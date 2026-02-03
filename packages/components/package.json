@@ -1,0 +1,40 @@
+{
+  "name": "@org/components",
+  "version": "0.1.0",
+  "description": "Web Components for SPARQL/D3 visualizations",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": ["dist", "README.md", "LICENSE"],
+  "sideEffects": false,
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "rollup -c",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
+  "dependencies": {
+    "@org/core": "workspace:*",
+    "@org/datasource-sparql": "workspace:*",
+    "@org/renderer-d3": "workspace:*"
+  },
+  "peerDependencies": {
+    "d3": "^7.0.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^25.0.0",
+    "@rollup/plugin-node-resolve": "^15.0.0",
+    "@rollup/plugin-terser": "^0.4.0",
+    "rollup-plugin-dts": "^6.0.0",
+    "typescript": "^5.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

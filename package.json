@@ -1,0 +1,8 @@
+{
+  "private": true,
+  "workspaces": ["packages/*", "apps/*"],
+  "scripts": {
+    "build": "npm -ws run build",
+    "dev": "npm -w @org/playground run dev"
+  }
+}
