@@ -2,12 +2,11 @@
  * Composant Web pour la visualisation de graphes de connaissances.
  * Utilise D3.js pour le rendu SVG et un système d'encoding visuel configurable.
  */
-// import * as d3 from 'd3'; // penser a décommenter si l'on veut publier le composant
-import { SparqlDataFetcher } from './SparqlDataFetcher.js';
-import { DomainCalculator } from './DomainCalculator.js';
-import { ColorScaleCalculator, parseD3ColorScheme } from './ColorScaleCalculator.js';
+import * as d3 from 'd3'; 
+import { SparqlDataFetcher } from '@wimmics/kgnovis-sparql';
+import { DomainCalculator, ColorScaleCalculator } from '@wimmics/kgnovis-encoding';
 
-export class VisGraph extends HTMLElement {
+export default class VisGraph extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });

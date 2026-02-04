@@ -1,0 +1,8 @@
+{
+  "name": "@wimmics/kgnovis-core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "main": "./src/index.js"
+}

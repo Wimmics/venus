@@ -1,5 +1,5 @@
 // Import de D3 depuis CDN
-import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
+//import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 
 /**
  * Calculateur de palettes de couleurs pour l'encoding visuel des graphes de connaissances.

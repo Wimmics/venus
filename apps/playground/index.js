@@ -1,0 +1,1 @@
+import "@wimmics/kgnovis-webcomponents";

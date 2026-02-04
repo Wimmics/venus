@@ -1,5 +1,5 @@
 {
-  "name": "@org/playground",
+  "name": "@wimmics/kgnovis-playground",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,8 +8,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@org/components": "workspace:*",
-    "@org/proxy": "workspace:*"
+    "@org/components": "file:../../packages/components",
+    "d3": "^7.0.0"
   },
   "devDependencies": {
     "vite": "^5.0.0"

@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Playground</title>
+
+    <script type="module" src="./index.js"></script>
+  </head>
+
+  <body>
+        <!-- Add the component to your page -->
+     <vis-graph id="myGraph" width="800" height="600"></vis-graph>
+
+    <script>
+
+      window.addEventListener("DOMContentLoaded", async () => {
+        await customElements.whenDefined("vis-graph");
+        const graph = document.getElementById("myGraph");
+        console.log(graph)
+        // 1. Configure the component properties
+        graph.sparqlEndpoint = 'https://query.wikidata.org/sparql';
+        graph.sparqlQuery = `
+          SELECT ?species ?speciesLabel ?family ?familyLabel WHERE {
+            # Species belonging to the cat family (Felidae)
+            ?species wdt:P171* wd:Q25265 .   # ancestor taxon = Felidae
+            ?species wdt:P105 wd:Q7432 .     # taxon rank = species
+
+            # Retrieve the family taxon
+            ?species wdt:P171* ?family .
+            ?family wdt:P105 wd:Q35409 .     # taxon rank = family
+
+            SERVICE wikibase:label {
+              bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en".
+            }
+          }
+          LIMIT 100
+
+            `;
+        
+        // Optional: configure a proxy if your endpoint has CORS issues
+        // graph.proxy = 'http://localhost:3001/sparql-proxy';
+
+        // Configure custom visual encoding
+        graph.encoding = {
+          nodes: {
+            field: ["speciesLabel", "familyLabel"],
+            color: { 
+              field: "familyLabel",
+              scale: { type: "ordinal", range: "Set1" }
+            }
+          },
+          links: {
+            field: {source: "speciesLabel", target: "familyLabel"}
+          }
+        };
+
+        // 2. Launch the visualization
+        graph.launch().then(result => {
+          if (result.status === 'success') {
+            console.log('Graph loaded with', result.data.nodes.length, 'nodes');
+          } else {
+            console.error('Failed to load graph:', result.message);
+          }
+        });
+
+      });
+    
+    </script>
+
+  </body>
+
+</html>

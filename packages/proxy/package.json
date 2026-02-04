@@ -1,0 +1,33 @@
+{
+  "name": "@wimmics/kgnovis-sparql-proxy",
+  "version": "0.1.0",
+  "description": "Minimal SPARQL proxy server to avoid browser CORS issues",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js"
+  },
+  "bin": {
+    "sparql-proxy": "./index.js"
+  },
+  "files": [
+    "index.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

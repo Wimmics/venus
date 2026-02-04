@@ -1,0 +1,1 @@
+export { SparqlDataFetcher } from './src/sparql-fetcher.js';

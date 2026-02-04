@@ -1,8 +1,15 @@
 {
+  "name": "@wimmics/kgnovis",
   "private": true,
   "workspaces": ["packages/*", "apps/*"],
   "scripts": {
-    "build": "npm -ws run build",
-    "dev": "npm -w @org/playground run dev"
+    "build": "npm -w @wimmics/kgnovis-webcomponents run build",
+    "dev": "npm -w @wimmics/kgnovis-playground run dev",
+
+    "proxy": "npm -w @wimmics/kgnovis-sparql-proxy run start",
+
+    "publish:components": "npm -w @wimmics/kgnovis-webcomponents publish --access public",
+    "publish:proxy": "npm -w @wimmics/kgnovis-sparql-proxy publish --access public"
   }
+
 }
