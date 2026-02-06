@@ -12,10 +12,11 @@
         <!-- Add the component to your page -->
      <vis-graph id="myGraph" width="800" height="600"></vis-graph>
 
+     <vis-uri-meta width="800" height="600"></vis-uri-meta>
+
     <script>
 
-      window.addEventListener("DOMContentLoaded", async () => {
-        await customElements.whenDefined("vis-graph");
+      async function configGraph() {
         const graph = document.getElementById("myGraph");
         console.log(graph)
         // 1. Configure the component properties
@@ -37,6 +38,8 @@
           LIMIT 100
 
             `;
+
+          graph.nodeDetailsPanel = document.querySelector('vis-uri-meta')
         
         // Optional: configure a proxy if your endpoint has CORS issues
         // graph.proxy = 'http://localhost:3001/sparql-proxy';
@@ -44,14 +47,14 @@
         // Configure custom visual encoding
         graph.encoding = {
           nodes: {
-            field: ["speciesLabel", "familyLabel"],
+            field: ["species", "family"],
             color: { 
               field: "familyLabel",
               scale: { type: "ordinal", range: "Set1" }
             }
           },
           links: {
-            field: {source: "speciesLabel", target: "familyLabel"}
+            field: {source: "species", target: "family"}
           }
         };
 
@@ -63,6 +66,19 @@
             console.error('Failed to load graph:', result.message);
           }
         });
+      }
+
+      async function configMetaPanel() {
+        const panel = document.querySelector('vis-uri-meta')
+
+        panel.node = { uri: "http://www.wikidata.org/entity/Q25265" }
+        panel.sparqlEndpoint = "https://query.wikidata.org/sparql"
+
+        await panel.load()
+      }
+
+      window.addEventListener("DOMContentLoaded", async () => {
+          await configGraph()
 
       });
     

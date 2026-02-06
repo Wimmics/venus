@@ -1,0 +1,13 @@
+{
+  "name": "@wimmics/kgnovis-mappers",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": [
+    "./index.js",
+    "./src/register-all.js",
+    "./dist/index.js",
+    "./dist/register-all.js"
+  ],
+  "main": "./index.js"
+}

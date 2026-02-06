@@ -8,7 +8,11 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist", "README.md", "LICENSE"],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "sideEffects": false,
   "scripts": {
     "clean": "rm -rf dist",
@@ -19,15 +23,16 @@
     "d3": "^7.0.0"
   },
   "devDependencies": {
-    "@org/core": "file:../core",
-    "@org/encoding": "file:../encoding",
-    "@org/datasource-sparql": "file:../datasource-sparql",
-    "@org/renderer-d3": "file:../renderer-d3",
-
     "@rollup/plugin-commonjs": "^25.0.0",
     "@rollup/plugin-node-resolve": "^15.0.0",
     "@rollup/plugin-terser": "^0.4.0",
-    "rollup": "^4.0.0"
+    "@wimmics/kgnovis-core": "file:../core",
+    "@wimmics/kgnovis-d3renderer": "file:../renderer-d3",
+    "@wimmics/kgnovis-encoding": "file:../encoding",
+    "@wimmics/kgnovis-mappers": "file:../mappers",
+    "@wimmics/kgnovis-sparql": "file:../sparql",
+    "rollup": "^4.0.0",
+    "rollup-plugin-string": "^3.0.0"
   },
   "publishConfig": {
     "access": "public"

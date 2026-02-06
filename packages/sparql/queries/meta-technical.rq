@@ -1,0 +1,43 @@
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX dc: <http://purl.org/dc/elements/1.1/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+
+SELECT DISTINCT ?property ?value ?valueType
+WHERE {
+  <{{URI}}> ?property ?value .
+  
+  FILTER (
+    ?property != rdfs:label &&
+    ?property != rdfs:comment &&
+    ?property != skos:prefLabel &&
+    ?property != skos:altLabel &&
+    ?property != skos:definition &&
+    ?property != skos:note &&
+    ?property != dc:title &&
+    ?property != dcterms:title &&
+    ?property != dc:description &&
+    ?property != dcterms:description &&
+    ?property != foaf:name &&
+    ?property != rdfs:subClassOf &&
+    ?property != rdf:type &&
+    ?property != skos:broader &&
+    ?property != skos:narrower &&
+    ?property != skos:related &&
+    ?property != owl:sameAs &&
+    ?property != owl:equivalentClass &&
+    ?property != rdfs:seeAlso &&
+    ?property != dcterms:isPartOf &&
+    ?property != dcterms:hasPart
+  )
+  
+  BIND(
+    IF(isLiteral(?value), "literal",
+      IF(isURI(?value), "uri", "unknown")
+    ) AS ?valueType
+  )
+}
+ORDER BY ?property
+LIMIT 150

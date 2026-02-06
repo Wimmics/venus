@@ -1,0 +1,28 @@
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX dc: <http://purl.org/dc/elements/1.1/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+
+SELECT DISTINCT ?property ?value ?lang
+WHERE {
+  <{{URI}}> ?property ?value .
+
+  FILTER (
+    ?property = rdfs:label ||
+    ?property = rdfs:comment ||
+    ?property = skos:prefLabel ||
+    ?property = skos:altLabel ||
+    ?property = skos:definition ||
+    ?property = skos:note ||
+    ?property = dc:title ||
+    ?property = dcterms:title ||
+    ?property = dc:description ||
+    ?property = dcterms:description ||
+    ?property = foaf:name
+  )
+
+  BIND(LANG(?value) as ?lang)
+}
+ORDER BY ?property
+LIMIT 100

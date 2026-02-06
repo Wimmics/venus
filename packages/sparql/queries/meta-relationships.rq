@@ -1,0 +1,36 @@
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+
+SELECT DISTINCT ?property ?value ?valueLabel
+WHERE {
+  <{{URI}}> ?property ?value .
+  
+  FILTER (
+    ?property = rdfs:subClassOf ||
+    ?property = rdf:type ||
+    ?property = skos:broader ||
+    ?property = skos:narrower ||
+    ?property = skos:related ||
+    ?property = owl:sameAs ||
+    ?property = owl:equivalentClass ||
+    ?property = rdfs:seeAlso ||
+    ?property = dcterms:isPartOf ||
+    ?property = dcterms:hasPart
+  )
+  
+  OPTIONAL {
+    ?value rdfs:label ?valueLabel .
+    FILTER(LANG(?valueLabel) = "" || LANGMATCHES(LANG(?valueLabel), "en") || LANGMATCHES(LANG(?valueLabel), "fr"))
+  }
+  OPTIONAL {
+      ?value skos:prefLabel ?prefLabel .
+      FILTER(LANG(?prefLabel) = "" || LANGMATCHES(LANG(?prefLabel), "en") || LANGMATCHES(LANG(?prefLabel), "fr"))
+  }
+  BIND(COALESCE(?valueLabel, ?prefLabel, "") AS ?valueLabel)
+
+}
+ORDER BY ?property
+LIMIT 50
