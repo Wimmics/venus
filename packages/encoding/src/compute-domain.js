@@ -3,6 +3,8 @@
  * Cette classe analyse les données pour générer automatiquement les domaines
  * appropriés selon les besoins de l'utilisateur et la nature des données.
  */
+import { createLogger } from "@wimmics/kgnovis-core";
+
 export class DomainCalculator {
   constructor() {
     // Cache pour les domaines calculés par champ
@@ -10,31 +12,27 @@ export class DomainCalculator {
     // Cache pour les statistiques des champs
     this.fieldStatsCache = new Map();
     
-    // Logging configuration - set to false to show only warnings and errors
-    this.enableDebugLogs = false;
+    this.logger = createLogger("DomainCalculator", { debug: false, level: "warn" });
+    this.maxLogMessageLength = 420;
+    this.maxListedValuesInWarnings = 12;
   }
 
-  /**
-   * Centralized logging methods for consistent output
-   */
-  _logDebug(message, ...args) {
-    if (this.enableDebugLogs) {
-      console.log(`%c[DomainCalculator] ${message}`, 'color:rgb(34, 255, 214)', ...args);
+  _truncateLogMessage(message) {
+    const text = typeof message === 'string' ? message : String(message);
+    if (text.length <= this.maxLogMessageLength) return text;
+    const truncatedChars = text.length - this.maxLogMessageLength;
+    return `${text.slice(0, this.maxLogMessageLength)}... [${truncatedChars} chars truncated]`;
+  }
+
+  _formatValueList(values) {
+    if (!Array.isArray(values) || values.length === 0) {
+      return '';
     }
-  }
-
-  _logInfo(message, ...args) {
-    if (this.enableDebugLogs) {
-      console.info(`%c[DomainCalculator] ${message}`, 'color: #2196F3', ...args);
-    }
-  }
-
-  _logWarn(message, ...args) {
-    console.warn(`%c[DomainCalculator] WARNING: ${message}`, 'color: #FF9800; font-weight: bold', ...args);
-  }
-
-  _logError(message, ...args) {
-    console.error(`%c[DomainCalculator] ERROR: ${message}`, 'color: #F44336; font-weight: bold', ...args);
+    const shownValues = values.slice(0, this.maxListedValuesInWarnings).map(v => String(v));
+    const remainingCount = values.length - shownValues.length;
+    return remainingCount > 0
+      ? `${shownValues.join(', ')}, ... (+${remainingCount} more)`
+      : shownValues.join(', ');
   }
 
   /**
@@ -49,7 +47,7 @@ export class DomainCalculator {
    */
   getDomain(data, field, userDomain = null, scaleType = 'ordinal') {
     if (!data || data.length === 0) {
-      this._logWarn(`No data available for field "${field}"`);
+      this.logger.warn(this._truncateLogMessage(`No data available for field "${field}"`));
       return [];
     }
 
@@ -57,26 +55,26 @@ export class DomainCalculator {
     const extractedValues = this.getVal(data, field);
     
     if (extractedValues.length === 0) {
-      this._logWarn(`No values found in data for field "${field}"`);
+      this.logger.warn(this._truncateLogMessage(`No values found in data for field "${field}"`));
       return [];
     }
 
-    this._logDebug(`Field analysis "${field}": ${extractedValues.length} unique values found`);
-    this._logDebug(`Values extracted from data:`, extractedValues);
-    this._logDebug(`User domain provided:`, userDomain);
+    this.logger.debug(this._truncateLogMessage(`Field analysis "${field}": ${extractedValues.length} unique values found`));
+    this.logger.debug(this._truncateLogMessage(`Values extracted from data:`), extractedValues);
+    this.logger.debug(this._truncateLogMessage(`User domain provided:`), userDomain);
 
     // Cas 1: Pas de domaine utilisateur -> utiliser les valeurs extraites
     if (!userDomain || userDomain.length === 0) {
       const reason = !userDomain ? "user domain not defined (null/undefined)" : "user domain empty (empty array)";
-      this._logDebug(`Case 1: Automatic domain generation - Reason: ${reason}`);
-      this._logDebug(`Automatic generation based on ${extractedValues.length} data values`);
+      this.logger.debug(this._truncateLogMessage(`Case 1: Automatic domain generation - Reason: ${reason}`));
+      this.logger.debug(this._truncateLogMessage(`Automatic generation based on ${extractedValues.length} data values`));
       
       const sortedDomain = this.sortDomainValues(extractedValues, scaleType);
       
       // Informational warning for user awareness
-      this._logWarn(`No domain provided by user for field "${field}". Domain automatically generated (${extractedValues.length} unique values): [${sortedDomain.join(', ')}]. To customize the domain, provide a "domain" array in your scale configuration.`);
+      this.logger.warn(this._truncateLogMessage(`No domain provided by user for field "${field}". Domain automatically generated (${extractedValues.length} unique values): [${this._formatValueList(sortedDomain)}]. To customize the domain, provide a "domain" array in your scale configuration.`));
       
-      this._logDebug(`Domain generated (${scaleType}):`, sortedDomain);
+      this.logger.debug(this._truncateLogMessage(`Domain generated (${scaleType}):`), sortedDomain);
       return sortedDomain;
     }
 
@@ -88,13 +86,13 @@ export class DomainCalculator {
       // Regrouper tous les détails en un seul warning consolidé
       const warningParts = [
         `Invalid domain for field "${field}": ${invalidityReport.reason}`,
-        `User provided: [${userDomain.join(', ')}]`,
-        `Data contains: [${extractedValues.join(', ')}]`,
-        `Domain corrected to: [${fixedDomain.join(', ')}]`
+        `User provided: [${this._formatValueList(userDomain)}]`,
+        `Data contains: [${this._formatValueList(extractedValues)}]`,
+        `Domain corrected to: [${this._formatValueList(fixedDomain)}]`
       ];
-      this._logWarn(warningParts.join(' | '));
+      this.logger.warn(this._truncateLogMessage(warningParts.join(' | ')));
       
-      this._logDebug(`Domain corrected:`, fixedDomain);
+      this.logger.debug(this._truncateLogMessage(`Domain corrected:`), fixedDomain);
       return fixedDomain;
     }
 
@@ -106,20 +104,20 @@ export class DomainCalculator {
       // Regrouper tous les détails en un seul warning consolidé
       const warningParts = [
         `Incomplete domain for field "${field}": Missing ${incompletenessReport.missingValues.length} values (coverage: ${Math.round(incompletenessReport.coverage * 100)}%)`,
-        `User provided: [${userDomain.join(', ')}]`,
-        `Missing values: [${incompletenessReport.missingValues.join(', ')}]`,
-        `Domain completed to: [${completedDomain.join(', ')}]`
+        `User provided: [${this._formatValueList(userDomain)}]`,
+        `Missing values: [${this._formatValueList(incompletenessReport.missingValues)}]`,
+        `Domain completed to: [${this._formatValueList(completedDomain)}]`
       ];
-      this._logWarn(warningParts.join(' | '));
+      this.logger.warn(this._truncateLogMessage(warningParts.join(' | ')));
       
-      this._logDebug(`Domain completed (${userDomain.length} → ${completedDomain.length} values):`, completedDomain);
+      this.logger.debug(this._truncateLogMessage(`Domain completed (${userDomain.length} → ${completedDomain.length} values):`), completedDomain);
       return completedDomain;
     }
 
     // Cas 4: Domaine utilisateur valide -> le conserver tel quel
-    this._logDebug(`Valid user domain, keeping as is`);
-    this._logDebug(`All user domain values match the data`);
-    this._logDebug(`Domain preserved:`, userDomain);
+    this.logger.debug(this._truncateLogMessage(`Valid user domain, keeping as is`));
+    this.logger.debug(this._truncateLogMessage(`All user domain values match the data`));
+    this.logger.debug(this._truncateLogMessage(`Domain preserved:`), userDomain);
     return [...userDomain]; // Copie pour éviter les modifications externes
   }
 
@@ -303,16 +301,16 @@ export class DomainCalculator {
    * @returns {Array} Le domaine corrigé
    */
   fixDomain(invalidDomain, extractedValues, scaleType) {
-    this._logDebug(`Correcting invalid domain...`);
-    this._logDebug(`Invalid domain:`, invalidDomain);
-    this._logDebug(`Available data:`, extractedValues);
-    this._logDebug(`Complete replacement with data values`);
+    this.logger.debug(this._truncateLogMessage(`Correcting invalid domain...`));
+    this.logger.debug(this._truncateLogMessage(`Invalid domain:`), invalidDomain);
+    this.logger.debug(this._truncateLogMessage(`Available data:`), extractedValues);
+    this.logger.debug(this._truncateLogMessage(`Complete replacement with data values`));
     
     // Pour un domaine complètement invalide, utiliser toutes les valeurs des données
     const sortedDomain = this.sortDomainValues(extractedValues, scaleType);
     
-    this._logDebug(`Domain corrected (sorting ${scaleType}):`, sortedDomain);
-    this._logDebug(`Change: ${invalidDomain.length} → ${sortedDomain.length} values`);
+    this.logger.debug(this._truncateLogMessage(`Domain corrected (sorting ${scaleType}):`), sortedDomain);
+    this.logger.debug(this._truncateLogMessage(`Change: ${invalidDomain.length} → ${sortedDomain.length} values`));
     
     return sortedDomain;
   }
@@ -326,8 +324,8 @@ export class DomainCalculator {
    * @returns {Array} Le domaine complété
    */
   completeDomain(incompleteDomain, extractedValues, scaleType) {
-    this._logDebug(`Completing incomplete domain...`);
-    this._logDebug(`User domain:`, incompleteDomain);
+    this.logger.debug(this._truncateLogMessage(`Completing incomplete domain...`));
+    this.logger.debug(this._truncateLogMessage(`User domain:`), incompleteDomain);
     
     // Garder l'ordre de l'utilisateur pour les valeurs qu'il a spécifiées
     const completedDomain = [...incompleteDomain];
@@ -337,20 +335,20 @@ export class DomainCalculator {
       !incompleteDomain.some(domainValue => this.valuesAreEqual(domainValue, dataValue))
     );
     
-    this._logDebug(`Missing values detected:`, missingValues);
+    this.logger.debug(this._truncateLogMessage(`Missing values detected:`), missingValues);
     
     // Trier les valeurs manquantes selon le type d'échelle
     const sortedMissingValues = this.sortDomainValues(missingValues, scaleType);
     
-    this._logDebug(`Missing values sorted (${scaleType}):`, sortedMissingValues);
-    this._logDebug(`Adding missing values to end of user domain`);
+    this.logger.debug(this._truncateLogMessage(`Missing values sorted (${scaleType}):`), sortedMissingValues);
+    this.logger.debug(this._truncateLogMessage(`Adding missing values to end of user domain`));
     
     // Les ajouter à la fin du domaine utilisateur
     completedDomain.push(...sortedMissingValues);
     
-    this._logDebug(`Domain completed:`, completedDomain);
-    this._logDebug(`Change: ${incompleteDomain.length} → ${completedDomain.length} values`);
-    this._logDebug(`Preservation: user order maintained for first ${incompleteDomain.length} values`);
+    this.logger.debug(this._truncateLogMessage(`Domain completed:`), completedDomain);
+    this.logger.debug(this._truncateLogMessage(`Change: ${incompleteDomain.length} → ${completedDomain.length} values`));
+    this.logger.debug(this._truncateLogMessage(`Preservation: user order maintained for first ${incompleteDomain.length} values`));
     
     return completedDomain;
   }

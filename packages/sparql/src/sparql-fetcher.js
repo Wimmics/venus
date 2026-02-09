@@ -138,21 +138,10 @@ export class SparqlDataFetcher {
 
   /**
    * High-level helper used by components:
-   * - If jsonData is provided, returns it immediately.
-   * - Otherwise executes query with fallback and returns a normalized result object.
+   * - Executes query with fallback and returns a normalized result object.
    */
-  async fetchSparqlData(endpoint, query, jsonData = null, proxyUrl = null, onProxyError = null, onNotification = null, opts = {}) {
+  async fetchSparqlData(endpoint, query, proxyUrl = null, onProxyError = null, onNotification = null, opts = {}) {
     try {
-      if (jsonData) {
-        this.log.debug("Using provided JSON data");
-        return {
-          status: "success",
-          method: "direct-json",
-          message: "Data loaded from provided JSON.",
-          data: jsonData,
-          rawData: jsonData
-        };
-      }
 
       const { data: rawData, method } = await this.executeSparqlQueryWithFallback(endpoint, query, proxyUrl, opts);
 

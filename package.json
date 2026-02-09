@@ -9,7 +9,9 @@
     "proxy": "npm -w @wimmics/kgnovis-sparql-proxy run start",
 
     "publish:components": "npm -w @wimmics/kgnovis-webcomponents publish --access public",
-    "publish:proxy": "npm -w @wimmics/kgnovis-sparql-proxy publish --access public"
+    "publish:proxy": "npm -w @wimmics/kgnovis-sparql-proxy publish --access public",
+
+    "reset": "rm -rf node_modules packages/*/node_modules && npm install"
   }
 
 }

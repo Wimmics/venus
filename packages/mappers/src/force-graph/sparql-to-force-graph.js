@@ -17,18 +17,19 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 		const bindings = results.results.bindings;
 		
 		let mapping = ctx.encoding;
+		const defaultEnc = ctx.encodingManager?.getDefaultEncoding && ctx.encodingManager.getDefaultEncoding();
 		const isDefaultEncoding =
-		!ctx.encoding ||
-		(ctx.encoding === ctx.defaultEncoding) ||
-		(ctx.encoding?.nodes?.field === "source" && ctx.encoding?.links?.field === "source-target");
+			!ctx.encoding ||
+			(ctx.encoding === defaultEnc) ||
+			(ctx.encoding?.nodes?.field === "source" && ctx.encoding?.links?.field === "source-target");
 		
 		let usedAdaptiveEncoding = false;
 		if (isDefaultEncoding) {
-			mapping = ctx.createAdaptiveEncoding(vars);
+			mapping = ctx.encodingManager?.createAdaptiveEncoding(vars);
 			usedAdaptiveEncoding = true;
 		}
 		
-		const { sourceVar, targetVar, linkType } = ctx.resolveFieldMapping(mapping, vars);
+		const { sourceVar, targetVar, linkType } = ctx.encodingManager?.resolveFieldMapping(mapping, vars) || {};
 		const semanticVar =
 		linkType === "semantic" && typeof mapping?.links?.field === "string"
 		? mapping.links.field
@@ -79,7 +80,13 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 		
 		return {
 			graph: { nodes: finalNodes, links: finalLinks },
-			meta: { usedAdaptiveEncoding, vars, mappingResolved: { sourceVar, targetVar, linkType, semanticVar } }
+			meta: {
+				usedAdaptiveEncoding,
+				vars,
+				mappingResolved: { sourceVar, targetVar, linkType, semanticVar },
+				// expose the actual mapping (encoding) used to build the graph
+				encodingUsed: JSON.parse(JSON.stringify(mapping))
+			}
 		};
 	}
 	
@@ -94,12 +101,7 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 			originalData: {}
 		};
 		
-		for (const varName of vars) {
-			if (binding[varName]) {
-				node[varName] = binding[varName].value;
-				node.originalData[varName] = binding[varName];
-			}
-		}
+		this._copyRelevantNodeFields(node, binding, vars, entityVarName);
 		return node;
 	}
 	
@@ -119,12 +121,7 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 				originalData: {}
 			};
 			
-			for (const varName of vars) {
-				if (binding[varName]) {
-					node[varName] = binding[varName].value;
-					node.originalData[varName] = binding[varName];
-				}
-			}
+			this._copyRelevantNodeFields(node, binding, vars, targetVar);
 			
 			nodesMap.set(targetId, node);
 		}
@@ -173,12 +170,7 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 				originalData: {}
 			};
 			
-			for (const varName of vars) {
-				if (binding[varName]) {
-					node[varName] = binding[varName].value;
-					node.originalData[varName] = binding[varName];
-				}
-			}
+			this._copyRelevantNodeFields(node, binding, vars, targetVar);
 			
 			nodesMap.set(targetId, node);
 		}
@@ -225,5 +217,21 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 			node.links = linkCount.get(node.id);
 		}
 	}
-}
 
+	_copyRelevantNodeFields(node, binding, vars, entityVarName) {
+		const relatedVarNames = vars.filter((varName) => {
+			if (varName === entityVarName) return true;
+			if (varName.startsWith(entityVarName)) return true;
+			if (varName === `${entityVarName}Label`) return true;
+			if (varName === `${entityVarName}Name`) return true;
+			return false;
+		});
+
+		for (const varName of relatedVarNames) {
+			if (binding[varName]) {
+				node[varName] = binding[varName].value;
+				node.originalData[varName] = binding[varName];
+			}
+		}
+	}
+}

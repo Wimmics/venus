@@ -48,24 +48,21 @@
         graph.encoding = {
           nodes: {
             field: ["species", "family"],
-            color: { 
-              field: "familyLabel",
-              scale: { type: "ordinal", range: "Set1" }
-            }
+            color: [
+              { field: "speciesLabel", scale: { type: "ordinal", range: "red" }, label: "Species Label" },
+              { field: "familyLabel",  scale: { type: "ordinal", range: "yellow" }, label: "Family Label" }
+            ]
           },
           links: {
-            field: {source: "species", target: "family"}
+            field: {source: "species", target: "family"},
+            color: [
+              { field: "type", scale: { type: "ordinal", range: ["#999", "#f66"] } }
+            ]
           }
         };
 
         // 2. Launch the visualization
-        graph.launch().then(result => {
-          if (result.status === 'success') {
-            console.log('Graph loaded with', result.data.nodes.length, 'nodes');
-          } else {
-            console.error('Failed to load graph:', result.message);
-          }
-        });
+        graph.launch()
       }
 
       async function configMetaPanel() {
