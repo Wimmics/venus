@@ -4,6 +4,7 @@ Browser-facing Web Components for KG visualization and node metadata.
 
 ## Responsibilities
 - Provide `<vis-graph>` for graph loading, rendering, encoding, and interaction.
+- Provide `<vis-barchart>` for bar-chart loading, rendering, encoding, and legends.
 - Provide `<vis-uri-meta>` for URI/node metadata display.
 - Coordinate datasource, mapper, encoding manager, renderer, and legends.
 

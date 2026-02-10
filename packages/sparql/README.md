@@ -12,5 +12,5 @@ SPARQL data access layer for query execution and metadata retrieval.
   - `@wimmics/kgnovis-core` (logging)
 - Used by:
   - `@wimmics/kgnovis-datasource`
-  - `@wimmics/kgnovis-components`
+  - `@wimmics/kgnovis-components` (`vis-graph` and `vis-barchart` through datasource)
   - Any app that wants direct SPARQL querying utilities.

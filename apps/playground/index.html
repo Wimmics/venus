@@ -84,6 +84,7 @@
       </div>
 
       <vis-graph id="myGraph" width="100%" height="100%"></vis-graph>
+      <vis-barchart id="myBarChart" width="100%" height="100%" style="display:none;"></vis-barchart>
       <vis-uri-meta id="metaPanel" width="900" height="600"></vis-uri-meta>
     </div>
 
@@ -161,24 +162,36 @@
         }
       }
 
-      async function applyScenario(graph, metaPanel, scenario) {
+      async function applyScenario(graph, barChart, metaPanel, scenario) {
         setStatus(`Loading scenario: ${scenario.name || scenario.id}...`);
         setScenarioDescription(scenario.description || "");
 
         const queryText = await fetchText(scenario.queryPath);
+        const visType = scenario.visType || "force-graph";
 
-        graph.nodeDetailsPanel = metaPanel;
-        graph.sparqlEndpoint = scenario.endpoint;
-        graph.sparqlQuery = queryText;
-        graph.encoding = scenario.encoding;
+        graph.style.display = visType === "bar-chart" ? "none" : "block";
+        barChart.style.display = visType === "bar-chart" ? "block" : "none";
 
-        await graph.launch();
+        if (visType === "bar-chart") {
+          barChart.sparqlEndpoint = scenario.endpoint;
+          barChart.sparqlQuery = queryText;
+          barChart.encoding = scenario.encoding;
+          await barChart.launch();
+        } else {
+          graph.nodeDetailsPanel = metaPanel;
+          graph.sparqlEndpoint = scenario.endpoint;
+          graph.sparqlQuery = queryText;
+          graph.encoding = scenario.encoding;
+
+          await graph.launch();
+        }
 
         setStatus(`Loaded: ${scenario.name || scenario.id}`);
       }
 
       async function initPlayground() {
         const graph = document.getElementById("myGraph");
+        const barChart = document.getElementById("myBarChart");
         const metaPanel = document.getElementById("metaPanel");
         const select = document.getElementById("scenarioSelect");
         const reloadButton = document.getElementById("reloadScenario");
@@ -203,7 +216,7 @@
             sessionStorage.setItem(SCENARIO_STORAGE_KEY, selectedScenario.id);
 
             try {
-              await applyScenario(graph, metaPanel, selectedScenario);
+              await applyScenario(graph, barChart, metaPanel, selectedScenario);
             } catch (error) {
               console.error(error);
               setStatus(error.message || "Failed to load scenario", true);

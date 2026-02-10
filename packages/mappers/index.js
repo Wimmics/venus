@@ -11,3 +11,4 @@ export { createSparqlMapper, listSparqlMappers } from "./src/mapper-factory.js"
 // Mapper classes
 export { SparqlToVisMapper } from "./src/sparql-to-vis-mapper.js"
 export { SparqlToForceGraphMapper } from './src/force-graph/sparql-to-force-graph.js'
+export { SparqlToBarChartMapper } from "./src/bar-chart/sparql-to-bar-chart.js";

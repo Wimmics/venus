@@ -1,12 +1,12 @@
 # KGnoVis Monorepo
 
-KGnoVis is a modular toolkit to fetch SPARQL data, map it to graph structures, encode visuals, and render interactive knowledge graph components in the browser.
+KGnoVis is a modular toolkit to fetch SPARQL data, map it to visualization structures, encode visuals, and render interactive components in the browser.
 
 ## Architecture
 
 High-level flow:
 
-`apps/*` -> `@wimmics/kgnovis-webcomponents` -> `@wimmics/kgnovis-datasource` -> `@wimmics/kgnovis-sparql` + `@wimmics/kgnovis-mappers` -> graph `{nodes, links}` -> `@wimmics/kgnovis-encoding` -> `@wimmics/kgnovis-d3renderer` + `@wimmics/kgnovis-legends`
+`apps/*` -> `@wimmics/kgnovis-webcomponents` -> `@wimmics/kgnovis-datasource` -> `@wimmics/kgnovis-sparql` + `@wimmics/kgnovis-mappers` -> vis data (`{nodes, links}` or `{rows}`) -> `@wimmics/kgnovis-encoding` -> `@wimmics/kgnovis-d3renderer` + `@wimmics/kgnovis-legends`
 
 Optional network helper:
 
@@ -14,14 +14,14 @@ Optional network helper:
 
 ## Packages
 
-- `packages/components`: browser custom elements (`vis-graph`, `vis-uri-meta`) and integration layer.
-- `packages/core`: shared low-level utilities (currently logger).
-- `packages/datasource`: fetch + retry + map orchestration for visualization data.
-- `packages/encoding`: domain and scale computation, encoding managers.
-- `packages/legends`: color/size legend web components and factory helpers.
-- `packages/mappers`: SPARQL JSON -> visualization graph mapping layer.
+- `packages/components`: browser custom elements (`vis-graph`, `vis-barchart`, `vis-uri-meta`) and integration layer.
+- `packages/core`: shared low-level utilities (`createLogger`, `VIS_TYPES`).
+- `packages/datasource`: fetch + retry + map orchestration for visualization data (`buildForceGraph`, `buildBarChart`).
+- `packages/encoding`: domain and scale computation, visualization-specific encoding managers and visual-artifact compilers.
+- `packages/legends`: color/size legend web components and factory helpers used by graph and bar chart.
+- `packages/mappers`: SPARQL JSON -> visualization data mapping layer (force graph and bar chart).
 - `packages/proxy`: standalone SPARQL proxy server for CORS workarounds.
-- `packages/renderer-d3`: D3 force-graph renderer runtime.
+- `packages/renderer-d3`: D3 renderer runtime (force graph and bar chart).
 - `packages/sparql`: SPARQL fetchers and metadata query helpers.
 
 Each package has its own minimal README with responsibilities and links.

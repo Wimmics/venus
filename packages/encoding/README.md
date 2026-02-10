@@ -3,18 +3,18 @@
 Encoding engine that turns user encoding into validated domains and D3-ready scales.
 
 ## What This Package Does
-- Resolves force-graph encoding for nodes and links.
+- Resolves visualization-specific encoding for force graph and bar chart.
 - Computes or validates domains from data (`DomainCalculator`).
 - Builds color ranges/palettes (`ColorScaleCalculator`).
 - Normalizes size ranges (`SizeRangeCalculator`).
 - Computes bin breaks for quantitative binning (`BinBreaksCalculator`).
 - Creates and caches D3 scales in the encoding manager.
 
-## Current Encoding Model
-- Each mark (`nodes`, `links`) can be associated to a `color` object and a `size` object.
+## Encoding Model
+- Force graph: `nodes` / `links` channels (`color`, `size`, `stroke`, `labels`, `interactions`).
+- Bar chart: `x`, `y`, `color`, `direction`.
 
-
-## Minimal Usage
+## Force-Graph Example
 ```js
 graph.encoding = {
   interactions: { enabled: true, drag: true, zoom: true },
@@ -67,6 +67,52 @@ In co-occurrence mode, nodes are connected when they share the same resolved val
 - `value`: CSS color string (name or hex), for example `"white"` or `"#ffffff"` (default `"#ffffff"`)
 - `width`: stroke width as a number (`2`) or CSS-like pixel string (`"2px"`) (default `1.5`)
 - `display`: `true | false` (default `true`)
+
+## Bar-Chart Example
+```js
+bar.encoding = {
+  x: {
+    field: "name",
+    axis: {
+      labelAngle: -45,
+      labelOffset: { x: -6, y: 10 }
+    }
+  },
+  y: {
+    field: "population",
+    axis: {
+      tickFormat: "kmb",
+      labelOffset: { x: -4, y: 0 }
+    },
+    scale: { type: "pow", exponent: 0.5 }
+  },
+  color: {
+    field: "language",
+    value: "#cccccc",
+    scale: { type: "ordinal", range: "Set1" },
+    legend: { title: "Language", position: "top-right", display: true }
+  },
+  direction: "vertical"
+};
+```
+
+`direction`:
+- `"vertical"` (default)
+- `"horizontal"`
+
+`x.axis` options:
+- `labelAngle`: number
+- `labelOffset`: `{ x: number, y: number }`
+
+`y.axis` options:
+- `labelOffset`: `{ x: number, y: number }`
+- `tickFormat`: preset string, one of:
+- `"raw"` (default, comma separated)
+- `"compact"` (Intl compact notation)
+- `"kmb"` (`k`, `M`, `B`, `T`)
+- `"k"` / `"thousands"`
+- `"m"` / `"millions"`
+- `"b"` / `"billions"`
 
 ## Scale Types
 - Ordinal-like: `ordinal`
@@ -186,11 +232,14 @@ Defaults:
 - `src/utils/build-size-range.js`
 - `src/utils/build-bin-breaks.js`
 - `src/force-graph-encoding-manager.js`
+- `src/bar-chart-encoding-manager.js`
+- `src/force-graph-visual-artifacts.js`
+- `src/bar-chart-visual-artifacts.js`
 
 ## Package Relationships
 - Depends on `@wimmics/kgnovis-core` for logging.
 - Used by:
 - `@wimmics/kgnovis-components`
-- `@wimmics/kgnovis-renderer-d3`
+- `@wimmics/kgnovis-d3renderer`
 - `@wimmics/kgnovis-datasource`
 - `@wimmics/kgnovis-mappers`

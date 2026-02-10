@@ -3,13 +3,14 @@
 D3-based rendering runtime for KGnoVis graph visualizations.
 
 ## Responsibilities
-- Render force-directed graph nodes/links to SVG.
-- Apply encoding-driven scales for node/link color and size.
-- Manage simulation, drag interactions, and render lifecycle updates.
+- Render force-directed graphs to SVG (`ForceGraphRenderer`).
+- Render bar charts to SVG (`BarChartRenderer`).
+- Apply encoding-driven scales and compiled visual artifacts to marks.
+- Manage renderer lifecycle updates (`render`, `updateData`, `updateEncoding`, `resize`, `destroy`).
 
 ## Package Links
 - Depends on:
   - D3 runtime
   - An encoding manager instance (injected by consumer)
 - Used by:
-  - `@wimmics/kgnovis-components` (`vis-graph` uses this renderer).
+  - `@wimmics/kgnovis-components` (`vis-graph` and `vis-barchart` use this renderer).

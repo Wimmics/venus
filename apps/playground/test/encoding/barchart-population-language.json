@@ -1,0 +1,47 @@
+{
+  "name": "Bar Chart: Population by Country",
+  "description": "Tests vis-barchart with vertical bars, Y quantitative scale, and data-driven color using a fixed language domain and Reds palette.",
+  "visType": "bar-chart",
+  "endpoint": "https://query.wikidata.org/sparql",
+  "queryPath": "./test/queries/countries-population-language.rq",
+  "encoding": {
+    "x": {
+      "field": "name",
+      "axis": {
+        "labelAngle": -45,
+        "labelOffset": { "x": -6, "y": 5 }
+      }
+    },
+    "y": {
+      "field": "population",
+      "axis": {
+        "tickFormat": "kmb",
+        "labelOffset": { "x": -4, "y": 0 }
+      },
+      "scale": {
+        "type": "pow",
+        "exponent": 0.5
+      }
+    },
+    "color": {
+      "field": "randomLang",
+      "value": "#cccccc",
+      "scale": {
+        "type": "ordinal",
+        "domain": [
+          "English",
+          "French",
+          "German",
+          "Italian",
+          "Spanish"
+        ],
+        "range": "Set1"
+      },
+      "legend": {
+        "title": "Language",
+        "position": "top-right"
+      }
+    },
+    "direction": "vertical"
+  }
+}

@@ -11,4 +11,4 @@ Legend web components and legend factory utilities.
 - Depends on:
   - No internal KGnoVis packages.
 - Used by:
-  - `@wimmics/kgnovis-components` (`vis-graph` legend lifecycle management).
+  - `@wimmics/kgnovis-components` (`vis-graph` and `vis-barchart` legend lifecycle management).

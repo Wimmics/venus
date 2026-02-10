@@ -48,6 +48,10 @@
     {
       "id": "interactions-disabled",
       "configPath": "./test/encoding/interactions-disabled.json"
+    },
+    {
+      "id": "barchart-population-language",
+      "configPath": "./test/encoding/barchart-population-language.json"
     }
   ]
 }
