@@ -1,12 +1,13 @@
 import { SparqlToVisMapper } from "../sparql-to-vis-mapper.js";
 import { extractId, extractLabel } from "../extract-bindings-info.js"
+import { VIS_TYPES } from "@wimmics/kgnovis-core";
 
 import { calculateFlexibleCooccurrence } from "./cooccurrence.js"
 
 export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 	
 	constructor(options = {}) {
-		super({ ...options, visType: "force-graph" });
+		super({ ...options, visType: VIS_TYPES.FORCE_GRAPH });
 	}
 	
 	map(results, ctx) {

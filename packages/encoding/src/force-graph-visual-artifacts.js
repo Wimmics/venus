@@ -1,3 +1,5 @@
+import { VIS_TYPES } from "@wimmics/kgnovis-core";
+
 function resolveSingle(config) {
   return Array.isArray(config) ? config[0] : config;
 }
@@ -37,7 +39,7 @@ export function createForceGraphVisualArtifacts({
   encoding,
   nodes = [],
   links = [],
-  visType = "force-graph"
+  visType = VIS_TYPES.FORCE_GRAPH
 } = {}) {
   const artifacts = {
     scales: new Map(),

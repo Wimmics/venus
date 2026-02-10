@@ -1,5 +1,6 @@
 // build-force-graph.js
 import { createSparqlMapper } from "@wimmics/kgnovis-mappers";
+import { VIS_TYPES } from "@wimmics/kgnovis-core";
 import { buildVis } from "./build-vis.js";
 
 /**
@@ -22,7 +23,7 @@ export async function buildForceGraph({
   
   logger = null
 } = {}) {
-  const mapper = createSparqlMapper("force-graph");
+  const mapper = createSparqlMapper(VIS_TYPES.FORCE_GRAPH);
 
   return buildVis({
     endpoint,

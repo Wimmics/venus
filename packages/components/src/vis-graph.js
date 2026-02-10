@@ -19,7 +19,7 @@ import { createRenderer } from "@wimmics/kgnovis-d3renderer";
 import { SparqlDataFetcher } from "@wimmics/kgnovis-sparql";
 import { createEncodingManager, createVisualArtifacts } from "@wimmics/kgnovis-encoding";
 import { createSparqlMapper, listSparqlMappers } from "@wimmics/kgnovis-mappers";
-import { createLogger } from "@wimmics/kgnovis-core";
+import { createLogger, VIS_TYPES } from "@wimmics/kgnovis-core";
 import { buildForceGraph } from "@wimmics/kgnovis-datasource";
 import { createLegends, positionLegends } from "@wimmics/kgnovis-legends";
 
@@ -51,10 +51,10 @@ export class VisGraph extends HTMLElement {
 
     // Mapper
     this.logger.debug("Available mappers", { mappers: listSparqlMappers?.() });
-    this.mapper = createSparqlMapper("force-graph");
+    this.mapper = createSparqlMapper(VIS_TYPES.FORCE_GRAPH);
 
     // Encoding
-    this.encodingManager = createEncodingManager('force-graph');
+    this.encodingManager = createEncodingManager(VIS_TYPES.FORCE_GRAPH);
 
     this.scaleCache = new Map();
 
@@ -338,7 +338,7 @@ export class VisGraph extends HTMLElement {
     }
 
     try {
-      this._visualArtifacts = createVisualArtifacts("force-graph", {
+      this._visualArtifacts = createVisualArtifacts(VIS_TYPES.FORCE_GRAPH, {
         encodingManager: this.encodingManager,
         encoding: this.visualEncoding,
         nodes: this.nodes,
@@ -445,7 +445,7 @@ export class VisGraph extends HTMLElement {
 
     const container = this.shadowRoot.querySelector(".graph-container");
     if (container && !this.renderer) {
-      this.renderer = createRenderer("force-graph", {
+      this.renderer = createRenderer(VIS_TYPES.FORCE_GRAPH, {
         container,
         encodingManager: this.encodingManager,
         width: this.width,
