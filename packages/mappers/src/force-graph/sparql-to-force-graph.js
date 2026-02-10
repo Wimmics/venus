@@ -1,7 +1,6 @@
 import { SparqlToVisMapper } from "../sparql-to-vis-mapper.js";
 import { extractId, extractLabel } from "../extract-bindings-info.js"
 
-import { createLogger } from "@wimmics/kgnovis-core";
 import { calculateFlexibleCooccurrence } from "./cooccurrence.js"
 
 export class SparqlToForceGraphMapper extends SparqlToVisMapper {
@@ -34,6 +33,7 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 		linkType === "semantic" && typeof mapping?.links?.field === "string"
 		? mapping.links.field
 		: null;
+		const explicitlyReferencedNodeFields = this._collectExplicitNodeFields(mapping);
 		
 		const nodesMap = new Map();
 		const linksMap = new Map();
@@ -45,17 +45,17 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 			const sourceId = extractId(binding[sourceVar]);
 			
 			if (!nodesMap.has(sourceId)) {
-				const node = this._makeNode(binding, vars, sourceVar, sourceId);
+				const node = this._makeNode(binding, vars, sourceVar, sourceId, explicitlyReferencedNodeFields);
 				nodesMap.set(sourceId, node);
 			}
 			
 			if (linkType === "directional" && targetVar && binding[targetVar]) {
-				this._addDirectionalLink({ binding, vars, sourceId, targetVar, nodesMap, linksMap });
+				this._addDirectionalLink({ binding, vars, sourceId, targetVar, nodesMap, linksMap, explicitlyReferencedNodeFields });
 				continue;
 			}
 			
 			if (linkType === "semantic" && targetVar && binding[targetVar]) {
-				this._addSemanticLink({ binding, vars, sourceId, targetVar, semanticVar, nodesMap, linksMap });
+				this._addSemanticLink({ binding, vars, sourceId, targetVar, semanticVar, nodesMap, linksMap, explicitlyReferencedNodeFields });
 				continue;
 			}
 			
@@ -90,7 +90,7 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 		};
 	}
 	
-	_makeNode(binding, vars, entityVarName, id) {
+	_makeNode(binding, vars, entityVarName, id, explicitlyReferencedNodeFields) {
 		const bindingValue = binding[entityVarName];
 		
 		const node = {
@@ -101,11 +101,11 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 			originalData: {}
 		};
 		
-		this._copyRelevantNodeFields(node, binding, vars, entityVarName);
+		this._copyRelevantNodeFields(node, binding, vars, entityVarName, explicitlyReferencedNodeFields);
 		return node;
 	}
 	
-	_addDirectionalLink({ binding, vars, sourceId, targetVar, nodesMap, linksMap }) {
+	_addDirectionalLink({ binding, vars, sourceId, targetVar, nodesMap, linksMap, explicitlyReferencedNodeFields }) {
 		if (!binding[targetVar]) return;
 		
 		const targetBinding = binding[targetVar];
@@ -121,7 +121,7 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 				originalData: {}
 			};
 			
-			this._copyRelevantNodeFields(node, binding, vars, targetVar);
+			this._copyRelevantNodeFields(node, binding, vars, targetVar, explicitlyReferencedNodeFields);
 			
 			nodesMap.set(targetId, node);
 		}
@@ -153,7 +153,8 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 		targetVar,
 		semanticVar,
 		nodesMap,
-		linksMap
+		linksMap,
+		explicitlyReferencedNodeFields
 	}) {
 		if (!binding[targetVar]) return;
 		
@@ -170,7 +171,7 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 				originalData: {}
 			};
 			
-			this._copyRelevantNodeFields(node, binding, vars, targetVar);
+			this._copyRelevantNodeFields(node, binding, vars, targetVar, explicitlyReferencedNodeFields);
 			
 			nodesMap.set(targetId, node);
 		}
@@ -218,12 +219,31 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 		}
 	}
 
-	_copyRelevantNodeFields(node, binding, vars, entityVarName) {
+	_collectExplicitNodeFields(mapping) {
+		const fields = new Set();
+		const nodeColorConfig = mapping?.nodes?.color;
+		const nodeColorConfigs = Array.isArray(nodeColorConfig) ? nodeColorConfig : [nodeColorConfig].filter(Boolean);
+
+		for (const config of nodeColorConfigs) {
+			if (typeof config?.field === "string" && config.field.trim()) {
+				fields.add(config.field);
+			}
+		}
+
+		if (typeof mapping?.nodes?.size?.field === "string" && mapping.nodes.size.field.trim()) {
+			fields.add(mapping.nodes.size.field);
+		}
+
+		return fields;
+	}
+
+	_copyRelevantNodeFields(node, binding, vars, entityVarName, explicitlyReferencedNodeFields = new Set()) {
 		const relatedVarNames = vars.filter((varName) => {
 			if (varName === entityVarName) return true;
 			if (varName.startsWith(entityVarName)) return true;
 			if (varName === `${entityVarName}Label`) return true;
 			if (varName === `${entityVarName}Name`) return true;
+			if (explicitlyReferencedNodeFields.has(varName)) return true;
 			return false;
 		});
 

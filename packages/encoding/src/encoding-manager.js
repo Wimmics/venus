@@ -16,6 +16,8 @@ export class EncodingManager {
   constructor(opts = {}) {
     this.domainCalculator = opts.domainCalculator;
     this.colorScaleCalculator = opts.colorScaleCalculator;
+    this.sizeRangeCalculator = opts.sizeRangeCalculator;
+    this.binBreaksCalculator = opts.binBreaksCalculator;
     this.scaleCache = new Map();
     this.lastEncodingHash = null;
     this.lastDataHash = null;

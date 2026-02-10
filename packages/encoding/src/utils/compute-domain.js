@@ -59,6 +59,11 @@ export class DomainCalculator {
       return [];
     }
 
+    // Quantitative scales use continuous numeric domains (min/max), not categorical membership checks.
+    if (this._isQuantitativeScale(scaleType)) {
+      return this._getQuantitativeDomain(extractedValues, field, userDomain, scaleType);
+    }
+
     this.logger.debug(this._truncateLogMessage(`Field analysis "${field}": ${extractedValues.length} unique values found`));
     this.logger.debug(this._truncateLogMessage(`Values extracted from data:`), extractedValues);
     this.logger.debug(this._truncateLogMessage(`User domain provided:`), userDomain);
@@ -119,6 +124,60 @@ export class DomainCalculator {
     this.logger.debug(this._truncateLogMessage(`All user domain values match the data`));
     this.logger.debug(this._truncateLogMessage(`Domain preserved:`), userDomain);
     return [...userDomain]; // Copie pour éviter les modifications externes
+  }
+
+  _isQuantitativeScale(scaleType) {
+    return scaleType === 'linear' || scaleType === 'sqrt' || scaleType === 'log' || scaleType === 'quantitative' || scaleType === 'sequential';
+  }
+
+  _getQuantitativeDomain(extractedValues, field, userDomain, scaleType) {
+    const numericValues = extractedValues
+      .map(v => this.convertToNumber(v))
+      .filter(v => !isNaN(v));
+
+    if (numericValues.length === 0) {
+      this.logger.warn(this._truncateLogMessage(`No numeric values found in data for field "${field}"`));
+      return [];
+    }
+
+    const dataMin = Math.min(...numericValues);
+    const dataMax = Math.max(...numericValues);
+    const autoDomain = [dataMin, dataMax];
+
+    if (!Array.isArray(userDomain) || userDomain.length < 2) {
+      this.logger.warn(this._truncateLogMessage(`No valid numeric domain provided by user for field "${field}". Domain automatically generated from data extent: [${this._formatValueList(autoDomain)}].`));
+      return autoDomain;
+    }
+
+    const userNumericValues = userDomain
+      .map(v => this.convertToNumber(v))
+      .filter(v => !isNaN(v));
+
+    if (userNumericValues.length < 2) {
+      this.logger.warn(this._truncateLogMessage(`Invalid numeric domain for field "${field}". User provided: [${this._formatValueList(userDomain)}]. Domain automatically generated from data extent: [${this._formatValueList(autoDomain)}].`));
+      return autoDomain;
+    }
+
+    const userMin = Math.min(...userNumericValues);
+    const userMax = Math.max(...userNumericValues);
+    let finalDomain = [userMin, userMax];
+
+    if (scaleType === 'log' && (finalDomain[0] <= 0 || finalDomain[1] <= 0)) {
+      const positiveValues = numericValues.filter(v => v > 0);
+      if (positiveValues.length < 2) {
+        this.logger.warn(this._truncateLogMessage(`Log scale requires positive values for field "${field}". Falling back to [1, 10].`));
+        return [1, 10];
+      }
+      finalDomain = [Math.min(...positiveValues), Math.max(...positiveValues)];
+      this.logger.warn(this._truncateLogMessage(`Invalid non-positive user domain for log scale on field "${field}". Domain corrected to positive data extent: [${this._formatValueList(finalDomain)}].`));
+    }
+
+    if (finalDomain[0] === finalDomain[1]) {
+      finalDomain = [finalDomain[0], finalDomain[0] + 1];
+      this.logger.warn(this._truncateLogMessage(`Degenerate numeric domain for field "${field}" (min=max). Domain expanded to: [${this._formatValueList(finalDomain)}].`));
+    }
+
+    return finalDomain;
   }
 
   /**

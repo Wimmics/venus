@@ -266,6 +266,11 @@ export class VisGraph extends HTMLElement {
    * The DOM structure is built once; this just updates the renderer.
    */
   render() {
+    const container = this.shadowRoot?.querySelector(".graph-container");
+    if (container) {
+      container.style.background = this._resolveBackgroundColor();
+    }
+
     if (this.renderer) {
       this.renderer.render({ nodes: this.nodes, links: this.links }, this.visualEncoding);
       this._manageLegends();
@@ -343,7 +348,7 @@ export class VisGraph extends HTMLElement {
         .graph-container {
           width: ${this.width}px;
           height: ${this.height}px;
-          background: #f9f9f9;
+          background: #ffffff;
           border: 1px solid #ddd;
           border-radius: 4px;
           overflow: hidden;
@@ -476,6 +481,17 @@ export class VisGraph extends HTMLElement {
         bubbles: true
       })
     );
+  }
+
+  _resolveBackgroundColor() {
+    const background = this.visualEncoding?.background;
+    if (typeof background === "string" && background.trim()) {
+      return background;
+    }
+    if (background && typeof background.value === "string" && background.value.trim()) {
+      return background.value;
+    }
+    return "#ffffff";
   }
 
   // ========== PRIVATE: INTERACTION (HOVER, CONTEXT MENU, TOOLTIPS) ==========

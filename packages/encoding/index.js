@@ -1,6 +1,8 @@
 import "./src/register-all.js";
 
-export { ColorScaleCalculator } from './src/build-color-range.js';
-export { DomainCalculator } from './src/compute-domain.js';
+export { ColorScaleCalculator } from './src/utils/build-color-range.js';
+export { DomainCalculator } from './src/utils/compute-domain.js';
+export { SizeRangeCalculator } from './src/utils/build-size-range.js';
+export { BinBreaksCalculator } from './src/utils/build-bin-breaks.js';
 
 export { createEncodingManager } from './src/encoding-manager-factory.js'

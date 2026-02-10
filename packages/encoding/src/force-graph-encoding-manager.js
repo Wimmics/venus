@@ -186,7 +186,17 @@ export class ForceGraphEncodingManager extends EncodingManager {
       const f = enc.nodes.size.field;
       const scaleType = enc.nodes.size.scale.type || "linear";
       const userDomain = enc.nodes.size.scale.domain;
+      const userRange = enc.nodes.size.scale.range;
       enc.nodes.size.scale.domain = this.domainCalculator.getDomain(nodes, f, userDomain, scaleType);
+      if (this.sizeRangeCalculator) {
+        enc.nodes.size.scale.range = this.sizeRangeCalculator.createSizeRange({
+          data: nodes,
+          field: f,
+          scaleType,
+          range: userRange,
+          label: `Size[${f}]`
+        });
+      }
     }
 
     return enc;
@@ -249,6 +259,44 @@ export class ForceGraphEncodingManager extends EncodingManager {
       type === "linear" || type === "sqrt" || type === "log" || type === "quantitative" || type === "sequential";
 
     try {
+      if (isQuant) {
+        const binningOptions = this._resolveBinningOptions(scaleConfig);
+        const numericValues = (Array.isArray(data) ? data : [])
+          .map((item) => this.domainCalculator.convertToNumber(item?.[field]))
+          .filter((value) => !isNaN(value));
+
+        if (binningOptions.enabled && numericValues.length > 1 && this.binBreaksCalculator) {
+          const domainMin = Number(finalDomain[0]);
+          const domainMax = Number(finalDomain[finalDomain.length - 1]);
+          const effectiveMin = Number.isFinite(binningOptions.min) ? binningOptions.min : (Number.isFinite(domainMin) ? domainMin : null);
+          const effectiveMax = Number.isFinite(binningOptions.max) ? binningOptions.max : (Number.isFinite(domainMax) ? domainMax : null);
+          const breaks = this.binBreaksCalculator.computeBreaks(numericValues, {
+            method: binningOptions.method,
+            bins: binningOptions.bins,
+            breaks: binningOptions.breaks,
+            min: effectiveMin,
+            max: effectiveMax,
+            label: `${isColorScale ? "Color" : "Size"}[${field}]`,
+            quantitative: true
+          });
+
+          const binCount = breaks.bins;
+          if (binCount > 1 && isColorScale) {
+            const thresholdColors = this._buildThresholdColorRange(range, binCount, field);
+            const thresholdScale = d3.scaleThreshold().domain(breaks.thresholds).range(thresholdColors);
+            thresholdScale.__kgnovisBounds = { min: breaks.min, max: breaks.max };
+            return thresholdScale;
+          }
+
+          if (binCount > 1) {
+            const thresholdSizes = this._buildThresholdSizeRange(range, binCount, data, field, type);
+            const thresholdScale = d3.scaleThreshold().domain(breaks.thresholds).range(thresholdSizes);
+            thresholdScale.__kgnovisBounds = { min: breaks.min, max: breaks.max };
+            return thresholdScale;
+          }
+        }
+      }
+
       if (isColorScale) {
         const scaleType = isQuant ? "quantitative" : "ordinal";
         return this.colorScaleCalculator.createColorScale({
@@ -260,7 +308,15 @@ export class ForceGraphEncodingManager extends EncodingManager {
         });
       }
 
-      const finalRange = range || [5, 20];
+      const finalRange = this.sizeRangeCalculator
+        ? this.sizeRangeCalculator.createSizeRange({
+            data,
+            field,
+            scaleType: type,
+            range,
+            label: `Size[${field}]`
+          })
+        : (range || [5, 20]);
 
       if (type === "linear") return d3.scaleLinear().domain(finalDomain).range(finalRange);
       if (type === "sqrt") return d3.scaleSqrt().domain(finalDomain).range(finalRange);
@@ -270,5 +326,67 @@ export class ForceGraphEncodingManager extends EncodingManager {
     } catch {
       return null;
     }
+  }
+
+  _resolveBinningOptions(scaleConfig) {
+    const raw = scaleConfig?.binning;
+    if (raw === false) {
+      return { enabled: false, method: "jenks", bins: 1, breaks: null, min: null, max: null };
+    }
+
+    const method = raw?.method === "quartiles" ? "quartiles" : "jenks";
+    const bins = Number.isFinite(raw?.bins) ? Math.max(1, Math.floor(raw.bins)) : 5;
+    const breaks = Array.isArray(raw?.breaks) ? raw.breaks : null;
+    const min = Number.isFinite(raw?.min) ? Number(raw.min) : null;
+    const max = Number.isFinite(raw?.max) ? Number(raw.max) : null;
+    return { enabled: true, method, bins, breaks, min, max };
+  }
+
+  _buildThresholdColorRange(range, binCount, field) {
+    const dummyDomain = Array.from({ length: binCount }, (_, index) => index);
+    const paletteScale = this.colorScaleCalculator.createColorScale({
+      domain: dummyDomain,
+      range,
+      scaleType: "ordinal",
+      fallbackInterpolator: null,
+      label: `Color[${field}]`
+    });
+
+    const palette = paletteScale?.range?.() || [];
+    if (palette.length >= binCount) return palette.slice(0, binCount);
+
+    const fallback = this.colorScaleCalculator.getColorPalette("Category10", binCount, "ordinal");
+    return Array.from({ length: binCount }, (_, index) => palette[index % palette.length] || fallback[index % fallback.length] || "#999");
+  }
+
+  _buildThresholdSizeRange(range, binCount, data, field, scaleType) {
+    const normalized = this.sizeRangeCalculator
+      ? this.sizeRangeCalculator.createSizeRange({
+          data,
+          field,
+          scaleType,
+          range,
+          label: `Size[${field}]`
+        })
+      : (range || [5, 20]);
+
+    if (!Array.isArray(normalized) || normalized.length === 0) {
+      return Array.from({ length: binCount }, () => 10);
+    }
+
+    if (normalized.length >= binCount) {
+      return normalized.slice(0, binCount);
+    }
+
+    const start = Number(normalized[0]);
+    const end = Number(normalized[normalized.length - 1]);
+    if (!Number.isFinite(start) || !Number.isFinite(end) || binCount <= 1) {
+      return Array.from({ length: binCount }, () => 10);
+    }
+
+    return Array.from({ length: binCount }, (_, index) => {
+      const ratio = binCount === 1 ? 0 : index / (binCount - 1);
+      return start + (end - start) * ratio;
+    });
   }
 }

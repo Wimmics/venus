@@ -55,11 +55,63 @@ export class SizeLegend extends HTMLElement {
     return this._encoding?.legend?.title || this._encoding?.label || this._encoding?.field || "Legend";
   }
 
+  _getNumericDomainBounds() {
+    const scaleBounds = this._d3Scale?.__kgnovisBounds;
+    if (scaleBounds && Number.isFinite(scaleBounds.min) && Number.isFinite(scaleBounds.max)) {
+      return { min: Math.min(scaleBounds.min, scaleBounds.max), max: Math.max(scaleBounds.min, scaleBounds.max) };
+    }
+
+    const dataValues = (Array.isArray(this._data) ? this._data : [])
+      .map((item) => Number(item?.[this._encoding?.field]))
+      .filter((value) => Number.isFinite(value));
+    if (dataValues.length >= 2) {
+      return { min: Math.min(...dataValues), max: Math.max(...dataValues) };
+    }
+
+    const domain = this._encoding?.scale?.domain;
+    if (Array.isArray(domain) && domain.length >= 2) {
+      const numeric = domain.map((value) => Number(value)).filter((value) => Number.isFinite(value));
+      if (numeric.length >= 2) {
+        return { min: Math.min(...numeric), max: Math.max(...numeric) };
+      }
+    }
+
+    return { min: null, max: null };
+  }
+
+  _formatIntervalLabel(min, max, { includeLower = true, includeUpper = true } = {}) {
+    const minTxt = min === undefined || min === null ? "?" : Number(min).toFixed(2).replace(/\.00$/, "");
+    const maxTxt = max === undefined || max === null ? "?" : Number(max).toFixed(2).replace(/\.00$/, "");
+    const left = includeLower ? "[" : "(";
+    const right = includeUpper ? "]" : ")";
+    return `${left}${minTxt}, ${maxTxt}${right}`;
+  }
+
   _getSampleValues(count = 3) {
     if (!this._encoding?.scale?.domain) return [];
 
+    if (this._d3Scale && typeof this._d3Scale.invertExtent === "function" && typeof this._d3Scale.range === "function") {
+      const rangeValues = this._d3Scale.range();
+      const thresholds = typeof this._d3Scale.domain === "function" ? this._d3Scale.domain() : [];
+      const bounds = this._getNumericDomainBounds();
+      return rangeValues.map((size, index) => {
+        const lower = index === 0 ? bounds.min : thresholds[index - 1];
+        const upper = index === rangeValues.length - 1 ? bounds.max : thresholds[index];
+        return {
+          value: this._formatIntervalLabel(lower, upper, { includeLower: true, includeUpper: index === rangeValues.length - 1 }),
+          size: typeof size === "number" ? size : 10
+        };
+      });
+    }
+
     const domain = this._encoding.scale.domain;
-    const range = this._encoding.scale.range || [8, 25];
+    const scaleRange =
+      this._d3Scale && typeof this._d3Scale.range === "function"
+        ? this._d3Scale.range()
+        : null;
+    const range = Array.isArray(scaleRange) && scaleRange.length >= 2
+      ? scaleRange
+      : (this._encoding.scale.range || [8, 25]);
 
     const samples = [];
     const step = Math.max(1, Math.floor(domain.length / count));
@@ -148,19 +200,21 @@ export class SizeLegend extends HTMLElement {
           padding: 10px 12px;
         }
         .legend-item {
-          display: flex;
+          display: grid;
+          grid-template-columns: 56px 1fr;
           align-items: center;
           margin-bottom: 6px;
-          gap: 12px;
+          gap: 10px;
         }
         .size-circle {
           background: #69b3a2;
           border: 1px solid #fff;
           border-radius: 50%;
-          flex-shrink: 0;
+          justify-self: center;
         }
         .label {
           color: #666;
+          text-align: left;
           overflow: hidden;
           text-overflow: ellipsis;
         }

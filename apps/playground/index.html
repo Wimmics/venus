@@ -22,20 +22,22 @@
         // 1. Configure the component properties
         graph.sparqlEndpoint = 'https://query.wikidata.org/sparql';
         graph.sparqlQuery = `
-          SELECT ?species ?speciesLabel ?family ?familyLabel WHERE {
-            # Species belonging to the cat family (Felidae)
-            ?species wdt:P171* wd:Q25265 .   # ancestor taxon = Felidae
-            ?species wdt:P105 wd:Q7432 .     # taxon rank = species
+            SELECT ?species ?speciesLabel ?family ?familyLabel ?articleCount WHERE {
+    ?species wdt:P171* wd:Q25265 .   # Felidae descendant
+    ?species wdt:P105 wd:Q7432 .     # taxon rank = species
 
-            # Retrieve the family taxon
-            ?species wdt:P171* ?family .
-            ?family wdt:P105 wd:Q35409 .     # taxon rank = family
+    ?species wdt:P171* ?family .
+    ?family wdt:P105 wd:Q35409 .     # taxon rank = family
 
-            SERVICE wikibase:label {
-              bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en".
-            }
-          }
-          LIMIT 100
+    ?species wikibase:sitelinks ?articleCount .
+
+    SERVICE wikibase:label {
+      bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en".
+    }
+  }
+  ORDER BY DESC(?articleCount)
+  LIMIT 100
+
 
             `;
 
@@ -51,7 +53,19 @@
             color: [
               { field: "speciesLabel", scale: { type: "ordinal", range: "red" }, label: "Species Label" },
               { field: "familyLabel",  scale: { type: "ordinal", range: "yellow" }, label: "Family Label" }
-            ]
+            ],
+            size: {
+              field: "articleCount",
+              scale: {
+                type: "sqrt",      // linear | sqrt | log | ordinal
+                //domain: [0, 250],     // optional (auto-computed if omitted)
+                range: [5, 20],       // radius range in px
+                binning: { method: "quartile", bins: 5 } // optional
+              },
+              value: 10,             // optional fallback radius
+              legend: { title: "Node Size" }, // optional title
+              label: "Node Size"     // optional alternative title
+            }
           },
           links: {
             field: {source: "species", target: "family"},

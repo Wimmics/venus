@@ -5,8 +5,10 @@
  * Follows the same pattern as mapper-factory.js for consistency.
  * Allows dynamic registration of new visualization types.
  */
-import { DomainCalculator } from "./compute-domain.js";
-import { ColorScaleCalculator } from "./build-color-range.js";
+import { DomainCalculator } from "./utils/compute-domain.js";
+import { ColorScaleCalculator } from "./utils/build-color-range.js";
+import { SizeRangeCalculator } from "./utils/build-size-range.js";
+import { BinBreaksCalculator } from "./utils/build-bin-breaks.js";
 
 const registry = new Map();
 
@@ -39,6 +41,8 @@ export function createEncodingManager(visType, options = {}) {
   const opts = {
     domainCalculator: options.domainCalculator || new DomainCalculator(),
     colorScaleCalculator: options.colorScaleCalculator || new ColorScaleCalculator(),
+    sizeRangeCalculator: options.sizeRangeCalculator || new SizeRangeCalculator(),
+    binBreaksCalculator: options.binBreaksCalculator || new BinBreaksCalculator(),
     ...options
   };
 
