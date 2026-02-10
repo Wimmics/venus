@@ -44,6 +44,10 @@
     {
       "id": "link-by-conservation-multifield",
       "configPath": "./test/encoding/links-by-conservation-multifield.json"
+    },
+    {
+      "id": "interactions-disabled",
+      "configPath": "./test/encoding/interactions-disabled.json"
     }
   ]
 }

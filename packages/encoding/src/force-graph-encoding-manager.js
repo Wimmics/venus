@@ -22,6 +22,11 @@ export class ForceGraphEncodingManager extends EncodingManager {
       width: 800,
       height: 600,
       autosize: "none",
+      interactions: {
+        enabled: true,
+        drag: true,
+        zoom: true
+      },
       nodes: {
         field: ["source"],
         labels: {

@@ -17,6 +17,7 @@ Encoding engine that turns user encoding into validated domains and D3-ready sca
 ## Minimal Usage
 ```js
 graph.encoding = {
+  interactions: { enabled: true, drag: true, zoom: true },
   nodes: {
     field: ["species", "family"],
     labels: { display: true },
@@ -44,6 +45,11 @@ graph.encoding = {
   }
 };
 ```
+
+`interactions` controls graph interactions:
+- `enabled`: `true | false` global interaction switch (default `true`)
+- `drag`: enable/disable node drag and drop (default `true`)
+- `zoom`: enable/disable pan and zoom (default `true`)
 
 `nodes.field` accepts:
 - A string (for example `"species"`)

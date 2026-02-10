@@ -14,6 +14,8 @@ export default class ForceGraphRenderer {
     this.simulation = null;
     this.nodeGroup = null;
     this.linkSel = null;
+    this.viewportGroup = null;
+    this.zoomBehavior = null;
 
     this.nodes = [];
     this.links = [];
@@ -64,6 +66,11 @@ export default class ForceGraphRenderer {
     this.links = (this.links || []).filter((l) => l && l.source != null && l.target != null);
 
     const mapping = this.encoding || {};
+    const interactionConfig = mapping.interactions || {};
+    const interactionsEnabled = interactionConfig.enabled !== false;
+    const dragEnabled = interactionsEnabled && interactionConfig.drag !== false;
+    const zoomEnabled = interactionsEnabled && interactionConfig.zoom !== false;
+    const shouldConstrainNodes = !zoomEnabled;
     const artifactChannels = Array.isArray(visualArtifacts?.channels) ? visualArtifacts.channels : [];
     const artifactScales = visualArtifacts?.scales instanceof Map ? visualArtifacts.scales : new Map();
     const findChannel = (mark, channel) =>
@@ -210,6 +217,53 @@ export default class ForceGraphRenderer {
       d.y = Math.max(r, Math.min(height - r, d.y));
     };
 
+    const computeNodeBounds = () => {
+      let minX = Infinity;
+      let minY = Infinity;
+      let maxX = -Infinity;
+      let maxY = -Infinity;
+
+      for (const node of this.nodes) {
+        const x = Number.isNaN(node?.x) ? width / 2 : node.x;
+        const y = Number.isNaN(node?.y) ? height / 2 : node.y;
+        const r = getNodeRadius(node);
+        minX = Math.min(minX, x - r);
+        minY = Math.min(minY, y - r);
+        maxX = Math.max(maxX, x + r);
+        maxY = Math.max(maxY, y + r);
+      }
+
+      if (!Number.isFinite(minX) || !Number.isFinite(minY) || !Number.isFinite(maxX) || !Number.isFinite(maxY)) {
+        return null;
+      }
+
+      return { minX, minY, maxX, maxY };
+    };
+
+    const applyInitialZoomFit = () => {
+      if (!zoomEnabled || !this.zoomBehavior) return;
+      const bounds = computeNodeBounds();
+      if (!bounds) return;
+
+      const padding = 30;
+      const graphWidth = Math.max(1, bounds.maxX - bounds.minX);
+      const graphHeight = Math.max(1, bounds.maxY - bounds.minY);
+      const centerX = (bounds.minX + bounds.maxX) / 2;
+      const centerY = (bounds.minY + bounds.maxY) / 2;
+      const scale = Math.min(
+        width / (graphWidth + padding * 2),
+        height / (graphHeight + padding * 2),
+        1
+      );
+
+      const transform = d3.zoomIdentity
+        .translate(width / 2, height / 2)
+        .scale(scale)
+        .translate(-centerX, -centerY);
+
+      this.svg.call(this.zoomBehavior.transform, transform);
+    };
+
     const getLabelPlacement = (d) => {
       const centerX = width / 2;
       const centerY = height / 2;
@@ -232,7 +286,41 @@ export default class ForceGraphRenderer {
       return { x: 0, y: offset, anchor: "middle", baseline: "hanging" };
     };
 
-    this.linkSel = this.svg
+    const interpolate = (value, min, max) => {
+      if (value <= min) return 0;
+      if (value >= max) return 1;
+      return (value - min) / (max - min);
+    };
+
+    const computeLabelOpacity = (d, zoomK) => {
+      if (!showNodeLabels) return 0;
+      const zoomOpacity = interpolate(zoomK, 0.45, 0.95);
+      const renderedRadius = getNodeRadius(d) * zoomK;
+      const sizeOpacity = interpolate(renderedRadius, 3, 7);
+      return Math.max(0, Math.min(1, Math.min(zoomOpacity, sizeOpacity)));
+    };
+
+    this.viewportGroup = this.svg.append("g").attr("class", "viewport");
+    let labelSel = null;
+
+    if (zoomEnabled) {
+      this.zoomBehavior = d3
+        .zoom()
+        .scaleExtent([0.1, 8])
+        .on("zoom", (event) => {
+          this.viewportGroup.attr("transform", event.transform);
+          if (labelSel) {
+            labelSel.style("opacity", (d) => computeLabelOpacity(d, event.transform.k));
+          }
+        });
+      this.svg.call(this.zoomBehavior);
+    } else {
+      this.svg.on(".zoom", null);
+      this.zoomBehavior = null;
+      this.viewportGroup.attr("transform", null);
+    }
+
+    this.linkSel = this.viewportGroup
       .append("g")
       .attr("class", "links")
       .selectAll("line")
@@ -245,20 +333,13 @@ export default class ForceGraphRenderer {
       .on("mouseover", (event, d) => this.callbacks.onLinkHover?.(d, event.offsetX, event.offsetY))
       .on("mouseout", () => this.callbacks.onLinkOut?.());
 
-    this.nodeGroup = this.svg
+    this.nodeGroup = this.viewportGroup
       .append("g")
       .attr("class", "nodes")
       .selectAll("g")
       .data(this.nodes)
       .enter()
       .append("g")
-      .call(
-        d3
-          .drag()
-          .on("start", (event, d) => dragstarted(event, d, this.simulation))
-          .on("drag", (event, d) => dragged(event, d))
-          .on("end", (event, d) => dragended(event, d, this.simulation))
-      )
       .on("mouseover", (event, d) => this.callbacks.onNodeHover?.(d, event, this.linkSel, this.nodeGroup))
       .on("mouseout", () => this.callbacks.onNodeOut?.(this.linkSel, this.nodeGroup))
       .on("contextmenu", (event, d) => {
@@ -267,15 +348,29 @@ export default class ForceGraphRenderer {
       })
       .on("click", (event, d) => this.callbacks.onNodeClick?.(d, event));
 
+    if (dragEnabled) {
+      this.nodeGroup.call(
+        d3
+          .drag()
+          .on("start", (event, d) => dragstarted(event, d, this.simulation))
+          .on("drag", (event, d) => dragged(event, d))
+          .on("end", (event, d) => dragended(event, d, this.simulation))
+      );
+    }
+
     this.nodeGroup
       .append("circle")
       .attr("r", getNodeRadius)
       .attr("fill", getNodeColor)
       .attr("stroke", getNodeStroke)
       .attr("stroke-width", getNodeStrokeWidth);
-    const labelSel = showNodeLabels
+    labelSel = showNodeLabels
       ? this.nodeGroup.append("text").attr("class", "node-label").text((d) => d.label || d.id)
       : null;
+    if (labelSel) {
+      const initialZoom = zoomEnabled ? d3.zoomTransform(this.svg.node()).k : 1;
+      labelSel.style("opacity", (d) => computeLabelOpacity(d, initialZoom));
+    }
 
     const calculateLinkPosition = (lnk) => {
       const source = lnk.source;
@@ -303,8 +398,11 @@ export default class ForceGraphRenderer {
       };
     };
 
+    let hasAppliedInitialFit = false;
     this.simulation.on("tick", () => {
-      this.nodeGroup.each(constrainNode);
+      if (shouldConstrainNodes) {
+        this.nodeGroup.each(constrainNode);
+      }
 
       this.linkSel.each(function (d) {
         const p = calculateLinkPosition(d);
@@ -326,6 +424,17 @@ export default class ForceGraphRenderer {
             .style("text-anchor", placement.anchor)
             .style("dominant-baseline", placement.baseline);
         });
+      }
+
+      if (zoomEnabled && !hasAppliedInitialFit && this.simulation.alpha() < 0.8) {
+        applyInitialZoomFit();
+        hasAppliedInitialFit = true;
+      }
+    });
+    this.simulation.on("end", () => {
+      if (zoomEnabled && !hasAppliedInitialFit) {
+        applyInitialZoomFit();
+        hasAppliedInitialFit = true;
       }
     });
 
@@ -380,11 +489,14 @@ export default class ForceGraphRenderer {
     }
 
     if (this.svg) {
+      this.svg.on(".zoom", null);
       this.svg.selectAll("*").remove();
       this.svg = null;
     }
 
     this.nodeGroup = null;
     this.linkSel = null;
+    this.viewportGroup = null;
+    this.zoomBehavior = null;
   }
 }
