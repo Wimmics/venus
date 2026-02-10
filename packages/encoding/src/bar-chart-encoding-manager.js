@@ -9,6 +9,7 @@ export class BarChartEncodingManager extends EncodingManager {
       height: 500,
       autosize: "none",
       direction: "vertical",
+      stack: false,
       x: {
         field: "category",
         axis: { labelAngle: 0 }
@@ -69,6 +70,15 @@ export class BarChartEncodingManager extends EncodingManager {
       throw new Error('Invalid encoding: "x.field" and "y.field" are required for bar-chart.');
     }
 
+    if (
+      merged.stack !== undefined &&
+      merged.stack !== true &&
+      merged.stack !== false &&
+      !(typeof merged.stack === "string" && merged.stack.toLowerCase().trim() === "normalize")
+    ) {
+      throw new Error('Invalid encoding: "stack" must be true, false, or "normalize".');
+    }
+
     return merged;
   }
 
@@ -103,6 +113,7 @@ export class BarChartEncodingManager extends EncodingManager {
       type === "sqrt" ||
       type === "log" ||
       type === "pow" ||
+      type === "count" ||
       type === "quantitative" ||
       type === "sequential";
 
@@ -158,6 +169,7 @@ export class BarChartEncodingManager extends EncodingManager {
 
     const range = scaleConfig.range || null;
     if (type === "linear") return d3.scaleLinear().domain(finalDomain).range(range || [0, 1]);
+    if (type === "count") return d3.scaleLinear().domain(finalDomain).range(range || [0, 1]);
     if (type === "sqrt") return d3.scaleSqrt().domain(finalDomain).range(range || [0, 1]);
     if (type === "log") return d3.scaleLog().domain(finalDomain).range(range || [0, 1]);
     if (type === "pow") {

@@ -118,7 +118,7 @@ export class DomainCalculator {
   }
 
   _isQuantitativeScale(scaleType) {
-    return scaleType === 'linear' || scaleType === 'sqrt' || scaleType === 'log' || scaleType === 'quantitative' || scaleType === 'sequential';
+    return scaleType === 'linear' || scaleType === 'sqrt' || scaleType === 'log' || scaleType === 'quantitative' || scaleType === 'sequential' || scaleType === 'count';
   }
 
   _getQuantitativeDomain(extractedValues, field, userDomain, scaleType) {

@@ -7,6 +7,7 @@ export default class BarChartRenderer {
     this.width = opts.width || 800;
     this.height = opts.height || 500;
     this.logger = opts.logger || console;
+    this.callbacks = opts.callbacks || {};
     this.svg = null;
     this.data = [];
     this.encoding = null;
@@ -26,6 +27,8 @@ export default class BarChartRenderer {
     const height = this.height;
     const xAxisConfig = mapping?.x?.axis || {};
     const yAxisConfig = mapping?.y?.axis || {};
+    const yScaleConfig = mapping?.y?.scale || {};
+    const yScaleType = String(yScaleConfig.type || "linear").toLowerCase();
     const xLabelAngle = Number.isFinite(Number(xAxisConfig.labelAngle)) ? Number(xAxisConfig.labelAngle) : 0;
     const xLabelOffset = this._normalizeOffset(xAxisConfig.labelOffset);
     const yLabelOffset = this._normalizeOffset(yAxisConfig.labelOffset);
@@ -62,7 +65,9 @@ export default class BarChartRenderer {
     }
 
     const direction = mapping.direction === "horizontal" ? "horizontal" : "vertical";
+    const stackMode = this._resolveStackMode(mapping?.stack);
     const colorEncoding = mapping?.color || {};
+    const colorField = colorEncoding?.field;
 
     const artifactChannels = Array.isArray(visualArtifacts?.channels) ? visualArtifacts.channels : [];
     const artifactScales = visualArtifacts?.scales instanceof Map ? visualArtifacts.scales : new Map();
@@ -99,26 +104,94 @@ export default class BarChartRenderer {
     };
 
     const colorForDatum = (datum) => {
-      const colorField = colorEncoding?.field;
       if (!colorField || datum[colorField] === undefined || datum[colorField] === null) return defaultBarColor;
       if (!barColorScale) return defaultBarColor;
       const color = barColorScale(datum[colorField]);
       return color || defaultBarColor;
     };
 
-    const yTickFormatter = this._buildTickFormatter(yAxisConfig.tickFormat);
+    const requestedTickFormat = this._normalizeTickFormatName(yAxisConfig.tickFormat);
+    if (
+      (requestedTickFormat === "percent" || requestedTickFormat === "percentage") &&
+      stackMode !== "normalize"
+    ) {
+      this.logger.warn(
+        'BarChartRenderer: `y.axis.tickFormat: "percent"` is usually meaningful with `stack: "normalize"`. Current stack mode is non-normalized.'
+      );
+    }
+    const yTickFormatter = this._buildTickFormatter(
+      yAxisConfig.tickFormat || (stackMode === "normalize" ? "percent" : (yScaleType === "count" ? "integer" : "raw"))
+    );
+    const normalizedRows = this.data.map((datum) => {
+      const x = String(datum?.[xField]);
+      const yNum = Math.max(0, toNumeric(datum?.[yField]) || 0);
+      const sub = colorField ? String(datum?.[colorField] ?? "undefined") : "__single__";
+      return { x, y: yNum, sub, raw: datum };
+    });
+    const xCategories = Array.from(new Set(normalizedRows.map((row) => row.x)));
+    const subCategories = this._resolveSubCategories(normalizedRows, colorField, barColorScale);
+    const aggregated = this._aggregateByCategory(normalizedRows, xCategories, subCategories);
+
+    const groupedBars = xCategories.flatMap((xCategory) =>
+      subCategories.map((subCategory) => {
+        const bucket = aggregated.get(xCategory)?.get(subCategory) || { value: 0, sample: null };
+        const value = bucket.value || 0;
+        const base = bucket.sample ? { ...bucket.sample } : {};
+        base[xField] = xCategory;
+        base[yField] = value;
+        if (colorField) base[colorField] = subCategory;
+        return {
+          x: xCategory,
+          sub: subCategory,
+          value,
+          datum: base
+        };
+      })
+    );
+
+    const stackedRows = xCategories.map((xCategory) => {
+      const row = { __x: xCategory, __meta: {} };
+      for (const subCategory of subCategories) {
+        const bucket = aggregated.get(xCategory)?.get(subCategory) || { value: 0, sample: null };
+        row[subCategory] = bucket.value || 0;
+        const base = bucket.sample ? { ...bucket.sample } : {};
+        base[xField] = xCategory;
+        base[yField] = row[subCategory];
+        if (colorField) base[colorField] = subCategory;
+        row.__meta[subCategory] = base;
+      }
+      return row;
+    });
+
+    const groupedMax = d3.max(groupedBars, (item) => item.value) || 0;
+    const stackedMax = d3.max(stackedRows, (row) => d3.sum(subCategories, (key) => Number(row[key]) || 0)) || 0;
+
+    const domainFromEncoding = yScaleConfig.domain;
+
+    const resolveValueDomain = (defaultMaxValue) => {
+      if (stackMode === "normalize") return [0, 1];
+      const yType = String(yScaleConfig.type || "linear").toLowerCase();
+      if (Array.isArray(domainFromEncoding) && domainFromEncoding.length >= 2) {
+        const minValue = Number(domainFromEncoding[0]);
+        const maxValue = Number(domainFromEncoding[domainFromEncoding.length - 1]);
+        if (yType === "log") {
+          const baseMin = Math.max(1e-9, minValue);
+          const baseMax = Math.max(baseMin * 10, maxValue);
+          return [baseMin, Math.max(baseMax, defaultMaxValue)];
+        }
+        if (stackMode === "stacked") {
+          return [Math.min(0, minValue), Math.max(1, maxValue, defaultMaxValue)];
+        }
+        return [Math.min(0, minValue), Math.max(1, maxValue)];
+      }
+      return [0, Math.max(1, defaultMaxValue)];
+    };
 
     if (direction === "vertical") {
-      const categories = this.data.map((datum) => String(datum[xField]));
-      const xScale = d3.scaleBand().domain(categories).range([0, innerWidth]).padding(0.15);
-
-      const values = this.data.map((datum) => toNumeric(datum[yField])).filter((value) => value !== null);
-      const domainFromEncoding = mapping?.y?.scale?.domain;
-      const yDomain =
-        Array.isArray(domainFromEncoding) && domainFromEncoding.length >= 2
-          ? [Number(domainFromEncoding[0]), Number(domainFromEncoding[domainFromEncoding.length - 1])]
-          : [0, Math.max(1, d3.max(values) || 1)];
-      const yScale = createValueScale(yDomain, [innerHeight, 0], mapping?.y?.scale || {});
+      const xScale = d3.scaleBand().domain(xCategories).range([0, innerWidth]).padding(0.15);
+      const xInnerScale = d3.scaleBand().domain(subCategories).range([0, xScale.bandwidth()]).padding(0.08);
+      const yDomain = resolveValueDomain(stackMode === "grouped" ? groupedMax : stackedMax);
+      const yScale = createValueScale(yDomain, [innerHeight, 0], yScaleConfig);
 
       plot
         .append("g")
@@ -132,42 +205,93 @@ export default class BarChartRenderer {
       plot
         .append("g")
         .attr("class", "y-axis")
-        .call(d3.axisLeft(yScale).tickFormat(yTickFormatter))
+        .call(this._buildValueAxis("left", yScale, yTickFormatter, yAxisConfig, yScaleType))
         .selectAll("text")
         .attr("transform", `translate(${yLabelOffset.x},${yLabelOffset.y})`);
 
-      plot
-        .append("g")
-        .attr("class", "bars")
-        .selectAll("rect")
-        .data(this.data)
-        .enter()
-        .append("rect")
-        .attr("x", (datum) => xScale(String(datum[xField])))
-        .attr("y", (datum) => yScale(Math.max(0, toNumeric(datum[yField]) || 0)))
-        .attr("width", xScale.bandwidth())
-        .attr("height", (datum) => Math.max(0, innerHeight - yScale(Math.max(0, toNumeric(datum[yField]) || 0))))
-        .attr("fill", (datum) => colorForDatum(datum));
+      if (stackMode === "grouped") {
+        plot
+          .append("g")
+          .attr("class", "bars")
+          .selectAll("rect")
+          .data(groupedBars)
+          .enter()
+          .append("rect")
+          .attr("x", (datum) => xScale(datum.x) + xInnerScale(datum.sub))
+          .attr("y", (datum) => yScale(datum.value))
+          .attr("width", xInnerScale.bandwidth())
+          .attr("height", (datum) => Math.max(0, innerHeight - yScale(datum.value)))
+          .attr("fill", (datum) => {
+            if (!colorField) return colorForDatum(datum.datum);
+            if (!barColorScale) return defaultBarColor;
+            return barColorScale(datum.sub) || defaultBarColor;
+          })
+          .on("mouseover", (event, datum) => {
+            this.callbacks.onBarHover?.(datum.datum, event.offsetX, event.offsetY);
+          })
+          .on("mouseout", () => {
+            this.callbacks.onBarOut?.();
+          });
+      } else {
+        const stackGenerator = d3.stack().keys(subCategories);
+        if (stackMode === "normalize") {
+          stackGenerator.offset(d3.stackOffsetExpand);
+        }
+        const stackSeries = stackGenerator(stackedRows);
+        plot
+          .append("g")
+          .attr("class", "bars")
+          .selectAll("g")
+          .data(stackSeries)
+          .enter()
+          .append("g")
+          .attr("fill", (series) => {
+            if (!colorField) return defaultBarColor;
+            if (!barColorScale) return defaultBarColor;
+            return barColorScale(series.key) || defaultBarColor;
+          })
+          .selectAll("rect")
+          .data((series) =>
+            series.map((segment) => {
+              const meta = segment.data?.__meta?.[series.key] || {};
+              const value = Number(segment.data?.[series.key]) || 0;
+              meta[xField] = segment.data?.__x;
+              meta[yField] = value;
+              if (colorField) meta[colorField] = series.key;
+              return {
+                key: series.key,
+                segment,
+                datum: meta
+              };
+            })
+          )
+          .enter()
+          .append("rect")
+          .attr("x", (datum) => xScale(datum.segment.data.__x))
+          .attr("y", (datum) => yScale(datum.segment[1]))
+          .attr("height", (datum) => Math.max(0, yScale(datum.segment[0]) - yScale(datum.segment[1])))
+          .attr("width", xScale.bandwidth())
+          .on("mouseover", (event, datum) => {
+            this.callbacks.onBarHover?.(datum.datum, event.offsetX, event.offsetY);
+          })
+          .on("mouseout", () => {
+            this.callbacks.onBarOut?.();
+          });
+      }
 
       return;
     }
 
-    const categories = this.data.map((datum) => String(datum[xField]));
-    const yScale = d3.scaleBand().domain(categories).range([0, innerHeight]).padding(0.15);
-
-    const values = this.data.map((datum) => toNumeric(datum[yField])).filter((value) => value !== null);
-    const domainFromEncoding = mapping?.y?.scale?.domain;
-    const xDomain =
-      Array.isArray(domainFromEncoding) && domainFromEncoding.length >= 2
-        ? [Number(domainFromEncoding[0]), Number(domainFromEncoding[domainFromEncoding.length - 1])]
-        : [0, Math.max(1, d3.max(values) || 1)];
-    const xScale = createValueScale(xDomain, [0, innerWidth], mapping?.y?.scale || {});
+    const yScale = d3.scaleBand().domain(xCategories).range([0, innerHeight]).padding(0.15);
+    const yInnerScale = d3.scaleBand().domain(subCategories).range([0, yScale.bandwidth()]).padding(0.08);
+    const xDomain = resolveValueDomain(stackMode === "grouped" ? groupedMax : stackedMax);
+    const xScale = createValueScale(xDomain, [0, innerWidth], yScaleConfig);
 
     plot
       .append("g")
       .attr("class", "x-axis")
       .attr("transform", `translate(0,${innerHeight})`)
-      .call(d3.axisBottom(xScale).tickFormat(yTickFormatter));
+      .call(this._buildValueAxis("bottom", xScale, yTickFormatter, yAxisConfig, yScaleType));
     plot
       .append("g")
       .attr("class", "y-axis")
@@ -176,18 +300,76 @@ export default class BarChartRenderer {
       .style("text-anchor", xLabelAngle ? "end" : "end")
       .attr("transform", xLabelAngle ? `translate(${xLabelOffset.x},${xLabelOffset.y}) rotate(${xLabelAngle})` : `translate(${xLabelOffset.x},${xLabelOffset.y})`);
 
+    if (stackMode === "grouped") {
+      plot
+        .append("g")
+        .attr("class", "bars")
+        .selectAll("rect")
+        .data(groupedBars)
+        .enter()
+        .append("rect")
+        .attr("x", 0)
+        .attr("y", (datum) => yScale(datum.x) + yInnerScale(datum.sub))
+        .attr("width", (datum) => Math.max(0, xScale(datum.value)))
+        .attr("height", yInnerScale.bandwidth())
+        .attr("fill", (datum) => {
+          if (!colorField) return colorForDatum(datum.datum);
+          if (!barColorScale) return defaultBarColor;
+          return barColorScale(datum.sub) || defaultBarColor;
+        })
+        .on("mouseover", (event, datum) => {
+          this.callbacks.onBarHover?.(datum.datum, event.offsetX, event.offsetY);
+        })
+        .on("mouseout", () => {
+          this.callbacks.onBarOut?.();
+        });
+      return;
+    }
+
+    const stackGenerator = d3.stack().keys(subCategories);
+    if (stackMode === "normalize") {
+      stackGenerator.offset(d3.stackOffsetExpand);
+    }
+    const stackSeries = stackGenerator(stackedRows);
     plot
       .append("g")
       .attr("class", "bars")
+      .selectAll("g")
+      .data(stackSeries)
+      .enter()
+      .append("g")
+      .attr("fill", (series) => {
+        if (!colorField) return defaultBarColor;
+        if (!barColorScale) return defaultBarColor;
+        return barColorScale(series.key) || defaultBarColor;
+      })
       .selectAll("rect")
-      .data(this.data)
+      .data((series) =>
+        series.map((segment) => {
+          const meta = segment.data?.__meta?.[series.key] || {};
+          const value = Number(segment.data?.[series.key]) || 0;
+          meta[xField] = segment.data?.__x;
+          meta[yField] = value;
+          if (colorField) meta[colorField] = series.key;
+          return {
+            key: series.key,
+            segment,
+            datum: meta
+          };
+        })
+      )
       .enter()
       .append("rect")
-      .attr("x", 0)
-      .attr("y", (datum) => yScale(String(datum[xField])))
-      .attr("width", (datum) => Math.max(0, xScale(Math.max(0, toNumeric(datum[yField]) || 0))))
+      .attr("x", (datum) => xScale(datum.segment[0]))
+      .attr("y", (datum) => yScale(datum.segment.data.__x))
+      .attr("width", (datum) => Math.max(0, xScale(datum.segment[1]) - xScale(datum.segment[0])))
       .attr("height", yScale.bandwidth())
-      .attr("fill", (datum) => colorForDatum(datum));
+      .on("mouseover", (event, datum) => {
+        this.callbacks.onBarHover?.(datum.datum, event.offsetX, event.offsetY);
+      })
+      .on("mouseout", () => {
+        this.callbacks.onBarOut?.();
+      });
   }
 
   updateData(chart = { rows: [] }) {
@@ -238,8 +420,9 @@ export default class BarChartRenderer {
   }
 
   _buildTickFormatter(formatName) {
-    const key = typeof formatName === "string" ? formatName.toLowerCase().trim() : "";
+    const key = this._normalizeTickFormatName(formatName);
     if (!key || key === "raw") return (value) => d3.format(",")(value);
+    if (key === "percent" || key === "percentage") return (value) => d3.format(".0%")(value);
     if (key === "compact") {
       const compact = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
       return (value) => compact.format(value);
@@ -259,6 +442,85 @@ export default class BarChartRenderer {
     if (key === "k" || key === "thousands") return (value) => `${d3.format(".2~f")(Number(value) / 1e3)}k`;
     if (key === "m" || key === "millions") return (value) => `${d3.format(".2~f")(Number(value) / 1e6)}M`;
     if (key === "b" || key === "billions") return (value) => `${d3.format(".2~f")(Number(value) / 1e9)}B`;
+    if (key === "integer" || key === "int") return (value) => d3.format(",d")(Math.round(Number(value) || 0));
     return (value) => d3.format(",")(value);
+  }
+
+  _normalizeTickFormatName(formatName) {
+    return typeof formatName === "string" ? formatName.toLowerCase().trim() : "";
+  }
+
+  _buildValueAxis(orientation, scale, tickFormatter, axisConfig = {}, scaleType = "") {
+    const axis =
+      orientation === "left" ? d3.axisLeft(scale) : d3.axisBottom(scale);
+    axis.tickFormat(tickFormatter);
+
+    const normalizedScaleType = String(scaleType || "").toLowerCase();
+    const tickStep = Number(axisConfig.tickStep);
+    const effectiveStep = Number.isFinite(tickStep) && tickStep > 0
+      ? tickStep
+      : (normalizedScaleType === "count" ? 1 : null);
+    if (!effectiveStep) return axis;
+
+    const domain = typeof scale.domain === "function" ? scale.domain() : null;
+    if (!Array.isArray(domain) || domain.length < 2) return axis;
+    const start = Number(domain[0]);
+    const end = Number(domain[domain.length - 1]);
+    if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) return axis;
+
+    const firstTick = Math.ceil(start / effectiveStep) * effectiveStep;
+    const tickValues = [];
+    for (let value = firstTick; value <= end + effectiveStep * 1e-9; value += effectiveStep) {
+      tickValues.push(Number(value.toFixed(12)));
+      if (tickValues.length > 2000) break;
+    }
+    if (tickValues.length > 0) {
+      axis.tickValues(tickValues);
+    }
+
+    return axis;
+  }
+
+  _resolveStackMode(stack) {
+    if (stack === true) return "stacked";
+    if (typeof stack === "string" && stack.toLowerCase().trim() === "normalize") return "normalize";
+    return "grouped";
+  }
+
+  _resolveSubCategories(rows, colorField, barColorScale) {
+    if (!colorField) return ["__single__"];
+    const observed = Array.from(new Set(rows.map((row) => row.sub)));
+    const scaleDomain = typeof barColorScale?.domain === "function" ? barColorScale.domain() : [];
+    if (!Array.isArray(scaleDomain) || !scaleDomain.length) return observed;
+    const ordered = [];
+    for (const value of scaleDomain.map((item) => String(item))) {
+      if (observed.includes(value)) ordered.push(value);
+    }
+    for (const value of observed) {
+      if (!ordered.includes(value)) ordered.push(value);
+    }
+    return ordered;
+  }
+
+  _aggregateByCategory(rows, xCategories, subCategories) {
+    const aggregated = new Map();
+    for (const xCategory of xCategories) {
+      const subMap = new Map();
+      for (const subCategory of subCategories) {
+        subMap.set(subCategory, { value: 0, sample: null });
+      }
+      aggregated.set(xCategory, subMap);
+    }
+
+    for (const row of rows) {
+      if (!aggregated.has(row.x)) continue;
+      const subMap = aggregated.get(row.x);
+      if (!subMap.has(row.sub)) subMap.set(row.sub, { value: 0, sample: null });
+      const bucket = subMap.get(row.sub);
+      bucket.value += row.y;
+      if (!bucket.sample) bucket.sample = row.raw;
+      subMap.set(row.sub, bucket);
+    }
+    return aggregated;
   }
 }

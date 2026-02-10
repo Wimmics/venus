@@ -52,6 +52,10 @@
     {
       "id": "barchart-population-language",
       "configPath": "./test/encoding/barchart-population-language.json"
+    },
+    {
+      "id": "barchart-stacked-languages",
+      "configPath": "./test/encoding/barchart-stacked-languages.json"
     }
   ]
 }

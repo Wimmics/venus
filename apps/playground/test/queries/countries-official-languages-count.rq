@@ -1,0 +1,24 @@
+SELECT ?name ?langLabel (COUNT(?lang) AS ?languageCount) WHERE {
+  VALUES ?country {
+    wd:Q142  # France
+    wd:Q183  # Germany
+    wd:Q38   # Italy
+    wd:Q29   # Spain
+    wd:Q55   # Netherlands
+    wd:Q39   # Switzerland
+    wd:Q34   # Sweden
+    wd:Q145  # United Kingdom
+    wd:Q30   # United States
+    wd:Q16   # Canada
+  }
+
+  ?country wdt:P37 ?lang .
+
+  SERVICE wikibase:label {
+    bd:serviceParam wikibase:language "en".
+    ?country rdfs:label ?name .
+    ?lang rdfs:label ?langLabel .
+  }
+}
+GROUP BY ?country ?name ?langLabel
+ORDER BY ?name ?langLabel

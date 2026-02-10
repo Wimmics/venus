@@ -71,6 +71,7 @@ In co-occurrence mode, nodes are connected when they share the same resolved val
 ## Bar-Chart Example
 ```js
 bar.encoding = {
+  stack: false,
   x: {
     field: "name",
     axis: {
@@ -79,12 +80,13 @@ bar.encoding = {
     }
   },
   y: {
-    field: "population",
+    field: "languageCount",
     axis: {
-      tickFormat: "kmb",
+      tickFormat: "integer",
+      tickStep: 1,
       labelOffset: { x: -4, y: 0 }
     },
-    scale: { type: "pow", exponent: 0.5 }
+    scale: { type: "count" }
   },
   color: {
     field: "language",
@@ -100,25 +102,34 @@ bar.encoding = {
 - `"vertical"` (default)
 - `"horizontal"`
 
+`stack`:
+- `false` (default): grouped bar chart
+- `true`: stacked bar chart
+- `"normalize"`: normalized stacked bar chart (100%)
+
 `x.axis` options:
 - `labelAngle`: number
 - `labelOffset`: `{ x: number, y: number }`
 
 `y.axis` options:
 - `labelOffset`: `{ x: number, y: number }`
+- `tickStep`: positive number (for example `1` for count data)
 - `tickFormat`: preset string, one of:
-- `"raw"` (default, comma separated)
-- `"compact"` (Intl compact notation)
-- `"kmb"` (`k`, `M`, `B`, `T`)
-- `"k"` / `"thousands"`
-- `"m"` / `"millions"`
-- `"b"` / `"billions"`
+  - `"raw"` (default, comma separated)
+  - `"integer"` / `"int"` (rounded integers with separators)
+  - `"percent"` / `"percentage"` (best used with `stack: "normalize"`)
+  - `"compact"` (Intl compact notation)
+  - `"kmb"` (`k`, `M`, `B`, `T`)
+  - `"k"` / `"thousands"`
+  - `"m"` / `"millions"`
+  - `"b"` / `"billions"`
 
 ## Scale Types
 - Ordinal-like: `ordinal`
-- Quantitative-like: `linear`, `sqrt`, `log`, `quantitative`, `sequential`
+- Quantitative-like: `linear`, `sqrt`, `log`, `count`, `quantitative`, `sequential`
 
 For quantitative scales, domains are numeric extents. For ordinal scales, domains are unique values.
+For bar charts, `y.scale.type: "count"` behaves like a linear scale with integer-oriented defaults (`tickFormat: "integer"` and step `1` if not provided).
 
 ### Domain Rules
 - If `scale.domain` is missing, domain is auto-computed from data.
