@@ -49,10 +49,11 @@ export class ColorLegend extends HTMLElement {
   _toggleMinimized() {
     this._minimized = !this._minimized;
     this.render();
+    this.dispatchEvent(new CustomEvent('legendtoggle', { bubbles: true, composed: true }));
   }
 
   _getLegendTitle() {
-    return this._encoding?.legend?.title || this._encoding?.label || this._encoding?.field || "Legend";
+    return this._encoding?.legend?.title || this._encoding?.field || "Legend";
   }
 
   _getNumericDomainBounds() {
@@ -133,7 +134,7 @@ export class ColorLegend extends HTMLElement {
     this.shadowRoot.innerHTML = `
       <style>
         :host {
-          display: block;
+          display: inline-block;
           font-family: Arial, sans-serif;
           font-size: 12px;
         }

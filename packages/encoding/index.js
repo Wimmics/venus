@@ -6,3 +6,9 @@ export { SizeRangeCalculator } from './src/utils/build-size-range.js';
 export { BinBreaksCalculator } from './src/utils/build-bin-breaks.js';
 
 export { createEncodingManager } from './src/encoding-manager-factory.js'
+export {
+  createVisualArtifacts,
+  registerVisualArtifactCompiler,
+  hasVisualArtifactCompiler,
+  listVisualArtifactCompilers
+} from "./src/visual-artifact-factory.js";

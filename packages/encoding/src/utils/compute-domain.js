@@ -1,27 +1,18 @@
 /**
- * Calculateur de domaines pour l'encoding visuel des graphes de connaissances.
- * Cette classe analyse les données pour générer automatiquement les domaines
- * appropriés selon les besoins de l'utilisateur et la nature des données.
+ * Domain calculator used by visual encodings.
+ * It derives and validates domains from data and optional user input.
  */
 import { createLogger } from "@wimmics/kgnovis-core";
 
 export class DomainCalculator {
   constructor() {
-    // Cache pour les domaines calculés par champ
+    // Cached domains per field.
     this.domainCache = new Map();
-    // Cache pour les statistiques des champs
+    // Cached field statistics.
     this.fieldStatsCache = new Map();
     
     this.logger = createLogger("DomainCalculator", { debug: false, level: "warn" });
-    this.maxLogMessageLength = 420;
     this.maxListedValuesInWarnings = 12;
-  }
-
-  _truncateLogMessage(message) {
-    const text = typeof message === 'string' ? message : String(message);
-    if (text.length <= this.maxLogMessageLength) return text;
-    const truncatedChars = text.length - this.maxLogMessageLength;
-    return `${text.slice(0, this.maxLogMessageLength)}... [${truncatedChars} chars truncated]`;
   }
 
   _formatValueList(values) {
@@ -36,26 +27,26 @@ export class DomainCalculator {
   }
 
   /**
-   * Méthode principale pour obtenir le domaine d'un champ.
-   * Gère automatiquement les 3 cas : aucune donnée, données erronées, données incomplètes.
-   * 
-   * @param {Array} data - Les données du graphe (nodes ou links)
-   * @param {string} field - Le nom du champ à analyser
-   * @param {Array|null} userDomain - Le domaine fourni par l'utilisateur (peut être null/undefined)
-   * @param {string} scaleType - Le type d'échelle ('ordinal', 'linear', 'sqrt', 'log')
-   * @returns {Array} Le domaine calculé pour ce champ
+   * Main domain resolution entry point.
+   * Handles automatic domain generation, invalid user domains, and incomplete domains.
+   *
+   * @param {Array} data - Graph data (nodes or links)
+   * @param {string} field - Field name to analyze
+   * @param {Array|null} userDomain - User-provided domain (can be null/undefined)
+   * @param {string} scaleType - Scale type ('ordinal', 'linear', 'sqrt', 'log')
+   * @returns {Array} Resolved domain for the field
    */
   getDomain(data, field, userDomain = null, scaleType = 'ordinal') {
     if (!data || data.length === 0) {
-      this.logger.warn(this._truncateLogMessage(`No data available for field "${field}"`));
+      this.logger.warn(`No data available for field "${field}"`);
       return [];
     }
 
-    // Extraire les valeurs existantes du champ dans les données
+    // Extract unique values for the requested field.
     const extractedValues = this.getVal(data, field);
     
     if (extractedValues.length === 0) {
-      this.logger.warn(this._truncateLogMessage(`No values found in data for field "${field}"`));
+      this.logger.warn(`No values found in data for field "${field}"`);
       return [];
     }
 
@@ -64,66 +55,66 @@ export class DomainCalculator {
       return this._getQuantitativeDomain(extractedValues, field, userDomain, scaleType);
     }
 
-    this.logger.debug(this._truncateLogMessage(`Field analysis "${field}": ${extractedValues.length} unique values found`));
-    this.logger.debug(this._truncateLogMessage(`Values extracted from data:`), extractedValues);
-    this.logger.debug(this._truncateLogMessage(`User domain provided:`), userDomain);
+    this.logger.debug(`Field analysis "${field}": ${extractedValues.length} unique values found`);
+    this.logger.debug(`Values extracted from data:`, extractedValues);
+    this.logger.debug(`User domain provided:`, userDomain);
 
-    // Cas 1: Pas de domaine utilisateur -> utiliser les valeurs extraites
+    // Case 1: no user domain provided -> use extracted values.
     if (!userDomain || userDomain.length === 0) {
       const reason = !userDomain ? "user domain not defined (null/undefined)" : "user domain empty (empty array)";
-      this.logger.debug(this._truncateLogMessage(`Case 1: Automatic domain generation - Reason: ${reason}`));
-      this.logger.debug(this._truncateLogMessage(`Automatic generation based on ${extractedValues.length} data values`));
+      this.logger.debug(`Case 1: Automatic domain generation - Reason: ${reason}`);
+      this.logger.debug(`Automatic generation based on ${extractedValues.length} data values`);
       
       const sortedDomain = this.sortDomainValues(extractedValues, scaleType);
       
       // Informational warning for user awareness
-      this.logger.warn(this._truncateLogMessage(`No domain provided by user for field "${field}". Domain automatically generated (${extractedValues.length} unique values): [${this._formatValueList(sortedDomain)}]. To customize the domain, provide a "domain" array in your scale configuration.`));
+      this.logger.warn(`No domain provided by user for field "${field}". Domain automatically generated (${extractedValues.length} unique values): [${this._formatValueList(sortedDomain)}]. To customize the domain, provide a "domain" array in your scale configuration.`);
       
-      this.logger.debug(this._truncateLogMessage(`Domain generated (${scaleType}):`), sortedDomain);
+      this.logger.debug(`Domain generated (${scaleType}):`, sortedDomain);
       return sortedDomain;
     }
 
-    // Cas 2: Domaine utilisateur erroné -> le corriger
+    // Case 2: invalid user domain -> fix it.
     const invalidityReport = this.analyzeDomainInvalidity(userDomain, extractedValues);
     if (invalidityReport.isInvalid) {
       const fixedDomain = this.fixDomain(userDomain, extractedValues, scaleType);
       
-      // Regrouper tous les détails en un seul warning consolidé
+      // Emit a single consolidated warning with context.
       const warningParts = [
         `Invalid domain for field "${field}": ${invalidityReport.reason}`,
         `User provided: [${this._formatValueList(userDomain)}]`,
         `Data contains: [${this._formatValueList(extractedValues)}]`,
         `Domain corrected to: [${this._formatValueList(fixedDomain)}]`
       ];
-      this.logger.warn(this._truncateLogMessage(warningParts.join(' | ')));
+      this.logger.warn(warningParts.join(' | '));
       
-      this.logger.debug(this._truncateLogMessage(`Domain corrected:`), fixedDomain);
+      this.logger.debug(`Domain corrected:`, fixedDomain);
       return fixedDomain;
     }
 
-    // Cas 3: Domaine utilisateur incomplet -> le compléter
+    // Case 3: incomplete user domain -> complete it.
     const incompletenessReport = this.analyzeDomainIncompleteness(userDomain, extractedValues);
     if (incompletenessReport.isIncomplete) {
       const completedDomain = this.completeDomain(userDomain, extractedValues, scaleType);
       
-      // Regrouper tous les détails en un seul warning consolidé
+      // Emit a single consolidated warning with context.
       const warningParts = [
         `Incomplete domain for field "${field}": Missing ${incompletenessReport.missingValues.length} values (coverage: ${Math.round(incompletenessReport.coverage * 100)}%)`,
         `User provided: [${this._formatValueList(userDomain)}]`,
         `Missing values: [${this._formatValueList(incompletenessReport.missingValues)}]`,
         `Domain completed to: [${this._formatValueList(completedDomain)}]`
       ];
-      this.logger.warn(this._truncateLogMessage(warningParts.join(' | ')));
+      this.logger.warn(warningParts.join(' | '));
       
-      this.logger.debug(this._truncateLogMessage(`Domain completed (${userDomain.length} → ${completedDomain.length} values):`), completedDomain);
+      this.logger.debug(`Domain completed (${userDomain.length} → ${completedDomain.length} values):`, completedDomain);
       return completedDomain;
     }
 
-    // Cas 4: Domaine utilisateur valide -> le conserver tel quel
-    this.logger.debug(this._truncateLogMessage(`Valid user domain, keeping as is`));
-    this.logger.debug(this._truncateLogMessage(`All user domain values match the data`));
-    this.logger.debug(this._truncateLogMessage(`Domain preserved:`), userDomain);
-    return [...userDomain]; // Copie pour éviter les modifications externes
+    // Case 4: valid user domain -> keep as is.
+    this.logger.debug(`Valid user domain, keeping as is`);
+    this.logger.debug(`All user domain values match the data`);
+    this.logger.debug(`Domain preserved:`, userDomain);
+    return [...userDomain]; // Return a copy to avoid external mutation.
   }
 
   _isQuantitativeScale(scaleType) {
@@ -136,7 +127,7 @@ export class DomainCalculator {
       .filter(v => !isNaN(v));
 
     if (numericValues.length === 0) {
-      this.logger.warn(this._truncateLogMessage(`No numeric values found in data for field "${field}"`));
+      this.logger.warn(`No numeric values found in data for field "${field}"`);
       return [];
     }
 
@@ -145,7 +136,7 @@ export class DomainCalculator {
     const autoDomain = [dataMin, dataMax];
 
     if (!Array.isArray(userDomain) || userDomain.length < 2) {
-      this.logger.warn(this._truncateLogMessage(`No valid numeric domain provided by user for field "${field}". Domain automatically generated from data extent: [${this._formatValueList(autoDomain)}].`));
+      this.logger.warn(`No valid numeric domain provided by user for field "${field}". Domain automatically generated from data extent: [${this._formatValueList(autoDomain)}].`);
       return autoDomain;
     }
 
@@ -154,7 +145,7 @@ export class DomainCalculator {
       .filter(v => !isNaN(v));
 
     if (userNumericValues.length < 2) {
-      this.logger.warn(this._truncateLogMessage(`Invalid numeric domain for field "${field}". User provided: [${this._formatValueList(userDomain)}]. Domain automatically generated from data extent: [${this._formatValueList(autoDomain)}].`));
+      this.logger.warn(`Invalid numeric domain for field "${field}". User provided: [${this._formatValueList(userDomain)}]. Domain automatically generated from data extent: [${this._formatValueList(autoDomain)}].`);
       return autoDomain;
     }
 
@@ -165,34 +156,33 @@ export class DomainCalculator {
     if (scaleType === 'log' && (finalDomain[0] <= 0 || finalDomain[1] <= 0)) {
       const positiveValues = numericValues.filter(v => v > 0);
       if (positiveValues.length < 2) {
-        this.logger.warn(this._truncateLogMessage(`Log scale requires positive values for field "${field}". Falling back to [1, 10].`));
+        this.logger.warn(`Log scale requires positive values for field "${field}". Falling back to [1, 10].`);
         return [1, 10];
       }
       finalDomain = [Math.min(...positiveValues), Math.max(...positiveValues)];
-      this.logger.warn(this._truncateLogMessage(`Invalid non-positive user domain for log scale on field "${field}". Domain corrected to positive data extent: [${this._formatValueList(finalDomain)}].`));
+      this.logger.warn(`Invalid non-positive user domain for log scale on field "${field}". Domain corrected to positive data extent: [${this._formatValueList(finalDomain)}].`);
     }
 
     if (finalDomain[0] === finalDomain[1]) {
       finalDomain = [finalDomain[0], finalDomain[0] + 1];
-      this.logger.warn(this._truncateLogMessage(`Degenerate numeric domain for field "${field}" (min=max). Domain expanded to: [${this._formatValueList(finalDomain)}].`));
+      this.logger.warn(`Degenerate numeric domain for field "${field}" (min=max). Domain expanded to: [${this._formatValueList(finalDomain)}].`);
     }
 
     return finalDomain;
   }
 
   /**
-   * Extrait toutes les valeurs uniques d'un champ depuis les données brutes.
-   * Travaille uniquement avec les données issues directement des requêtes SPARQL.
-   * 
-   * @param {Array} data - Les données brutes à analyser
-   * @param {string} field - Le nom du champ
-   * @returns {Array} Les valeurs uniques trouvées
+   * Extract all unique values for a field from raw data.
+   *
+   * @param {Array} data - Raw input data
+   * @param {string} field - Field name
+   * @returns {Array} Unique values
    */
   getVal(data, field) {
     const values = new Set();
     
     data.forEach((item, index) => {
-      // Extraction directe du champ depuis les données brutes
+      // Direct field extraction from raw records.
       const value = item[field];
       
       if (value !== null && value !== undefined && value !== '') {
@@ -202,22 +192,22 @@ export class DomainCalculator {
     
     const result = Array.from(values);
     
-    // Mettre en cache les statistiques
+    // Cache field stats for optional diagnostics.
     this.cacheFieldStats(field, result, data.length);
     
     return result;
   }
 
   /**
-   * Trie les valeurs du domaine selon le type d'échelle.
-   * 
-   * @param {Array} values - Les valeurs à trier
-   * @param {string} scaleType - Le type d'échelle
-   * @returns {Array} Les valeurs triées
+   * Sort domain values according to scale type.
+   *
+   * @param {Array} values - Values to sort
+   * @param {string} scaleType - Scale type
+   * @returns {Array} Sorted values
    */
   sortDomainValues(values, scaleType) {
     if (scaleType === 'ordinal') {
-      // Pour les échelles ordinales, tri alphanumérique
+      // Alphanumeric sort for ordinal scales.
       return [...values].sort((a, b) => {
         if (typeof a === 'string' && typeof b === 'string') {
           return a.localeCompare(b, 'fr', { numeric: true });
@@ -225,7 +215,7 @@ export class DomainCalculator {
         return String(a).localeCompare(String(b), 'fr', { numeric: true });
       });
     } else {
-      // Pour les échelles numériques, tri numérique
+      // Numeric sort for quantitative scales.
       return [...values].sort((a, b) => {
         const numA = this.convertToNumber(a);
         const numB = this.convertToNumber(b);
@@ -235,11 +225,11 @@ export class DomainCalculator {
   }
 
   /**
-   * Analyse en détail la validité d'un domaine utilisateur.
-   * 
-   * @param {Array} userDomain - Le domaine fourni par l'utilisateur
-   * @param {Array} extractedValues - Les valeurs extraites des données
-   * @returns {Object} Rapport détaillé de validité
+   * Analyze whether a user domain is valid against extracted data values.
+   *
+   * @param {Array} userDomain - User-provided domain
+   * @param {Array} extractedValues - Values extracted from data
+   * @returns {Object} Detailed validity report
    */
   analyzeDomainInvalidity(userDomain, extractedValues) {
     if (!Array.isArray(userDomain)) {
@@ -286,11 +276,11 @@ export class DomainCalculator {
   }
 
   /**
-   * Analyse en détail la complétude d'un domaine utilisateur.
-   * 
-   * @param {Array} userDomain - Le domaine fourni par l'utilisateur
-   * @param {Array} extractedValues - Les valeurs extraites des données
-   * @returns {Object} Rapport détaillé de complétude
+   * Analyze whether a user domain fully covers extracted data values.
+   *
+   * @param {Array} userDomain - User-provided domain
+   * @param {Array} extractedValues - Values extracted from data
+   * @returns {Object} Detailed completeness report
    */
   analyzeDomainIncompleteness(userDomain, extractedValues) {
     if (!Array.isArray(userDomain)) {
@@ -328,11 +318,11 @@ export class DomainCalculator {
   }
 
   /**
-   * Vérifie si le domaine utilisateur est invalide par rapport aux données.
-   * 
-   * @param {Array} userDomain - Le domaine fourni par l'utilisateur
-   * @param {Array} extractedValues - Les valeurs extraites des données
-   * @returns {boolean} True si le domaine est invalide
+   * Convenience check: returns true when user domain is invalid.
+   *
+   * @param {Array} userDomain - User-provided domain
+   * @param {Array} extractedValues - Values extracted from data
+   * @returns {boolean} True if invalid
    */
   isDomainInvalid(userDomain, extractedValues) {
     const report = this.analyzeDomainInvalidity(userDomain, extractedValues);
@@ -340,11 +330,11 @@ export class DomainCalculator {
   }
 
   /**
-   * Vérifie si le domaine utilisateur est incomplet.
-   * 
-   * @param {Array} userDomain - Le domaine fourni par l'utilisateur
-   * @param {Array} extractedValues - Les valeurs extraites des données
-   * @returns {boolean} True si le domaine est incomplet
+   * Convenience check: returns true when user domain is incomplete.
+   *
+   * @param {Array} userDomain - User-provided domain
+   * @param {Array} extractedValues - Values extracted from data
+   * @returns {boolean} True if incomplete
    */
   isDomainIncomplete(userDomain, extractedValues) {
     const report = this.analyzeDomainIncompleteness(userDomain, extractedValues);
@@ -352,82 +342,81 @@ export class DomainCalculator {
   }
 
   /**
-   * Corrige un domaine invalide en utilisant les valeurs des données.
-   * 
-   * @param {Array} invalidDomain - Le domaine invalide
-   * @param {Array} extractedValues - Les valeurs extraites des données
-   * @param {string} scaleType - Le type d'échelle
-   * @returns {Array} Le domaine corrigé
+   * Replace an invalid domain with a sorted domain derived from data.
+   *
+   * @param {Array} invalidDomain - Invalid domain
+   * @param {Array} extractedValues - Values extracted from data
+   * @param {string} scaleType - Scale type
+   * @returns {Array} Corrected domain
    */
   fixDomain(invalidDomain, extractedValues, scaleType) {
-    this.logger.debug(this._truncateLogMessage(`Correcting invalid domain...`));
-    this.logger.debug(this._truncateLogMessage(`Invalid domain:`), invalidDomain);
-    this.logger.debug(this._truncateLogMessage(`Available data:`), extractedValues);
-    this.logger.debug(this._truncateLogMessage(`Complete replacement with data values`));
+    this.logger.debug(`Correcting invalid domain...`);
+    this.logger.debug(`Invalid domain:`, invalidDomain);
+    this.logger.debug(`Available data:`, extractedValues);
+    this.logger.debug(`Complete replacement with data values`);
     
-    // Pour un domaine complètement invalide, utiliser toutes les valeurs des données
+    // Fully invalid domains are replaced by the full data-driven domain.
     const sortedDomain = this.sortDomainValues(extractedValues, scaleType);
     
-    this.logger.debug(this._truncateLogMessage(`Domain corrected (sorting ${scaleType}):`), sortedDomain);
-    this.logger.debug(this._truncateLogMessage(`Change: ${invalidDomain.length} → ${sortedDomain.length} values`));
+    this.logger.debug(`Domain corrected (sorting ${scaleType}):`, sortedDomain);
+    this.logger.debug(`Change: ${invalidDomain.length} → ${sortedDomain.length} values`);
     
     return sortedDomain;
   }
 
   /**
-   * Complète un domaine incomplet en préservant l'ordre de l'utilisateur.
-   * 
-   * @param {Array} incompleteDomain - Le domaine incomplet
-   * @param {Array} extractedValues - Les valeurs extraites des données
-   * @param {string} scaleType - Le type d'échelle
-   * @returns {Array} Le domaine complété
+   * Complete an incomplete domain while preserving user order.
+   *
+   * @param {Array} incompleteDomain - Incomplete domain
+   * @param {Array} extractedValues - Values extracted from data
+   * @param {string} scaleType - Scale type
+   * @returns {Array} Completed domain
    */
   completeDomain(incompleteDomain, extractedValues, scaleType) {
-    this.logger.debug(this._truncateLogMessage(`Completing incomplete domain...`));
-    this.logger.debug(this._truncateLogMessage(`User domain:`), incompleteDomain);
+    this.logger.debug(`Completing incomplete domain...`);
+    this.logger.debug(`User domain:`, incompleteDomain);
     
-    // Garder l'ordre de l'utilisateur pour les valeurs qu'il a spécifiées
+    // Keep user-provided order for existing domain values.
     const completedDomain = [...incompleteDomain];
     
-    // Ajouter les valeurs manquantes
+    // Collect values that are present in data but missing from the user domain.
     const missingValues = extractedValues.filter(dataValue => 
       !incompleteDomain.some(domainValue => this.valuesAreEqual(domainValue, dataValue))
     );
     
-    this.logger.debug(this._truncateLogMessage(`Missing values detected:`), missingValues);
+    this.logger.debug(`Missing values detected:`, missingValues);
     
-    // Trier les valeurs manquantes selon le type d'échelle
+    // Sort missing values based on scale type.
     const sortedMissingValues = this.sortDomainValues(missingValues, scaleType);
     
-    this.logger.debug(this._truncateLogMessage(`Missing values sorted (${scaleType}):`), sortedMissingValues);
-    this.logger.debug(this._truncateLogMessage(`Adding missing values to end of user domain`));
+    this.logger.debug(`Missing values sorted (${scaleType}):`, sortedMissingValues);
+    this.logger.debug(`Adding missing values to end of user domain`);
     
-    // Les ajouter à la fin du domaine utilisateur
+    // Append missing values at the end.
     completedDomain.push(...sortedMissingValues);
     
-    this.logger.debug(this._truncateLogMessage(`Domain completed:`), completedDomain);
-    this.logger.debug(this._truncateLogMessage(`Change: ${incompleteDomain.length} → ${completedDomain.length} values`));
-    this.logger.debug(this._truncateLogMessage(`Preservation: user order maintained for first ${incompleteDomain.length} values`));
+    this.logger.debug(`Domain completed:`, completedDomain);
+    this.logger.debug(`Change: ${incompleteDomain.length} → ${completedDomain.length} values`);
+    this.logger.debug(`Preservation: user order maintained for first ${incompleteDomain.length} values`);
     
     return completedDomain;
   }
 
   /**
-   * Compare deux valeurs pour déterminer si elles sont équivalentes.
-   * Gère les comparaisons de types différents (string/number).
-   * 
-   * @param {*} value1 - Première valeur
-   * @param {*} value2 - Deuxième valeur
-   * @returns {boolean} True si les valeurs sont équivalentes
+   * Compare values with loose numeric/string compatibility.
+   *
+   * @param {*} value1 - First value
+   * @param {*} value2 - Second value
+   * @returns {boolean} True when equivalent
    */
   valuesAreEqual(value1, value2) {
-    // Comparaison directe
+    // Direct equality.
     if (value1 === value2) return true;
     
-    // Comparaison après conversion en string (pour gérer "1" vs 1)
+    // String equality to handle `"1"` vs `1`.
     if (String(value1) === String(value2)) return true;
     
-    // Comparaison numérique si les deux valeurs peuvent être converties
+    // Numeric equality when both sides can be parsed.
     const num1 = this.convertToNumber(value1);
     const num2 = this.convertToNumber(value2);
     if (!isNaN(num1) && !isNaN(num2) && num1 === num2) return true;
@@ -436,10 +425,10 @@ export class DomainCalculator {
   }
 
   /**
-   * Convertit une valeur en nombre si possible.
-   * 
-   * @param {*} value - La valeur à convertir
-   * @returns {number} Le nombre ou NaN si impossible
+   * Convert a value to number when possible.
+   *
+   * @param {*} value - Input value
+   * @returns {number} Parsed number or NaN
    */
   convertToNumber(value) {
     if (typeof value === 'number') return value;
@@ -451,11 +440,11 @@ export class DomainCalculator {
   }
 
   /**
-   * Met en cache les statistiques d'un champ pour optimiser les calculs futurs.
-   * 
-   * @param {string} field - Le nom du champ
-   * @param {Array} uniqueValues - Les valeurs uniques trouvées
-   * @param {number} totalCount - Le nombre total d'éléments dans les données
+   * Cache field stats for optional diagnostics and reuse.
+   *
+   * @param {string} field - Field name
+   * @param {Array} uniqueValues - Unique values found
+   * @param {number} totalCount - Total number of records
    */
   cacheFieldStats(field, uniqueValues, totalCount) {
     const stats = {
@@ -470,17 +459,17 @@ export class DomainCalculator {
   }
 
   /**
-   * Récupère les statistiques d'un champ depuis le cache.
-   * 
-   * @param {string} field - Le nom du champ
-   * @returns {Object|null} Les statistiques ou null si non trouvées
+   * Read cached stats for a field.
+   *
+   * @param {string} field - Field name
+   * @returns {Object|null} Stats object or null
    */
   getFieldStats(field) {
     return this.fieldStatsCache.get(field) || null;
   }
 
   /**
-   * Vide le cache pour forcer le recalcul lors de la prochaine utilisation.
+   * Clear caches and force recalculation on next call.
    */
   clearCache() {
     this.domainCache.clear();
@@ -488,13 +477,13 @@ export class DomainCalculator {
   }
 
   /**
-   * Génère un domaine suggéré pour un champ numérique basé sur les statistiques.
-   * Utile pour les échelles linéaires, sqrt, log.
-   * 
-   * @param {Array} data - Les données à analyser
-   * @param {string} field - Le nom du champ numérique
-   * @param {number} steps - Le nombre de pas suggérés (défaut: 5)
-   * @returns {Array} Le domaine numérique suggéré
+   * Generate a suggested numeric domain with evenly spaced steps.
+   * Useful for linear/sqrt/log scales.
+   *
+   * @param {Array} data - Data to analyze
+   * @param {string} field - Numeric field name
+   * @param {number} steps - Number of suggested steps (default: 5)
+   * @returns {Array} Suggested numeric domain
    */
   generateNumericDomain(data, field, steps = 5) {
     const values = this.getVal(data, field)
@@ -516,11 +505,11 @@ export class DomainCalculator {
   }
 
   /**
-   * Analyse la nature d'un champ pour suggérer le type d'échelle approprié.
-   * 
-   * @param {Array} data - Les données à analyser
-   * @param {string} field - Le nom du champ
-   * @returns {Object} Analyse avec type suggéré et statistiques
+   * Analyze field characteristics and suggest a scale type.
+   *
+   * @param {Array} data - Data to analyze
+   * @param {string} field - Field name
+   * @returns {Object} Suggested scale type and stats
    */
   analyzeFieldType(data, field) {
     const values = this.getVal(data, field);
@@ -533,21 +522,21 @@ export class DomainCalculator {
       };
     }
     
-    // Tester si toutes les valeurs sont numériques
+    // Check if all values are numeric.
     const numericValues = values.map(v => this.convertToNumber(v)).filter(v => !isNaN(v));
     const isNumeric = numericValues.length === values.length;
     
-    // Calculer des statistiques
+    // Compute simple stats.
     const uniqueCount = values.length;
-    const samples = values.slice(0, 5); // Échantillon pour aperçu
+    const samples = values.slice(0, 5); // Small preview sample.
     
-    // Suggérer le type d'échelle
+    // Suggest the most appropriate scale.
     let suggestedScale = 'ordinal';
     if (isNumeric) {
       if (uniqueCount <= 10) {
-        suggestedScale = 'ordinal'; // Peu de valeurs numériques -> ordinal
+        suggestedScale = 'ordinal'; // Few numeric values -> treat as categories.
       } else {
-        suggestedScale = 'linear'; // Beaucoup de valeurs numériques -> linéaire
+        suggestedScale = 'linear'; // Many numeric values -> continuous scale.
       }
     }
     

@@ -20,7 +20,7 @@ export default class ForceGraphRenderer {
     this.encoding = null;
   }
 
-  render(graph = { nodes: [], links: [] }, encoding = null) {
+  render(graph = { nodes: [], links: [] }, encoding = null, visualArtifacts = null) {
     this.nodes = graph.nodes || [];
     this.links = graph.links || [];
     this.encoding = encoding || this.encoding;
@@ -64,99 +64,108 @@ export default class ForceGraphRenderer {
     this.links = (this.links || []).filter((l) => l && l.source != null && l.target != null);
 
     const mapping = this.encoding || {};
+    const artifactChannels = Array.isArray(visualArtifacts?.channels) ? visualArtifacts.channels : [];
+    const artifactScales = visualArtifacts?.scales instanceof Map ? visualArtifacts.scales : new Map();
+    const findChannel = (mark, channel) =>
+      artifactChannels.find((item) => item?.mark === mark && item?.channel === channel) || null;
+    const nodeColorChannel = findChannel("nodes", "color");
+    const nodeSizeChannel = findChannel("nodes", "size");
+    const linkColorChannel = findChannel("links", "color");
 
-    // Node color scales
-    const nodeColorConfigs = Array.isArray(mapping.nodes?.color)
-      ? mapping.nodes.color
-      : [mapping.nodes?.color].filter(Boolean);
-    const nodeColorEntries = nodeColorConfigs.map((config, index) => ({
-      config,
-      scale: config?.scale
-        ? this.encodingManager.getOrCreateD3Scale(
-            `nodeColor-${index}-${config.field}`,
-            config.scale,
-            this.nodes,
-            config.field,
-            true,
-            (scaleConfig, data, field, isColor) => this.encodingManager.createD3Scale(scaleConfig, data, field, isColor)
-          )
-        : null
-    }));
+    // Node color scale (compiled artifacts)
+    const nodeColorConfig = nodeColorChannel?.encoding || {};
+    const nodeColorScale = nodeColorChannel?.scaleId
+      ? artifactScales.get(nodeColorChannel.scaleId) || null
+      : null;
 
     const getNodeColor = (d) => {
-      for (const entry of nodeColorEntries) {
-        const field = entry.config?.field;
-        if (!field || d[field] === undefined) continue;
+      const field = nodeColorConfig?.field;
+      const defaultColor = nodeColorChannel?.defaultValue || nodeColorConfig?.value || "#cccccc";
+      if (!field || d[field] === undefined) return defaultColor;
 
-        if (entry.scale) {
-          const dom = entry.scale.domain?.() || [];
-          if (!dom.length || dom.includes(d[field])) {
-            const color = entry.scale(d[field]);
+      if (nodeColorScale) {
+        const value = d[field];
+        const isThreshold = typeof nodeColorScale.invertExtent === "function";
+        if (isThreshold) {
+          const color = nodeColorScale(value);
+          if (color) return color;
+        } else {
+          const dom = nodeColorScale.domain?.() || [];
+          if (!dom.length || dom.includes(value)) {
+            const color = nodeColorScale(value);
             if (color) return color;
           }
         }
-
-        if (entry.config?.value) return entry.config.value;
       }
-      return "#cccccc";
+
+      return defaultColor;
     };
 
-    // Node size scale
-    const nodeSizeConfig = mapping.nodes?.size || {};
-    const nodeSizeScale = nodeSizeConfig.scale
-      ? this.encodingManager.getOrCreateD3Scale(
-          `nodeSize-${nodeSizeConfig.field}`,
-          nodeSizeConfig.scale,
-          this.nodes,
-          nodeSizeConfig.field,
-          false,
-          (config, data, field, isColor) => this.encodingManager.createD3Scale(config, data, field, isColor)
-        )
+    // Node size scale (compiled artifacts)
+    const nodeSizeConfig = nodeSizeChannel?.encoding || {};
+    const nodeSizeScale = nodeSizeChannel?.scaleId
+      ? artifactScales.get(nodeSizeChannel.scaleId) || null
       : null;
 
     const getNodeRadius = (d) => {
-      if (nodeSizeScale && nodeSizeConfig.field && d[nodeSizeConfig.field] !== undefined) {
-        const r = nodeSizeScale(d[nodeSizeConfig.field]);
-        if (typeof r === "number" && !Number.isNaN(r) && r > 0) return r;
+      const field = nodeSizeConfig?.field;
+      const channelDefaultRadius =
+        typeof nodeSizeChannel?.defaultValue === "number" &&
+        !Number.isNaN(nodeSizeChannel.defaultValue) &&
+        nodeSizeChannel.defaultValue > 0
+          ? nodeSizeChannel.defaultValue
+          : null;
+      const encodingDefaultRadius =
+        typeof nodeSizeConfig?.value === "number" &&
+        !Number.isNaN(nodeSizeConfig.value) &&
+        nodeSizeConfig.value > 0
+          ? nodeSizeConfig.value
+          : null;
+      const defaultRadius = channelDefaultRadius || encodingDefaultRadius || 10;
+      if (!field || d[field] === undefined) return defaultRadius;
+
+      if (nodeSizeScale) {
+        const value = d[field];
+        const isThreshold = typeof nodeSizeScale.invertExtent === "function";
+        const isQuantitative =
+          ["linear", "sqrt", "log", "quantitative", "sequential"].includes(nodeSizeConfig?.scale?.type) || isThreshold;
+        const dom = nodeSizeScale.domain?.() || [];
+        if (isQuantitative || !dom.length || dom.includes(value)) {
+          const radius = nodeSizeScale(value);
+          if (typeof radius === "number" && !Number.isNaN(radius) && radius > 0) return radius;
+        }
       }
-      const fallback = nodeSizeConfig.value || 10;
-      return typeof fallback === "number" && !Number.isNaN(fallback) && fallback > 0 ? fallback : 10;
+
+      return defaultRadius;
     };
 
-    // Link color scales
-    const linkColorConfigs = Array.isArray(mapping.links?.color)
-      ? mapping.links.color
-      : [mapping.links?.color].filter(Boolean);
-    const linkColorEntries = linkColorConfigs.map((config, index) => ({
-      config,
-      scale: config?.scale
-        ? this.encodingManager.getOrCreateD3Scale(
-            `linkColor-${index}-${config.field}`,
-            config.scale,
-            this.links,
-            config.field,
-            true,
-            (scaleConfig, data, field, isColor) => this.encodingManager.createD3Scale(scaleConfig, data, field, isColor)
-          )
-        : null
-    }));
+    // Link color scale (compiled artifacts)
+    const linkColorConfig = linkColorChannel?.encoding || {};
+    const linkColorScale = linkColorChannel?.scaleId
+      ? artifactScales.get(linkColorChannel.scaleId) || null
+      : null;
 
     const getLinkColor = (d) => {
-      for (const entry of linkColorEntries) {
-        const field = entry.config?.field;
-        if (!field || d[field] === undefined) continue;
+      const field = linkColorConfig?.field;
+      const defaultColor = linkColorChannel?.defaultValue || linkColorConfig?.value || "#999";
+      if (!field || d[field] === undefined) return defaultColor;
 
-        if (entry.scale) {
-          const dom = entry.scale.domain?.() || [];
-          if (!dom.length || dom.includes(d[field])) {
-            const color = entry.scale(d[field]);
+      if (linkColorScale) {
+        const value = d[field];
+        const isThreshold = typeof linkColorScale.invertExtent === "function";
+        if (isThreshold) {
+          const color = linkColorScale(value);
+          if (color) return color;
+        } else {
+          const dom = linkColorScale.domain?.() || [];
+          if (!dom.length || dom.includes(value)) {
+            const color = linkColorScale(value);
             if (color) return color;
           }
         }
-
-        if (entry.config?.value) return entry.config.value;
       }
-      return "#999";
+
+      return defaultColor;
     };
 
     const linkWidthConfig = mapping.links?.width || mapping.links?.Width || {};

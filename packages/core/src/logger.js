@@ -1,4 +1,13 @@
-export function createLogger(scope, { debug = false, level = "info" } = {}) {
+export function truncateLogMessage(message, maxLength = 420) {
+  const text = typeof message === "string" ? message : String(message);
+  if (!Number.isFinite(maxLength) || maxLength <= 0 || text.length <= maxLength) {
+    return text;
+  }
+  const truncatedChars = text.length - maxLength;
+  return `${text.slice(0, maxLength)}... [${truncatedChars} chars truncated]`;
+}
+
+export function createLogger(scope, { debug = false, level = "info", maxMessageLength = 420 } = {}) {
   const levels = { debug: 10, info: 20, warn: 30, error: 40 };
   const min = levels[level] ?? levels.info;
 
@@ -13,7 +22,8 @@ export function createLogger(scope, { debug = false, level = "info" } = {}) {
   }
 
   function line(lvl, message, meta) {
-    const prefix = `[${scope}] ${lvl.toUpperCase()}: ${message}`;
+    const safeMessage = truncateLogMessage(message, maxMessageLength);
+    const prefix = `[${scope}] ${lvl.toUpperCase()}: ${safeMessage}`;
     if (meta == null) return prefix;
     try {
       return `${prefix} ${JSON.stringify(meta)}`;

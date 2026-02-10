@@ -1,0 +1,33 @@
+{
+  "defaultScenarioId": "species-palette-size-jenks",
+  "scenarios": [
+    {
+      "id": "species-palette-size-jenks",
+      "configPath": "./test/encoding/species-palette-size-jenks.json"
+    },
+    {
+      "id": "family-color-links-size",
+      "configPath": "./test/encoding/family-color-links-size.json"
+    },
+    {
+      "id": "articlecount-color-and-size-quartiles",
+      "configPath": "./test/encoding/articlecount-color-and-size-quartiles.json"
+    },
+    {
+      "id": "conservation-color-constant-size",
+      "configPath": "./test/encoding/conservation-color-constant-size.json"
+    },
+    {
+      "id": "articlecount-manual-breaks",
+      "configPath": "./test/encoding/articlecount-manual-breaks.json"
+    },
+    {
+      "id": "articlecount-explicit-domain",
+      "configPath": "./test/encoding/articlecount-explicit-domain.json"
+    },
+    {
+      "id": "link-color-speciescount",
+      "configPath": "./test/encoding/link-color-speciescount.json"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "name": "Species Palette + Article Size (Jenks)",
+  "description": "Colors species nodes with a categorical palette and bins articleCount into Jenks classes for node radius.",
+  "endpoint": "https://query.wikidata.org/sparql",
+  "queryPath": "./test/queries/felidae-species-family-article-count.rq",
+  "encoding": {
+    "nodes": {
+      "field": ["species", "family"],
+      "color": {
+        "field": "speciesLabel",
+        "value": "#cccccc",
+        "scale": { "type": "ordinal", "range": "Set3" },
+        "legend": { "title": "Species Label", "position": "left", "display": true }
+      },
+      "size": {
+        "field": "articleCount",
+        "value": 7,
+        "scale": {
+          "type": "sqrt",
+          "range": [4, 18],
+          "binning": { "method": "jenks", "bins": 5 }
+        },
+        "legend": { "title": "Article Count", "position": "right", "display": true }
+      }
+    },
+    "links": {
+      "field": { "source": "species", "target": "family" },
+      "color": {
+        "field": "type",
+        "value": "#999",
+        "scale": { "type": "ordinal", "range": ["#999", "#f66"] }
+      }
+    }
+  }
+}

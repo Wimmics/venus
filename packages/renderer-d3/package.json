@@ -3,6 +3,11 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": [
+    "./index.js",
+    "./src/register-all.js",
+    "./dist/index.js",
+    "./dist/register-all.js"
+  ],
   "main": "./index.js"
 }

@@ -4,97 +4,223 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Playground</title>
-
     <script type="module" src="./index.js"></script>
+    <style>
+      body {
+        margin: 0;
+        padding: 16px;
+        font-family: Arial, sans-serif;
+        background: #f7f7f7;
+      }
+
+      .playground {
+        display: grid;
+        gap: 16px;
+      }
+
+      .controls {
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 12px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .controls-row {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      label {
+        font-weight: 700;
+      }
+
+      select,
+      button {
+        border: 1px solid #bbb;
+        border-radius: 6px;
+        padding: 8px 10px;
+        font-size: 14px;
+        background: #fff;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      .scenario-description {
+        font-size: 14px;
+        color: #333;
+      }
+
+      .status {
+        font-size: 13px;
+        color: #555;
+      }
+
+      .status.error {
+        color: #a10000;
+      }
+
+      vis-graph {
+        display: block;
+      }
+    </style>
   </head>
 
   <body>
-        <!-- Add the component to your page -->
-     <vis-graph id="myGraph" width="800" height="600"></vis-graph>
+    <div class="playground">
+      <div class="controls">
+        <div class="controls-row">
+          <label for="scenarioSelect">Test Scenario</label>
+          <select id="scenarioSelect"></select>
+          <button id="reloadScenario" type="button">Reload Scenario</button>
+        </div>
+        <div id="scenarioDescription" class="scenario-description"></div>
+        <div id="status" class="status"></div>
+      </div>
 
-     <vis-uri-meta width="800" height="600"></vis-uri-meta>
+      <vis-graph id="myGraph" width="100%" height="100%"></vis-graph>
+      <vis-uri-meta id="metaPanel" width="900" height="600"></vis-uri-meta>
+    </div>
 
     <script>
+      const SCENARIO_INDEX_PATH = "./test/encoding/scenarios.index.json";
+      const SCENARIO_STORAGE_KEY = "kgnovis.playground.selectedScenarioId";
 
-      async function configGraph() {
-        const graph = document.getElementById("myGraph");
-        console.log(graph)
-        // 1. Configure the component properties
-        graph.sparqlEndpoint = 'https://query.wikidata.org/sparql';
-        graph.sparqlQuery = `
-            SELECT ?species ?speciesLabel ?family ?familyLabel ?articleCount WHERE {
-    ?species wdt:P171* wd:Q25265 .   # Felidae descendant
-    ?species wdt:P105 wd:Q7432 .     # taxon rank = species
+      async function fetchJson(path) {
+        const response = await fetch(path);
+        if (!response.ok) {
+          throw new Error(`Failed to load JSON at ${path} (${response.status})`);
+        }
+        return response.json();
+      }
 
-    ?species wdt:P171* ?family .
-    ?family wdt:P105 wd:Q35409 .     # taxon rank = family
+      async function fetchText(path) {
+        const response = await fetch(path);
+        if (!response.ok) {
+          throw new Error(`Failed to load query at ${path} (${response.status})`);
+        }
+        return response.text();
+      }
 
-    ?species wikibase:sitelinks ?articleCount .
+      function setStatus(message, isError = false) {
+        const statusEl = document.getElementById("status");
+        statusEl.textContent = message;
+        statusEl.classList.toggle("error", isError);
+      }
 
-    SERVICE wikibase:label {
-      bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en".
-    }
-  }
-  ORDER BY DESC(?articleCount)
-  LIMIT 100
+      function setScenarioDescription(text) {
+        document.getElementById("scenarioDescription").textContent = text || "";
+      }
 
+      async function loadScenarioCatalog() {
+        const index = await fetchJson(SCENARIO_INDEX_PATH);
+        const entries = Array.isArray(index.scenarios) ? index.scenarios : [];
 
-            `;
+        const configs = await Promise.all(
+          entries.map(async (entry) => {
+            const config = await fetchJson(entry.configPath);
+            return {
+              id: entry.id,
+              configPath: entry.configPath,
+              ...config
+            };
+          })
+        );
 
-          graph.nodeDetailsPanel = document.querySelector('vis-uri-meta')
-        
-        // Optional: configure a proxy if your endpoint has CORS issues
-        // graph.proxy = 'http://localhost:3001/sparql-proxy';
-
-        // Configure custom visual encoding
-        graph.encoding = {
-          nodes: {
-            field: ["species", "family"],
-            color: [
-              { field: "speciesLabel", scale: { type: "ordinal", range: "red" }, label: "Species Label" },
-              { field: "familyLabel",  scale: { type: "ordinal", range: "yellow" }, label: "Family Label" }
-            ],
-            size: {
-              field: "articleCount",
-              scale: {
-                type: "sqrt",      // linear | sqrt | log | ordinal
-                //domain: [0, 250],     // optional (auto-computed if omitted)
-                range: [5, 20],       // radius range in px
-                binning: { method: "quartile", bins: 5 } // optional
-              },
-              value: 10,             // optional fallback radius
-              legend: { title: "Node Size" }, // optional title
-              label: "Node Size"     // optional alternative title
-            }
-          },
-          links: {
-            field: {source: "species", target: "family"},
-            color: [
-              { field: "type", scale: { type: "ordinal", range: ["#999", "#f66"] } }
-            ]
-          }
+        return {
+          defaultScenarioId: index.defaultScenarioId,
+          scenarios: configs
         };
-
-        // 2. Launch the visualization
-        graph.launch()
       }
 
-      async function configMetaPanel() {
-        const panel = document.querySelector('vis-uri-meta')
+      function populateScenarioDropdown(scenarios, defaultScenarioId) {
+        const select = document.getElementById("scenarioSelect");
+        select.innerHTML = "";
 
-        panel.node = { uri: "http://www.wikidata.org/entity/Q25265" }
-        panel.sparqlEndpoint = "https://query.wikidata.org/sparql"
+        for (const scenario of scenarios) {
+          const option = document.createElement("option");
+          option.value = scenario.id;
+          option.textContent = scenario.name || scenario.id;
+          select.appendChild(option);
+        }
 
-        await panel.load()
+        const savedScenarioId = sessionStorage.getItem(SCENARIO_STORAGE_KEY);
+        const savedExists = scenarios.some((scenario) => scenario.id === savedScenarioId);
+        const defaultExists = scenarios.some((scenario) => scenario.id === defaultScenarioId);
+        const selectedScenarioId = savedExists
+          ? savedScenarioId
+          : (defaultExists ? defaultScenarioId : (scenarios[0]?.id || ""));
+        select.value = selectedScenarioId;
+        if (selectedScenarioId) {
+          sessionStorage.setItem(SCENARIO_STORAGE_KEY, selectedScenarioId);
+        }
       }
 
-      window.addEventListener("DOMContentLoaded", async () => {
-          await configGraph()
+      async function applyScenario(graph, metaPanel, scenario) {
+        setStatus(`Loading scenario: ${scenario.name || scenario.id}...`);
+        setScenarioDescription(scenario.description || "");
 
-      });
-    
+        const queryText = await fetchText(scenario.queryPath);
+
+        graph.nodeDetailsPanel = metaPanel;
+        graph.sparqlEndpoint = scenario.endpoint;
+        graph.sparqlQuery = queryText;
+        graph.encoding = scenario.encoding;
+
+        await graph.launch();
+
+        setStatus(`Loaded: ${scenario.name || scenario.id}`);
+      }
+
+      async function initPlayground() {
+        const graph = document.getElementById("myGraph");
+        const metaPanel = document.getElementById("metaPanel");
+        const select = document.getElementById("scenarioSelect");
+        const reloadButton = document.getElementById("reloadScenario");
+
+        try {
+          const catalog = await loadScenarioCatalog();
+          const scenariosById = new Map(catalog.scenarios.map((scenario) => [scenario.id, scenario]));
+
+          if (!catalog.scenarios.length) {
+            setStatus("No scenario found in test/encoding/scenarios.index.json", true);
+            return;
+          }
+
+          populateScenarioDropdown(catalog.scenarios, catalog.defaultScenarioId);
+
+          const runSelectedScenario = async () => {
+            const selectedScenario = scenariosById.get(select.value);
+            if (!selectedScenario) {
+              setStatus(`Unknown scenario: ${select.value}`, true);
+              return;
+            }
+            sessionStorage.setItem(SCENARIO_STORAGE_KEY, selectedScenario.id);
+
+            try {
+              await applyScenario(graph, metaPanel, selectedScenario);
+            } catch (error) {
+              console.error(error);
+              setStatus(error.message || "Failed to load scenario", true);
+            }
+          };
+
+          select.addEventListener("change", runSelectedScenario);
+          reloadButton.addEventListener("click", runSelectedScenario);
+
+          await runSelectedScenario();
+        } catch (error) {
+          console.error(error);
+          setStatus(error.message || "Failed to initialize playground", true);
+        }
+      }
+
+      window.addEventListener("DOMContentLoaded", initPlayground);
     </script>
-
   </body>
-
 </html>

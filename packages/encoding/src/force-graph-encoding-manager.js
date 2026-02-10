@@ -151,52 +151,44 @@ export class ForceGraphEncodingManager extends EncodingManager {
     const enc = JSON.parse(JSON.stringify(encoding));
     const linkData = Array.isArray(links) ? links : [];
 
-    // Nodes color domain(s)
-    const nodeColorEncodings = Array.isArray(enc.nodes?.color) ? enc.nodes.color : [enc.nodes?.color].filter(Boolean);
-    for (const colorEncoding of nodeColorEncodings) {
-      if (!colorEncoding?.field || !colorEncoding?.scale) continue;
-      const scaleType = colorEncoding.scale.type || "ordinal";
-      const userDomain = colorEncoding.scale.domain;
-      colorEncoding.scale.domain = this.domainCalculator.getDomain(nodes, colorEncoding.field, userDomain, scaleType);
-    }
-    if (Array.isArray(enc.nodes?.color)) {
-      enc.nodes.color = nodeColorEncodings;
-    } else if (nodeColorEncodings[0]) {
-      enc.nodes.color = nodeColorEncodings[0];
+    // Nodes color domain (single config)
+    const nodeColorEncoding = Array.isArray(enc.nodes?.color) ? enc.nodes.color[0] : enc.nodes?.color;
+    if (nodeColorEncoding?.field && nodeColorEncoding?.scale) {
+      const scaleType = nodeColorEncoding.scale.type || "ordinal";
+      const userDomain = nodeColorEncoding.scale.domain;
+      nodeColorEncoding.scale.domain = this.domainCalculator.getDomain(nodes, nodeColorEncoding.field, userDomain, scaleType);
+      enc.nodes.color = nodeColorEncoding;
     }
 
-    // Links color domain(s)
+    // Links color domain (single config)
     if (linkData.length) {
-      const linkColorEncodings = Array.isArray(enc.links?.color) ? enc.links.color : [enc.links?.color].filter(Boolean);
-      for (const colorEncoding of linkColorEncodings) {
-        if (!colorEncoding?.field || !colorEncoding?.scale) continue;
-        const scaleType = colorEncoding.scale.type || "ordinal";
-        const userDomain = colorEncoding.scale.domain;
-        colorEncoding.scale.domain = this.domainCalculator.getDomain(linkData, colorEncoding.field, userDomain, scaleType);
-      }
-      if (Array.isArray(enc.links?.color)) {
-        enc.links.color = linkColorEncodings;
-      } else if (linkColorEncodings[0]) {
-        enc.links.color = linkColorEncodings[0];
+      const linkColorEncoding = Array.isArray(enc.links?.color) ? enc.links.color[0] : enc.links?.color;
+      if (linkColorEncoding?.field && linkColorEncoding?.scale) {
+        const scaleType = linkColorEncoding.scale.type || "ordinal";
+        const userDomain = linkColorEncoding.scale.domain;
+        linkColorEncoding.scale.domain = this.domainCalculator.getDomain(linkData, linkColorEncoding.field, userDomain, scaleType);
+        enc.links.color = linkColorEncoding;
       }
     }
 
-    // Nodes size domain
-    if (enc.nodes?.size?.field && enc.nodes?.size?.scale) {
-      const f = enc.nodes.size.field;
-      const scaleType = enc.nodes.size.scale.type || "linear";
-      const userDomain = enc.nodes.size.scale.domain;
-      const userRange = enc.nodes.size.scale.range;
-      enc.nodes.size.scale.domain = this.domainCalculator.getDomain(nodes, f, userDomain, scaleType);
+    // Nodes size domain (single config)
+    const nodeSizeEncoding = Array.isArray(enc.nodes?.size) ? enc.nodes.size[0] : enc.nodes?.size;
+    if (nodeSizeEncoding?.field && nodeSizeEncoding?.scale) {
+      const field = nodeSizeEncoding.field;
+      const scaleType = nodeSizeEncoding.scale.type || "linear";
+      const userDomain = nodeSizeEncoding.scale.domain;
+      const userRange = nodeSizeEncoding.scale.range;
+      nodeSizeEncoding.scale.domain = this.domainCalculator.getDomain(nodes, field, userDomain, scaleType);
       if (this.sizeRangeCalculator) {
-        enc.nodes.size.scale.range = this.sizeRangeCalculator.createSizeRange({
+        nodeSizeEncoding.scale.range = this.sizeRangeCalculator.createSizeRange({
           data: nodes,
-          field: f,
+          field,
           scaleType,
           range: userRange,
-          label: `Size[${f}]`
+          label: `Size[${field}]`
         });
       }
+      enc.nodes.size = nodeSizeEncoding;
     }
 
     return enc;
@@ -223,8 +215,27 @@ export class ForceGraphEncodingManager extends EncodingManager {
       throw new Error('Invalid encoding: "nodes.field" is required (array with at least one SPARQL variable).');
     }
 
+    this._validateSingleScaleConfig(userEncoding);
+    const normalizedEncoding = this._normalizeSingleScales(userEncoding);
+
     // Merge user encoding with defaults
-    return { ...this.getDefaultEncoding(), ...userEncoding };
+    return { ...this.getDefaultEncoding(), ...normalizedEncoding };
+  }
+
+  _normalizeSingleScales(encoding) {
+    return JSON.parse(JSON.stringify(encoding || {}));
+  }
+
+  _validateSingleScaleConfig(encoding) {
+    if (Array.isArray(encoding?.nodes?.color)) {
+      throw new Error('Invalid encoding: "nodes.color" must be an object, not an array.');
+    }
+    if (Array.isArray(encoding?.nodes?.size)) {
+      throw new Error('Invalid encoding: "nodes.size" must be an object, not an array.');
+    }
+    if (Array.isArray(encoding?.links?.color)) {
+      throw new Error('Invalid encoding: "links.color" must be an object, not an array.');
+    }
   }
 
   /**

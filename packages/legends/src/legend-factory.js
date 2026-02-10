@@ -1,52 +1,63 @@
 import { ColorLegend } from './color-legend.js';
 import { SizeLegend } from './size-legend.js';
 
+function normalizeLegendPosition(position) {
+  if (typeof position !== "string") return "bottom";
+  const value = position.toLowerCase().trim();
+  if (["left", "right", "top", "bottom"].includes(value)) return value;
+  if (["top-left", "bottom-left", "top-right", "bottom-right"].includes(value)) return value;
+  return "bottom";
+}
+
 /**
- * Factory function to create legend elements based on encoding configuration
+ * Factory function to create legend elements from compiled legend descriptors.
  * @param {Object} config - Configuration object
- * @param {Object} config.colorEncoding - Color encoding configuration { field, scale }
- * @param {Object} config.sizeEncoding - Size encoding configuration { field, scale }
- * @param {Array} config.data - Data array
- * @param {Function} config.getD3Scale - Optional function to get D3 scale instance
+ * @param {Array} config.legendItems - Compiled legend descriptors
+ * @param {Object} config.datasets - Data by key ({ nodes, links, ... })
+ * @param {Function} config.getScaleById - Function to resolve D3 scales by scale id
  * @returns {Array<HTMLElement>} Array of legend elements
  */
 export function createLegends(config) {
   const legends = [];
-  const colorEncodings = Array.isArray(config.colorEncoding)
-    ? config.colorEncoding
-    : [config.colorEncoding].filter(Boolean);
+  const legendItems = config.legendItems || [];
 
-  // Create color legends if color encoding(s) are defined
-  colorEncodings.forEach((colorEncoding, index) => {
-    if (!colorEncoding?.field || !colorEncoding?.scale) return;
-    const colorLegend = new ColorLegend();
-    colorLegend.encoding = colorEncoding;
-    colorLegend.data = config.data;
+  for (const item of legendItems) {
+    if (item?.display === false) continue;
 
-    // Attach D3 scale for accurate color rendering
-    if (config.getD3Scale) {
-      const scaleKey = `node-color-${index}-${colorEncoding.field}`;
-      const d3Scale = config.getD3Scale(scaleKey);
-      if (d3Scale) colorLegend.d3Scale = d3Scale;
+    const legendEncoding = {
+      ...(item.encoding || {}),
+      legend: {
+        ...((item.encoding && item.encoding.legend) || {}),
+        title: item.title || item.field || "Legend",
+        position: normalizeLegendPosition(item.position),
+        display: item.display !== false
+      }
+    };
+
+    const dataKey = typeof item.dataKey === "string" ? item.dataKey : "nodes";
+    const data = config.datasets?.[dataKey] || config.data || [];
+    const scale = config.getScaleById
+      ? config.getScaleById(item.scaleId)
+      : (config.scales?.get?.(item.scaleId) || null);
+
+    if (item.type === "color") {
+      const colorLegend = new ColorLegend();
+      colorLegend.encoding = legendEncoding;
+      colorLegend.data = data;
+      colorLegend._legendPosition = legendEncoding.legend.position;
+      if (scale) colorLegend.d3Scale = scale;
+      legends.push(colorLegend);
+      continue;
     }
 
-    legends.push(colorLegend);
-  });
-
-  // Create size legend if size encoding is defined
-  if (config.sizeEncoding?.field && config.sizeEncoding?.scale) {
-    const sizeLegend = new SizeLegend();
-    sizeLegend.encoding = config.sizeEncoding;
-    sizeLegend.data = config.data;
-
-    // Optionally attach D3 scale if provided
-    if (config.getD3Scale) {
-      const scaleKey = `node-size-${config.sizeEncoding.field}`;
-      const d3Scale = config.getD3Scale(scaleKey);
-      if (d3Scale) sizeLegend.d3Scale = d3Scale;
+    if (item.type === "size") {
+      const sizeLegend = new SizeLegend();
+      sizeLegend.encoding = legendEncoding;
+      sizeLegend.data = data;
+      sizeLegend._legendPosition = legendEncoding.legend.position;
+      if (scale) sizeLegend.d3Scale = scale;
+      legends.push(sizeLegend);
     }
-
-    legends.push(sizeLegend);
   }
 
   return legends;
@@ -60,48 +71,96 @@ export function createLegends(config) {
  */
 export function positionLegends(container, legends, options = {}) {
   const {
-    position = 'bottom-left',
+    position = 'bottom',
     spacing = 20,
-    gap = 270
+    gap = 20,
+    stackGap = 12
   } = options;
 
-  legends.forEach((legend, idx) => {
-    const baseSpacing = spacing;
-    const offset = idx * gap;
+  const groups = new Map();
+  legends.forEach((legend) => {
+    const legendPosition = legend?._legendPosition || position;
+    if (!groups.has(legendPosition)) groups.set(legendPosition, []);
+    groups.get(legendPosition).push(legend);
+  });
 
-    switch (position) {
-      case 'bottom-left':
-        legend.style.cssText = `
-          position: absolute;
-          bottom: ${baseSpacing}px;
-          left: ${baseSpacing + offset}px;
-          z-index: 10;
-        `;
-        break;
-      case 'bottom-right':
-        legend.style.cssText = `
-          position: absolute;
-          bottom: ${baseSpacing}px;
-          right: ${baseSpacing + offset}px;
-          z-index: 10;
-        `;
-        break;
-      case 'top-left':
-        legend.style.cssText = `
-          position: absolute;
-          top: ${baseSpacing}px;
-          left: ${baseSpacing + offset}px;
-          z-index: 10;
-        `;
-        break;
-      case 'top-right':
-        legend.style.cssText = `
-          position: absolute;
-          top: ${baseSpacing}px;
-          right: ${baseSpacing + offset}px;
-          z-index: 10;
-        `;
-        break;
+  const getLegendSize = (legend) => {
+    const rect = legend.getBoundingClientRect();
+    return {
+      width: rect.width || 220,
+      height: rect.height || 120
+    };
+  };
+
+  const applyStyle = (legend, cssText) => {
+    legend.style.cssText = `
+      position: absolute;
+      width: max-content;
+      z-index: 10;
+      ${cssText}
+    `;
+  };
+
+  groups.forEach((groupLegends, legendPosition) => {
+    if (legendPosition === 'top' || legendPosition === 'bottom') {
+      // Top/bottom are centered and laid out horizontally.
+      const widths = groupLegends.map((legend) => getLegendSize(legend).width);
+      const totalWidth = widths.reduce((sum, width) => sum + width, 0) + Math.max(0, groupLegends.length - 1) * gap;
+      let cursor = -totalWidth / 2;
+
+      groupLegends.forEach((legend, index) => {
+        const centerOffset = cursor + widths[index] / 2;
+        if (legendPosition === 'top') {
+          applyStyle(legend, `top: ${spacing}px; left: calc(50% + ${centerOffset}px); transform: translateX(-50%);`);
+        } else {
+          applyStyle(legend, `bottom: ${spacing}px; left: calc(50% + ${centerOffset}px); transform: translateX(-50%);`);
+        }
+        cursor += widths[index] + gap;
+      });
+      return;
     }
+
+    const heights = groupLegends.map((legend) => getLegendSize(legend).height);
+
+    if (legendPosition === 'left' || legendPosition === 'right') {
+      // Left/right are centered vertically and stacked.
+      const totalHeight = heights.reduce((sum, height) => sum + height, 0) + Math.max(0, groupLegends.length - 1) * stackGap;
+      let cursor = -totalHeight / 2;
+
+      groupLegends.forEach((legend, index) => {
+        const centerOffset = cursor + heights[index] / 2;
+        if (legendPosition === 'left') {
+          applyStyle(legend, `left: ${spacing}px; top: calc(50% + ${centerOffset}px); transform: translateY(-50%);`);
+        } else {
+          applyStyle(legend, `right: ${spacing}px; top: calc(50% + ${centerOffset}px); transform: translateY(-50%);`);
+        }
+        cursor += heights[index] + stackGap;
+      });
+      return;
+    }
+
+    // Corners are stacked vertically.
+    let offset = 0;
+    groupLegends.forEach((legend, index) => {
+      const height = heights[index];
+      switch (legendPosition) {
+        case 'top-left':
+          applyStyle(legend, `top: ${spacing + offset}px; left: ${spacing}px;`);
+          break;
+        case 'top-right':
+          applyStyle(legend, `top: ${spacing + offset}px; right: ${spacing}px;`);
+          break;
+        case 'bottom-left':
+          applyStyle(legend, `bottom: ${spacing + offset}px; left: ${spacing}px;`);
+          break;
+        case 'bottom-right':
+          applyStyle(legend, `bottom: ${spacing + offset}px; right: ${spacing}px;`);
+          break;
+        default:
+          applyStyle(legend, `bottom: ${spacing + offset}px; left: ${spacing}px;`);
+          break;
+      }
+      offset += height + stackGap;
+    });
   });
 }

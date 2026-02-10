@@ -15,9 +15,9 @@
  *   (any element with a compatible API: { open, node, endpoint, proxy })
  * - VisGraph will drive it (set props) when the user requests details.
  */
-import { ForceGraphRenderer } from "@wimmics/kgnovis-d3renderer";
+import { createRenderer } from "@wimmics/kgnovis-d3renderer";
 import { SparqlDataFetcher } from "@wimmics/kgnovis-sparql";
-import { createEncodingManager } from "@wimmics/kgnovis-encoding";
+import { createEncodingManager, createVisualArtifacts } from "@wimmics/kgnovis-encoding";
 import { createSparqlMapper, listSparqlMappers } from "@wimmics/kgnovis-mappers";
 import { createLogger } from "@wimmics/kgnovis-core";
 import { buildForceGraph } from "@wimmics/kgnovis-datasource";
@@ -72,6 +72,7 @@ export class VisGraph extends HTMLElement {
 
     // Legend management: component owns and manages its legends
     this._legends = [];
+    this._visualArtifacts = { scales: new Map(), channels: [], legends: [] };
 
     // Build DOM structure once
     this._initDOMStructure();
@@ -272,7 +273,8 @@ export class VisGraph extends HTMLElement {
     }
 
     if (this.renderer) {
-      this.renderer.render({ nodes: this.nodes, links: this.links }, this.visualEncoding);
+      this._compileVisualArtifacts();
+      this.renderer.render({ nodes: this.nodes, links: this.links }, this.visualEncoding, this._visualArtifacts);
       this._manageLegends();
     }
   }
@@ -289,46 +291,36 @@ export class VisGraph extends HTMLElement {
     if (!container) return;
 
     // Clean up old legends
-    this._legends.forEach(legend => legend.remove());
-    this._legends = [];
+    this._destroyLegends()
 
-    // Create new legends based on current encoding
+    // Create legends from compiled visual artifacts (shared with renderer)
     const legendConfig = {
-      colorEncoding: this.visualEncoding.nodes?.color,
-      sizeEncoding: this.visualEncoding.nodes?.size,
-      data: this.nodes,
-      getD3Scale: (scaleKey) => {
-        // Map legend scale keys to renderer scale keys for consistency
-        if (scaleKey.startsWith('node-color-')) {
-          const [, , index, ...fieldParts] = scaleKey.split('-');
-          const field = fieldParts.join('-');
-          const colorEncodings = Array.isArray(this.visualEncoding.nodes?.color)
-            ? this.visualEncoding.nodes.color
-            : [this.visualEncoding.nodes?.color].filter(Boolean);
-          const colorEncoding = colorEncodings[Number(index)] || colorEncodings.find((c) => c?.field === field);
-          if (!colorEncoding?.scale || !colorEncoding?.field) return null;
-          return this._getOrCreateScale(`nodeColor-${index}-${colorEncoding.field}`, colorEncoding.scale, this.nodes, colorEncoding.field, true);
-        } else if (scaleKey.startsWith('node-size-')) {
-          const field = scaleKey.replace('node-size-', '');
-          return this._getOrCreateScale(`nodeSize-${field}`, this.visualEncoding.nodes?.size?.scale, this.nodes, field, false);
-        }
-        return null;
-      }
+      legendItems: this._visualArtifacts?.legends || [],
+      datasets: { nodes: this.nodes, links: this.links },
+      getScaleById: (scaleId) => this._visualArtifacts?.scales?.get(scaleId) || null
     };
 
     const newLegends = createLegends(legendConfig);
-    
-    // Position and append legends
-    positionLegends(container, newLegends, {
-      position: 'bottom-left',
-      spacing: 20,
-      gap: 270
-    });
+    const relayoutLegends = () => {
+      positionLegends(container, this._legends, {
+        position: 'bottom',
+        spacing: 20,
+        gap: 20,
+        stackGap: 12
+      });
+    };
 
-    newLegends.forEach(legend => {
+    // Append first so legends have measurable dimensions for layout.
+    newLegends.forEach((legend) => {
+      legend.addEventListener('legendtoggle', () => {
+        requestAnimationFrame(() => relayoutLegends());
+      });
       container.appendChild(legend);
       this._legends.push(legend);
     });
+
+    // Position legends after append (supports stacking/centering by measured size).
+    relayoutLegends();
   }
 
   /**
@@ -337,6 +329,25 @@ export class VisGraph extends HTMLElement {
   _destroyLegends() {
     this._legends.forEach(legend => legend.remove());
     this._legends = [];
+  }
+
+  _compileVisualArtifacts() {
+    if (!this.nodes?.length) {
+      this._visualArtifacts = { scales: new Map(), channels: [], legends: [] };
+      return;
+    }
+
+    try {
+      this._visualArtifacts = createVisualArtifacts("force-graph", {
+        encodingManager: this.encodingManager,
+        encoding: this.visualEncoding,
+        nodes: this.nodes,
+        links: this.links
+      });
+    } catch (error) {
+      this.logger.warn("Failed to compile visual artifacts", { message: error?.message });
+      this._visualArtifacts = { scales: new Map(), channels: [], legends: [] };
+    }
   }
 
   // ========== PRIVATE: DOM & RENDERER INITIALIZATION ==========
@@ -434,7 +445,7 @@ export class VisGraph extends HTMLElement {
 
     const container = this.shadowRoot.querySelector(".graph-container");
     if (container && !this.renderer) {
-      this.renderer = new ForceGraphRenderer({
+      this.renderer = createRenderer("force-graph", {
         container,
         encodingManager: this.encodingManager,
         width: this.width,
@@ -615,22 +626,6 @@ export class VisGraph extends HTMLElement {
       n.classList.add("fade-out");
       setTimeout(() => n.remove(), 500);
     }, 2500);
-  }
-
-  _getOrCreateScale(scaleKey, scaleConfig, data, field, isColorScale) {
-    return this.encodingManager.getOrCreateD3Scale(
-      scaleKey,
-      scaleConfig,
-      data,
-      field,
-      isColorScale,
-      (config, nodeData, fieldName, isColor) => this.encodingManager.createD3Scale(config, nodeData, fieldName, isColor)
-    );
-  }
-
-  createD3Scale(scaleConfig, data = null, field = null, defaultScale = null, isColorScale = false) {
-    const scale = this.encodingManager.createD3Scale(scaleConfig, data, field, isColorScale);
-    return scale || defaultScale;
   }
 
   _resolveEndpoint() {

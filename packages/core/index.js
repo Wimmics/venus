@@ -1,1 +1,1 @@
-export { createLogger } from "./src/logger.js";
+export { createLogger, truncateLogMessage } from "./src/logger.js";

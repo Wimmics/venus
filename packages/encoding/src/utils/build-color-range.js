@@ -2,69 +2,71 @@ import * as d3 from "d3";
 import * as d3Chromatic from "d3-scale-chromatic";
 import { createLogger } from "@wimmics/kgnovis-core";
 
-// Import de D3 depuis CDN
+// Optional CDN import kept for reference:
 //import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 
 /**
- * Calculateur de palettes de couleurs pour l'encoding visuel des graphes de connaissances.
- * Parse les ranges de type string (ex: "Blues", "Blues[5]") vers les schémas D3 appropriés.
- * Compatible avec les types ordinal et quantitative.
+ * Color scale calculator for visual encodings.
+ * Parses string ranges (for example: "Blues", "Blues[5]") to D3 schemes.
+ * Supports ordinal and quantitative scale types.
  */
 export class ColorScaleCalculator {
   constructor() {
-    // Cache pour les échelles générées
+    // Cache for generated scales.
     this.scaleCache = new Map();
     
-    // Cache pour éviter les warnings répétés
+    // Cache to avoid repeated warnings.
     this.warningCache = new Set();
     
     this.logger = createLogger("ColorScaleCalculator", { debug: false, level: "warn" });
   }
 
   /**
-   * Valide si une couleur est reconnue (hex, rgb, rgba, hsl, hsla, noms CSS standard)
-   * @param {string} color - Couleur à valider
-   * @returns {boolean} True si la couleur est valide
+   * Validate whether a color token is recognized.
+   * Supports hex, rgb/rgba, hsl/hsla, and common CSS color names.
+   *
+   * @param {string} color - Color token to validate
+   * @returns {boolean} True if valid
    */
   isValidColor(color) {
     if (typeof color !== 'string') return false;
     
-    // Nettoyer la couleur (supprimer espaces)
+    // Normalize whitespace.
     color = color.trim();
     
-    // Valider couleurs hex (#rgb, #rrggbb)
+    // Validate hex colors (#rgb, #rrggbb).
     const hexPattern = /^#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})$/;
     if (hexPattern.test(color)) return true;
     
-    // Valider couleurs RGB/RGBA
+    // Validate RGB/RGBA colors.
     const rgbPattern = /^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*(?:,\s*([01]|0?\.\d+))?\s*\)$/;
     const rgbMatch = color.match(rgbPattern);
     if (rgbMatch) {
       const [, r, g, b, a] = rgbMatch;
-      // Vérifier que les valeurs RGB sont dans la plage 0-255
+      // Validate RGB component bounds.
       if (parseInt(r) <= 255 && parseInt(g) <= 255 && parseInt(b) <= 255) {
-        // Si alpha est présent, vérifier qu'il est entre 0 et 1
+        // If alpha exists, validate [0, 1].
         if (a === undefined || (parseFloat(a) >= 0 && parseFloat(a) <= 1)) {
           return true;
         }
       }
     }
     
-    // Valider couleurs HSL/HSLA
+    // Validate HSL/HSLA colors.
     const hslPattern = /^hsla?\(\s*(\d{1,3})\s*,\s*(\d{1,3})%\s*,\s*(\d{1,3})%\s*(?:,\s*([01]|0?\.\d+))?\s*\)$/;
     const hslMatch = color.match(hslPattern);
     if (hslMatch) {
       const [, h, s, l, a] = hslMatch;
-      // Vérifier les plages HSL
+      // Validate HSL bounds.
       if (parseInt(h) <= 360 && parseInt(s) <= 100 && parseInt(l) <= 100) {
-        // Si alpha est présent, vérifier qu'il est entre 0 et 1
+        // If alpha exists, validate [0, 1].
         if (a === undefined || (parseFloat(a) >= 0 && parseFloat(a) <= 1)) {
           return true;
         }
       }
     }
     
-    // Valider couleurs CSS nommées courantes
+    // Validate common named CSS colors.
     const cssColors = [
       'red', 'green', 'blue', 'yellow', 'orange', 'purple', 'pink', 'brown',
       'black', 'white', 'gray', 'grey', 'cyan', 'magenta', 'lime', 'navy',
@@ -79,9 +81,9 @@ export class ColorScaleCalculator {
   }
 
   /**
-   * Convertit un composant RGB en hexadécimal
-   * @param {number} c - Composant RGB (0-255)
-   * @returns {string} Hexadécimal à 2 caractères
+   * Convert one RGB component to two-digit hex.
+   * @param {number} c - RGB component (0-255)
+   * @returns {string} Two-digit hex
    */
   componentToHex(c) {
     const hex = c.toString(16);
@@ -89,31 +91,31 @@ export class ColorScaleCalculator {
   }
 
   /**
-   * Convertit RGB en couleur hexadécimale
-   * @param {number} r - Rouge (0-255)
-   * @param {number} g - Vert (0-255)
-   * @param {number} b - Bleu (0-255)
-   * @returns {string} Couleur hexadécimale
+   * Convert RGB components to a hex color string.
+   * @param {number} r - Red (0-255)
+   * @param {number} g - Green (0-255)
+   * @param {number} b - Blue (0-255)
+   * @returns {string} Hex color
    */
   rgbToHex(r, g, b) {
     return "#" + this.componentToHex(r) + this.componentToHex(g) + this.componentToHex(b);
   }
 
   /**
-   * Convertit une couleur hexadécimale en RGB
-   * @param {string} hex - Couleur hexadécimale
-   * @returns {string} Format rgb(r, g, b)
+   * Convert a hex color to rgb(r, g, b) text.
+   * @param {string} hex - Hex color
+   * @returns {string} rgb(...) string
    */
   hexToRgb(hex) {
-    // Supprimer le "#" si présent
+    // Remove leading "#" if present.
     hex = hex.replace(/^#/, '');
 
-    // Convertir de la forme courte (3 caractères) à la forme complète (6 caractères)
+    // Expand short form (#abc) to full form (#aabbcc).
     if (hex.length === 3) {
       hex = hex.split('').map(c => c + c).join('');
     }
 
-    // Convertir en valeurs RGB
+    // Parse RGB components.
     let r = parseInt(hex.substring(0, 2), 16);
     let g = parseInt(hex.substring(2, 4), 16);
     let b = parseInt(hex.substring(4, 6), 16);
@@ -122,9 +124,9 @@ export class ColorScaleCalculator {
   }
 
   /**
-   * Parse un nom de schéma D3 avec support des indices (ex: "Blues[5]")
-   * @param {string} input - Nom du schéma (ex: "Blues", "Blues[5]", "Category10")
-   * @param {string} scaleType - Type d'échelle ('ordinal' ou 'quantitative')
+   * Parse a D3 color scheme name with optional index support (for example: "Blues[5]").
+   * @param {string} input - Scheme name (for example: "Blues", "Blues[5]", "Category10")
+   * @param {string} scaleType - Scale type ('ordinal' or 'quantitative')
    * @returns {object|null} {type: "interpolate"|"scheme", value: function|array, raw: string}
    */
   parseD3ColorScheme(input, scaleType = 'ordinal') {
@@ -134,82 +136,103 @@ export class ColorScaleCalculator {
     if (!match) return null;
 
     const rawName = match[1];
+    const normalizedRawName = rawName
+      .replace(/^scheme/i, '')
+      .replace(/^interpolate/i, '');
     const index = match[2] ? parseInt(match[2], 10) : null;
 
-    // Essayer plusieurs variations de normalisation
+    // Try normalized name variations.
     const variations = [
-      // Première lettre majuscule + reste minuscule (ex: viridis → Viridis)
-      rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase(),
-      // Tout en majuscule (ex: viridis → VIRIDIS)  
-      rawName.toUpperCase(),
-      // Exactement comme fourni (ex: Viridis → Viridis)
-      rawName,
-      // Tout en minuscule (ex: VIRIDIS → viridis)
-      rawName.toLowerCase()
+      // First letter uppercase, rest lowercase.
+      normalizedRawName.charAt(0).toUpperCase() + normalizedRawName.slice(1).toLowerCase(),
+      // Uppercase.
+      normalizedRawName.toUpperCase(),
+      // As provided.
+      normalizedRawName,
+      // Lowercase.
+      normalizedRawName.toLowerCase()
     ];
 
     this.logger.debug(`Attempting to parse: "${input}" (type: ${scaleType})`);
     this.logger.debug(`Tested variations: ${variations.join(', ')}`);
 
+    const resolveInterpolate = (name) => {
+      const fullInterpolate = `interpolate${name}`;
+      if (fullInterpolate in d3 && typeof d3[fullInterpolate] === "function") {
+        return d3[fullInterpolate];
+      }
+      if (fullInterpolate in d3Chromatic && typeof d3Chromatic[fullInterpolate] === "function") {
+        return d3Chromatic[fullInterpolate];
+      }
+      return null;
+    };
+
+    const resolveScheme = (name) => {
+      const fullScheme = `scheme${name}`;
+      let scheme = null;
+
+      if (fullScheme in d3) {
+        scheme = d3[fullScheme];
+      } else if (fullScheme in d3Chromatic) {
+        scheme = d3Chromatic[fullScheme];
+      }
+
+      if (!scheme || !Array.isArray(scheme)) return null;
+
+      // Nested/sparse array (e.g. schemeBlues where some indexes are undefined
+      // and valid palettes start later).
+      const hasNestedPalettes = scheme.some((entry) => Array.isArray(entry));
+      if (hasNestedPalettes) {
+        if (index !== null && Array.isArray(scheme[index])) {
+          return scheme[index];
+        }
+
+        for (let paletteIndex = scheme.length - 1; paletteIndex >= 0; paletteIndex -= 1) {
+          if (Array.isArray(scheme[paletteIndex])) {
+            return scheme[paletteIndex];
+          }
+        }
+        return null;
+      }
+
+      // Flat array (e.g. schemeSet1)
+      return scheme;
+    };
+
     for (const normalizedName of variations) {
       if (scaleType === 'quantitative' || scaleType === 'sequential') {
-        // Pour quantitative : utiliser interpolate
-        const fullInterpolate = `interpolate${normalizedName}`;
-        this.logger.debug(`Testing interpolate: ${fullInterpolate}`);
-        
-        // Check d3 first, then d3Chromatic
-        if (fullInterpolate in d3 && typeof d3[fullInterpolate] === "function") {
-          this.logger.debug(`Found in d3: ${fullInterpolate}`);
+        // Quantitative: prefer interpolators, allow ColorBrewer schemes as fallback.
+        const interpolator = resolveInterpolate(normalizedName);
+        if (interpolator) {
           return {
             type: "interpolate",
-            value: d3[fullInterpolate],
+            value: interpolator,
             raw: rawName,
           };
         }
-        if (fullInterpolate in d3Chromatic && typeof d3Chromatic[fullInterpolate] === "function") {
-          this.logger.debug(`Found in d3Chromatic: ${fullInterpolate}`);
+
+        const scheme = resolveScheme(normalizedName);
+        if (scheme) {
           return {
-            type: "interpolate",
-            value: d3Chromatic[fullInterpolate],
+            type: "scheme",
+            value: scheme,
             raw: rawName,
           };
         }
       } else {
-        // Pour ordinal : utiliser scheme
-        const fullScheme = `scheme${normalizedName}`;
-        this.logger.debug(`Testing scheme: ${fullScheme}`);
-        
-        // Check d3 first, then d3Chromatic
-        let scheme = null;
-        let source = null;
-        
-        if (fullScheme in d3) {
-          scheme = d3[fullScheme];
-          source = 'd3';
-        } else if (fullScheme in d3Chromatic) {
-          scheme = d3Chromatic[fullScheme];
-          source = 'd3Chromatic';
-        }
-        
+        // Ordinal: prefer schemes, allow interpolators via quantization.
+        const scheme = resolveScheme(normalizedName);
         if (scheme) {
-          this.logger.debug(`Found in ${source}: ${fullScheme}`);
+          return { type: "scheme", value: scheme, raw: rawName };
+        }
 
-          // If the scheme is an array, it can be either:
-          // - a nested array (array of arrays) where each entry is a palette for a given size
-          // - a flat array of color strings (a single palette)
-          if (Array.isArray(scheme)) {
-            // Nested array (e.g. schemeBlues where scheme[5] is an array of 5 colors)
-            if (Array.isArray(scheme[0])) {
-              if (index !== null && scheme[index]) {
-                return { type: "scheme", value: scheme[index], raw: rawName };
-              }
-              const maxIndex = scheme.length - 1;
-              return { type: "scheme", value: scheme[maxIndex], raw: rawName };
-            }
-
-            // Flat array (e.g. schemeSet1) — return the palette itself
-            return { type: "scheme", value: scheme, raw: rawName };
-          }
+        const interpolator = resolveInterpolate(normalizedName);
+        if (interpolator) {
+          return {
+            type: "interpolate",
+            value: interpolator,
+            raw: rawName
+          };
         }
       }
     }
@@ -226,35 +249,33 @@ export class ColorScaleCalculator {
   }
 
   /**
-   * Obtient le meilleur fallback selon le type d'échelle et la taille du domaine
-   * @param {string} scaleType - Type d'échelle ('ordinal' ou 'quantitative')
-   * @param {number} domainSize - Taille du domaine
-   * @returns {*} Meilleur fallback (scheme array ou interpolator function)
+   * Choose a fallback palette/interpolator based on scale type and domain size.
+   * @param {string} scaleType - Scale type ('ordinal' or 'quantitative')
+   * @param {number} domainSize - Domain size
+   * @returns {*} Fallback scheme array or interpolator function
    */
   getBestFallback(scaleType, domainSize) {
     if (scaleType === 'quantitative' || scaleType === 'sequential') {
-      // Pour quantitative : utiliser des interpolateurs perceptuels
-      return d3.interpolateViridis; // Meilleur que Turbo pour la perception
+      // Quantitative defaults to a perceptual interpolator.
+      return d3.interpolateViridis;
     } else {
-      // Pour ordinal : utiliser des palettes catégorielles optimisées
+      // Ordinal defaults to categorical palettes.
       if (domainSize <= 10) {
-        return d3.schemeCategory10; // Palette optimale jusqu'à 10 catégories
+        return d3.schemeCategory10;
       } else if (domainSize <= 12) {
-        return d3.schemeSet3; // Palette plus claire pour plus de catégories
+        return d3.schemeSet3;
       } else {
-        // Pour beaucoup de catégories, générer depuis un interpolateur valide
+        // For many categories, generate colors from an interpolator.
         return d3.quantize(d3.interpolateViridis, domainSize);
       }
     }
   }
 
   /**
-   * Méthode principale pour créer une échelle de couleurs
-   * Travaille uniquement avec le domaine fourni (calculé par DomainCalculator)
-   * et se concentre sur le calcul du range pour générer l'échelle de couleur.
-   * 
-   * @param {object} config - Configuration {domain, range, scaleType, fallbackInterpolator, label}
-   * @returns {Function} Fonction d'échelle de couleur D3 (ex: d3.scaleOrdinal().domain(...).range(...))
+   * Create a color scale from domain and range settings.
+   *
+   * @param {object} config - {domain, range, scaleType, fallbackInterpolator, label}
+   * @returns {Function} D3 color scale function
    */
   createColorScale({ 
     domain, 
@@ -263,7 +284,7 @@ export class ColorScaleCalculator {
     fallbackInterpolator = null,
     label = "Color" 
   }) {
-    // Validation du domaine fourni
+    // Validate the input domain.
     if (!Array.isArray(domain) || domain.length === 0) {
       {
         const warningMessage = `Invalid or empty domain provided (${label}). Cannot create color scale.`;
@@ -279,14 +300,14 @@ export class ColorScaleCalculator {
     this.logger.debug(`Creating color scale (${label}) with domain:`, domain);
     this.logger.debug(`Scale type: ${scaleType}, Range input:`, range);
 
-    // Obtenir le meilleur fallback si pas spécifié
+    // Pick fallback if none is explicitly provided.
     const smartFallback = fallbackInterpolator || this.getBestFallback(scaleType, domain.length);
     this.logger.debug(`Smart fallback chosen (${label}):`, typeof smartFallback === 'function' ? smartFallback.name : smartFallback);
     
-    // Calculer le range final à partir de l'input utilisateur
+    // Compute final color range from user input.
     let finalRange = this._computeColorRange(range, scaleType, domain.length, smartFallback, label);
 
-    // Validation finale du range
+    // Final range validation.
     if (!Array.isArray(finalRange) || finalRange.length === 0) {
       {
         const warningMessage = `Could not compute valid color range (${label}). Using smart fallback.`;
@@ -299,7 +320,7 @@ export class ColorScaleCalculator {
       finalRange = this._getFallbackRange(smartFallback, domain.length);
     }
 
-    // Avertissements sur les tailles
+    // Warn for range/domain length mismatch.
     if (finalRange.length < domain.length) {
       {
         const warningMessage = `Color range shorter than domain (${label}): ${finalRange.length} < ${domain.length}. Colors will repeat.`;
@@ -320,32 +341,32 @@ export class ColorScaleCalculator {
       }
     }
 
-    // Création de l'échelle selon le type
+    // Build the final scale instance.
     return this._createD3Scale(domain, finalRange, scaleType, range, label);
   }
 
   /**
-   * Calcule le range de couleurs à partir de l'input utilisateur
+   * Compute a color range from user input.
    * @private
    */
   _computeColorRange(range, scaleType, domainLength, smartFallback, label) {
-    // Cas 1: Pas de range spécifié → utiliser le fallback intelligent
+    // Case 1: no range provided -> use fallback.
     if (range === null || range === undefined) {
       this.logger.debug(`No range specified (${label}), using smart fallback`);
       return this._getFallbackRange(smartFallback, domainLength);
     }
 
-    // Cas 2: Range de type string (nom de palette D3)
+    // Case 2: string range (palette/interpolator name).
     if (typeof range === 'string') {
       return this._parseStringRange(range, scaleType, domainLength, smartFallback, label);
     }
 
-    // Cas 3: Range de type array (couleurs explicites)
+    // Case 3: array range (explicit color values).
     if (Array.isArray(range)) {
       return this._parseArrayRange(range, scaleType, domainLength, smartFallback, label);
     }
 
-    // Cas 4: Type de range non supporté
+    // Case 4: unsupported range type.
     {
       const warningMessage = `Unsupported range type (${label}): ${typeof range}. Using smart fallback.`;
       const warningKey = warningMessage;
@@ -357,14 +378,18 @@ export class ColorScaleCalculator {
     return this._getFallbackRange(smartFallback, domainLength);
   }
 
-  /**
-   * Parse un range de type string (palette D3)
-   * @private
-   */
+  /** Parse a string-based range. */
   _parseStringRange(range, scaleType, domainLength, smartFallback, label) {
-    // Treat basic color names/literals as constant color before trying D3 palette names.
+    // Single literal colors are not valid scale ranges.
+    // Use `color.value` for constant color and keep `scale.range` for palettes.
     if (this.isValidColor(range)) {
-      return Array(domainLength).fill(range);
+      const warningMessage = `Invalid scale range (${label}): "${range}" is a single color literal. Use "color.value" for constant color, or provide a palette name / color array in "scale.range".`;
+      const warningKey = warningMessage;
+      if (!this.warningCache.has(warningKey)) {
+        this.logger.warn(warningMessage);
+        this.warningCache.add(warningKey);
+      }
+      return this._getFallbackRange(smartFallback, domainLength);
     }
 
     const parsed = this.parseD3ColorScheme(range, scaleType);
@@ -374,20 +399,26 @@ export class ColorScaleCalculator {
     } else if (parsed?.type === "scheme") {
       return parsed.value;
     } else {
-      // Palette non trouvée - utiliser fallback (warning déjà affiché par parseD3ColorScheme)
+      // Palette not found -> fallback (warning already emitted by parser).
       this.logger.debug(`String range parsing failed (${label}), using smart fallback`);
       return this._getFallbackRange(smartFallback, domainLength);
     }
   }
 
-  /**
-   * Parse un range de type array (couleurs explicites)
-   * @private
-   */
+  /** Parse an array-based range. */
   _parseArrayRange(range, scaleType, domainLength, smartFallback, label) {
-    // Cas spécial: array avec un seul élément string (erreur courante)
+    // Common mistake: one-element string array instead of plain string.
     if (range.length === 1 && typeof range[0] === 'string') {
       const potentialSchemeName = range[0];
+      if (this.isValidColor(potentialSchemeName)) {
+        const warningMessage = `Invalid scale range (${label}): ["${potentialSchemeName}"] is a single literal color. Use "color.value" for constant color, or provide at least 2 colors in "scale.range".`;
+        const warningKey = warningMessage;
+        if (!this.warningCache.has(warningKey)) {
+          this.logger.warn(warningMessage);
+          this.warningCache.add(warningKey);
+        }
+        return this._getFallbackRange(smartFallback, domainLength);
+      }
       const parsed = this.parseD3ColorScheme(potentialSchemeName, scaleType);
       
       if (parsed !== null) {
@@ -403,12 +434,12 @@ export class ColorScaleCalculator {
           }
         }
         
-        // Corriger automatiquement en utilisant la version string
+        // Auto-correct by parsing as a plain string range.
         return this._parseStringRange(potentialSchemeName, scaleType, domainLength, smartFallback, label);
       }
     }
 
-    // Validation des couleurs dans l'array
+    // Validate array colors.
     const validColors = [];
     const invalidColors = [];
     
@@ -431,8 +462,16 @@ export class ColorScaleCalculator {
       }
     }
 
-    if (validColors.length > 0) {
+    if (validColors.length > 1) {
       return validColors;
+    } else if (validColors.length === 1) {
+      const warningMessage = `Invalid scale range (${label}): a single color in array form is not supported for data-driven scales. Use "color.value" for constant color, or provide at least 2 colors in "scale.range".`;
+      const warningKey = warningMessage;
+      if (!this.warningCache.has(warningKey)) {
+        this.logger.warn(warningMessage);
+        this.warningCache.add(warningKey);
+      }
+      return this._getFallbackRange(smartFallback, domainLength);
     } else {
       {
         const warningMessage = `No valid colors found in array range (${label}). Using smart fallback.`;
@@ -446,10 +485,7 @@ export class ColorScaleCalculator {
     }
   }
 
-  /**
-   * Obtient le range de fallback
-   * @private
-   */
+  /** Get fallback range from fallback definition. */
   _getFallbackRange(smartFallback, domainLength) {
     if (typeof smartFallback === 'function') {
       try {
@@ -468,32 +504,29 @@ export class ColorScaleCalculator {
     } else if (Array.isArray(smartFallback)) {
       return smartFallback;
     } else {
-      // Dernier recours
+      // Last-resort fallback.
       return d3.quantize(d3.interpolateViridis, domainLength);
     }
   }
 
-  /**
-   * Crée l'échelle D3 finale
-   * @private
-   */
+  /** Build the final D3 scale object. */
   _createD3Scale(domain, finalRange, scaleType, originalRange, label) {
-    // Mapping final des couleurs selon la taille du domaine
+    // Cycle colors if range is shorter than domain.
     const finalColors = domain.map((_, i) => finalRange[i % finalRange.length]);
 
-    // Création de l'échelle selon le type
+    // Create scale according to requested type.
     let scale;
     
     if (scaleType === 'quantitative' || scaleType === 'sequential') {
-      // Pour quantitative, essayer d'utiliser scaleSequential si on a un interpolateur
+      // For quantitative scales, prefer d3.scaleSequential when possible.
       if (typeof originalRange === 'string') {
         const parsed = this.parseD3ColorScheme(originalRange, scaleType);
         if (parsed?.type === "interpolate") {
-          // Créer une échelle sequential avec interpolateur
+          // Build sequential scale from interpolator.
           scale = d3.scaleSequential(parsed.value)
             .domain([0, domain.length - 1]);
           
-          // Wrapper pour retourner la couleur par index du domaine
+          // Wrap the scale to map from domain value to position index.
           const originalScale = scale;
           scale = (value) => {
             const index = domain.indexOf(value);
@@ -507,11 +540,11 @@ export class ColorScaleCalculator {
         }
       }
       
-      // Fallback vers ordinal pour quantitative si pas d'interpolateur
+      // Fallback to ordinal if no interpolator is available.
       scale = d3.scaleOrdinal().domain(domain).range(finalColors);
       this.logger.debug(`Ordinal scale created (${label}) as fallback for quantitative`);
     } else {
-      // Pour ordinal (défaut)
+      // Default ordinal scale.
       scale = d3.scaleOrdinal().domain(domain).range(finalColors);
       this.logger.debug(`Ordinal scale created (${label})`);
     }
@@ -520,9 +553,9 @@ export class ColorScaleCalculator {
   }
 
   /**
-   * Obtient la méthode D3 appropriée selon le type d'échelle
-   * @param {string} type - Type d'échelle ('ordinal', 'quantitative', 'sequential')
-   * @returns {function} Constructeur d'échelle D3
+   * Return the D3 scale constructor for a scale type.
+   * @param {string} type - Scale type ('ordinal', 'quantitative', 'sequential')
+   * @returns {function} D3 scale constructor
    */
   getD3Method(type) {
     switch (type) {
@@ -536,11 +569,11 @@ export class ColorScaleCalculator {
   }
 
   /**
-   * Obtient une palette de couleurs simple par nom
-   * @param {string} name - Nom du schéma (ex: "Blues", "Blues[5]", "Category10")
-   * @param {number} size - Taille souhaitée de la palette
-   * @param {string} scaleType - Type d'échelle ('ordinal' ou 'quantitative')
-   * @returns {Array} Palette de couleurs
+   * Build a color palette by scheme name.
+   * @param {string} name - Scheme name (for example: "Blues", "Blues[5]", "Category10")
+   * @param {number} size - Requested palette size
+   * @param {string} scaleType - Scale type ('ordinal' or 'quantitative')
+   * @returns {Array} Color palette
    */
   getColorPalette(name, size = 8, scaleType = 'ordinal') {
     const parsed = this.parseD3ColorScheme(name, scaleType);
@@ -554,7 +587,7 @@ export class ColorScaleCalculator {
       }
     }
     
-    // Fallback intelligent basé sur le type et la taille
+    // Type-aware fallback.
     const smartFallback = this.getBestFallback(scaleType, size);
     if (typeof smartFallback === 'function') {
       try {
@@ -574,7 +607,7 @@ export class ColorScaleCalculator {
       return smartFallback.slice(0, size);
     }
     
-    // Dernier recours
+    // Last-resort fallback.
     try {
       return d3.quantize(d3.interpolateViridis, size);
     } catch (error) {
@@ -591,10 +624,10 @@ export class ColorScaleCalculator {
   }
 
   /**
-   * Trouve tous les indices d'une valeur dans un array
-   * @param {Array} array - Array à chercher
-   * @param {*} value - Valeur à trouver
-   * @returns {Array} Indices trouvés
+   * Find all indexes of a value in an array.
+   * @param {Array} array - Input array
+   * @param {*} value - Value to find
+   * @returns {Array} Matching indexes
    */
   getAllIndexes(array, value) {
     const indexes = [];
@@ -605,9 +638,7 @@ export class ColorScaleCalculator {
     return indexes;
   }
 
-  /**
-   * Vide le cache des échelles et des warnings
-   */
+  /** Clear scale and warning caches. */
   clearCache() {
     this.scaleCache.clear();
     this.warningCache.clear();
@@ -615,14 +646,13 @@ export class ColorScaleCalculator {
   }
 }
 
-// Fonction utilitaire pour parser les schémas D3 (compatible avec le code existant)
+// Utility wrapper for compatibility with existing call sites.
 export function parseD3ColorScheme(schemeName, scaleType = 'ordinal') {
   const calculator = new ColorScaleCalculator();
   return calculator.parseD3ColorScheme(schemeName, scaleType);
 }
 
-// Fonction utilitaire pour créer une échelle de couleurs
-// Retourne directement la fonction d'échelle D3 (ex: d3.scaleOrdinal().domain(...).range(...))
+// Utility wrapper that returns a ready-to-use D3 color scale.
 export function createColorScale({ domain, range, scaleType = 'ordinal', fallbackInterpolator = null, label = "Color" }) {
   const calculator = new ColorScaleCalculator();
   return calculator.createColorScale({ domain, range, scaleType, fallbackInterpolator, label });
