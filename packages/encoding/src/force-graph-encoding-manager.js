@@ -24,6 +24,14 @@ export class ForceGraphEncodingManager extends EncodingManager {
       autosize: "none",
       nodes: {
         field: ["source"],
+        labels: {
+          display: true
+        },
+        stroke: {
+          value: "#ffffff",
+          width: 1.5,
+          display: true
+        },
         color: {
           field: "type",
           scale: {
@@ -89,36 +97,25 @@ export class ForceGraphEncodingManager extends EncodingManager {
    */
   resolveFieldMapping(mapping, vars) {
     const linkField = mapping.links?.field;
+    const nodeFields = this._normalizeNodeFields(mapping?.nodes?.field);
 
     let sourceVar = vars[0];
     let targetVar = vars.length > 1 ? vars[1] : null;
     let linkType = "directional";
 
     // Override source from explicit nodes.field if provided
-    if (mapping.nodes?.field?.length) {
-      sourceVar = mapping.nodes.field[0];
+    if (nodeFields.length) {
+      sourceVar = nodeFields[0];
     }
 
     // Determine link type from linkField configuration
     if (linkField) {
       if (typeof linkField === "string") {
-        // String linkField indicates semantic link using that variable
+        // String linkField always indicates co-occurrence based on that variable's values
         if (vars.includes(linkField)) {
           linkType = "semantic";
-
-          if (mapping.nodes?.field?.length >= 2) {
-            // Two node variables for bidirectional semantic link
-            sourceVar = mapping.nodes.field[0];
-            targetVar = mapping.nodes.field[1];
-          } else if (mapping.nodes?.field?.length === 1) {
-            // Single node variable for co-occurrence semantic link
-            sourceVar = mapping.nodes.field[0];
-            targetVar = null; // co-occurrence mode handled by mapper
-          } else {
-            throw new Error(
-              "For semantic links, at least 1 variable is required in nodes.field"
-            );
-          }
+          sourceVar = nodeFields.length ? nodeFields[0] : vars[0];
+          targetVar = null; // co-occurrence mode handled by mapper
         }
       } else if (typeof linkField === "object" && linkField) {
         // Object linkField with explicit source/target
@@ -212,7 +209,7 @@ export class ForceGraphEncodingManager extends EncodingManager {
 
     // User-provided encoding validation
     if (!userEncoding?.nodes?.field) {
-      throw new Error('Invalid encoding: "nodes.field" is required (array with at least one SPARQL variable).');
+      throw new Error('Invalid encoding: "nodes.field" is required (string or array with at least one SPARQL variable).');
     }
 
     this._validateSingleScaleConfig(userEncoding);
@@ -224,6 +221,16 @@ export class ForceGraphEncodingManager extends EncodingManager {
 
   _normalizeSingleScales(encoding) {
     return JSON.parse(JSON.stringify(encoding || {}));
+  }
+
+  _normalizeNodeFields(fieldConfig) {
+    if (Array.isArray(fieldConfig)) {
+      return fieldConfig.filter((value) => typeof value === "string" && value.trim());
+    }
+    if (typeof fieldConfig === "string" && fieldConfig.trim()) {
+      return [fieldConfig];
+    }
+    return [];
   }
 
   _validateSingleScaleConfig(encoding) {

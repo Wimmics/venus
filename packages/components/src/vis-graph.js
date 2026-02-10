@@ -1,14 +1,10 @@
 /**
- * Web component for force-directed knowledge graph visualization.
+ * Web component for force-directed graph visualization.
  *
  * Responsibilities:
  * - Render a graph (D3 force simulation) from SPARQL JSON or manual nodes/links
  * - Manage visual encoding and legends
  * - Emit node selection / details requests
- *
- * Non-responsibilities:
- * - No node-details panel UI
- * - No metadata fetching
  *
  * Composition:
  * - A node-details component can be "provided" to VisGraph via the `nodeDetailsPanel` property
@@ -371,7 +367,6 @@ export class VisGraph extends HTMLElement {
         .links .directional { marker-end: url(#arrowhead); }
         .links .semantic { stroke-opacity: 0.7; }
 
-        .nodes circle { stroke: #fff; stroke-width: 1.5px; }
         .node-label { font-size: 12px; pointer-events: none; fill: #333; text-anchor: middle; dominant-baseline: middle; }
 
         .node-highlighted circle { stroke: #ff4444 !important; stroke-width: 3px !important; }
@@ -610,6 +605,7 @@ export class VisGraph extends HTMLElement {
 
   // ========== PRIVATE: HELPERS & UTILITIES ==========
 
+  // Display a short-lived in-component notification for user-facing feedback.
   _notify(message, type = "info") {
     const old = this.shadowRoot.querySelector(".notification");
     if (old) old.remove();
@@ -628,6 +624,7 @@ export class VisGraph extends HTMLElement {
     }, 2500);
   }
 
+  // Resolve endpoint precedence for details requests: runtime state, props/attrs, then default.
   _resolveEndpoint() {
     return (
       this.currentEndpoint ||
@@ -637,6 +634,7 @@ export class VisGraph extends HTMLElement {
     );
   }
 
+  // Resolve proxy precedence for details requests: runtime state, props/attrs, then no proxy.
   _resolveProxyUrl() {
     return this.currentProxyUrl || this.proxy || this.getAttribute("proxy-url") || null;
   }

@@ -14,6 +14,14 @@
       "configPath": "./test/encoding/articlecount-color-and-size-quartiles.json"
     },
     {
+      "id": "articlecount-color-size-no-labels",
+      "configPath": "./test/encoding/articlecount-color-size-no-labels.json"
+    },
+    {
+      "id": "articlecount-stroke-custom",
+      "configPath": "./test/encoding/articlecount-stroke-custom.json"
+    },
+    {
       "id": "conservation-color-constant-size",
       "configPath": "./test/encoding/conservation-color-constant-size.json"
     },
@@ -28,6 +36,14 @@
     {
       "id": "link-color-speciescount",
       "configPath": "./test/encoding/link-color-speciescount.json"
+    },
+    {
+      "id": "link-by-conservation",
+      "configPath": "./test/encoding/links-by-conservation.json"
+    },
+    {
+      "id": "link-by-conservation-multifield",
+      "configPath": "./test/encoding/links-by-conservation-multifield.json"
     }
   ]
 }

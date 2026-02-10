@@ -19,6 +19,8 @@ Encoding engine that turns user encoding into validated domains and D3-ready sca
 graph.encoding = {
   nodes: {
     field: ["species", "family"],
+    labels: { display: true },
+    stroke: { value: "#ffffff", width: 1.5, display: true },
     color: {
       field: "speciesLabel",
       value: "#cccccc",
@@ -42,6 +44,23 @@ graph.encoding = {
   }
 };
 ```
+
+`nodes.field` accepts:
+- A string (for example `"species"`)
+- An array of strings (for example `["species"]` or `["species", "family"]`)
+
+`links.field` controls link construction:
+- Object `{ source, target }`: directional links from source to target.
+- String (data field name): co-occurrence mode.
+In co-occurrence mode, nodes are connected when they share the same resolved value of `links.field`. If `nodes.field` contains multiple entries, all those fields are considered as node identities for co-occurrence.
+
+`nodes.labels` controls node text labels:
+- `display`: `true | false` (default `true`)
+
+`nodes.stroke` controls node outline style:
+- `value`: CSS color string (name or hex), for example `"white"` or `"#ffffff"` (default `"#ffffff"`)
+- `width`: stroke width as a number (`2`) or CSS-like pixel string (`"2px"`) (default `1.5`)
+- `display`: `true | false` (default `true`)
 
 ## Scale Types
 - Ordinal-like: `ordinal`

@@ -172,6 +172,28 @@ export default class ForceGraphRenderer {
     const getLinkWidth = () => linkWidthConfig.value || 1.5;
 
     const linkDistance = mapping.links?.distance || 100;
+    const nodeLabelsConfig = mapping.nodes?.labels || {};
+    const showNodeLabels = nodeLabelsConfig.display !== false;
+    const nodeStrokeConfig = mapping.nodes?.stroke || {};
+    const showNodeStroke = nodeStrokeConfig.display !== false;
+    const nodeStrokeColor =
+      typeof nodeStrokeConfig.value === "string" && nodeStrokeConfig.value.trim()
+        ? nodeStrokeConfig.value
+        : "#ffffff";
+    const parseStrokeWidth = (value, fallback = 1.5) => {
+      if (Number.isFinite(value) && Number(value) >= 0) return Number(value);
+      if (typeof value === "string") {
+        const normalized = value.trim();
+        const pxMatch = normalized.match(/^(\d+(?:\.\d+)?)px$/i);
+        if (pxMatch) return Number(pxMatch[1]);
+        const numeric = Number(normalized);
+        if (Number.isFinite(numeric) && numeric >= 0) return numeric;
+      }
+      return fallback;
+    };
+    const nodeStrokeWidth = parseStrokeWidth(nodeStrokeConfig.width, 1.5);
+    const getNodeStroke = () => (showNodeStroke ? nodeStrokeColor : "none");
+    const getNodeStrokeWidth = () => (showNodeStroke ? nodeStrokeWidth : 0);
 
     this.simulation = d3
       .forceSimulation(this.nodes)
@@ -186,6 +208,28 @@ export default class ForceGraphRenderer {
       const r = getNodeRadius(d);
       d.x = Math.max(r, Math.min(width - r, d.x));
       d.y = Math.max(r, Math.min(height - r, d.y));
+    };
+
+    const getLabelPlacement = (d) => {
+      const centerX = width / 2;
+      const centerY = height / 2;
+      const nodeX = Number.isNaN(d?.x) ? centerX : d.x;
+      const nodeY = Number.isNaN(d?.y) ? centerY : d.y;
+      const dx = nodeX - centerX;
+      const dy = nodeY - centerY;
+      const offset = getNodeRadius(d) + 8;
+
+      if (Math.abs(dx) >= Math.abs(dy)) {
+        if (dx >= 0) {
+          return { x: offset, y: 0, anchor: "start", baseline: "middle" };
+        }
+        return { x: -offset, y: 0, anchor: "end", baseline: "middle" };
+      }
+
+      if (dy < 0) {
+        return { x: 0, y: -offset, anchor: "middle", baseline: "auto" };
+      }
+      return { x: 0, y: offset, anchor: "middle", baseline: "hanging" };
     };
 
     this.linkSel = this.svg
@@ -223,8 +267,15 @@ export default class ForceGraphRenderer {
       })
       .on("click", (event, d) => this.callbacks.onNodeClick?.(d, event));
 
-    this.nodeGroup.append("circle").attr("r", getNodeRadius).attr("fill", getNodeColor);
-    this.nodeGroup.append("text").attr("class", "node-label").text((d) => d.label || d.id);
+    this.nodeGroup
+      .append("circle")
+      .attr("r", getNodeRadius)
+      .attr("fill", getNodeColor)
+      .attr("stroke", getNodeStroke)
+      .attr("stroke-width", getNodeStrokeWidth);
+    const labelSel = showNodeLabels
+      ? this.nodeGroup.append("text").attr("class", "node-label").text((d) => d.label || d.id)
+      : null;
 
     const calculateLinkPosition = (lnk) => {
       const source = lnk.source;
@@ -265,6 +316,17 @@ export default class ForceGraphRenderer {
         const y = Number.isNaN(d.y) ? height / 2 : d.y;
         return `translate(${x},${y})`;
       });
+
+      if (labelSel) {
+        labelSel.each(function (d) {
+          const placement = getLabelPlacement(d);
+          d3.select(this)
+            .attr("x", placement.x)
+            .attr("y", placement.y)
+            .style("text-anchor", placement.anchor)
+            .style("dominant-baseline", placement.baseline);
+        });
+      }
     });
 
     function dragstarted(event, d, sim) {
