@@ -1,0 +1,61 @@
+{
+  "defaultScenarioId": "species-palette-size-jenks",
+  "scenarios": [
+    {
+      "id": "species-palette-size-jenks",
+      "configPath": "./encoding/species-palette-size-jenks.json"
+    },
+    {
+      "id": "family-color-links-size",
+      "configPath": "./encoding/family-color-links-size.json"
+    },
+    {
+      "id": "articlecount-color-and-size-quartiles",
+      "configPath": "./encoding/articlecount-color-and-size-quartiles.json"
+    },
+    {
+      "id": "articlecount-color-size-no-labels",
+      "configPath": "./encoding/articlecount-color-size-no-labels.json"
+    },
+    {
+      "id": "articlecount-stroke-custom",
+      "configPath": "./encoding/articlecount-stroke-custom.json"
+    },
+    {
+      "id": "conservation-color-constant-size",
+      "configPath": "./encoding/conservation-color-constant-size.json"
+    },
+    {
+      "id": "articlecount-manual-breaks",
+      "configPath": "./encoding/articlecount-manual-breaks.json"
+    },
+    {
+      "id": "articlecount-explicit-domain",
+      "configPath": "./encoding/articlecount-explicit-domain.json"
+    },
+    {
+      "id": "link-color-speciescount",
+      "configPath": "./encoding/link-color-speciescount.json"
+    },
+    {
+      "id": "link-by-conservation",
+      "configPath": "./encoding/links-by-conservation.json"
+    },
+    {
+      "id": "link-by-conservation-multifield",
+      "configPath": "./encoding/links-by-conservation-multifield.json"
+    },
+    {
+      "id": "interactions-disabled",
+      "configPath": "./encoding/interactions-disabled.json"
+    },
+    {
+      "id": "barchart-population-language",
+      "configPath": "./encoding/barchart-population-language.json"
+    },
+    {
+      "id": "barchart-stacked-languages",
+      "configPath": "./encoding/barchart-stacked-languages.json"
+    }
+  ]
+}

@@ -2,7 +2,7 @@
   "name": "Co-occurrence by IUCN (Species + Family Nodes)",
   "description": "Builds co-occurrence links using links.field=iucnLabel across all values in nodes.field (species and family).",
   "endpoint": "https://query.wikidata.org/sparql",
-  "queryPath": "./test/queries/felidae-species-family-conservation.rq",
+  "queryPath": "../queries/felidae-species-family-conservation.rq",
   "encoding": {
     "nodes": {
       "field": ["species", "family"],

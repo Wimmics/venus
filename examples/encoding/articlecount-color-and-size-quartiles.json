@@ -2,7 +2,7 @@
   "name": "Article Count Color + Size (Quartiles)",
   "description": "Applies quantitative binning to both color and size using articleCount with the ColorBrewer Blues palette.",
   "endpoint": "https://query.wikidata.org/sparql",
-  "queryPath": "./test/queries/felidae-species-family-article-count.rq",
+  "queryPath": "../queries/felidae-species-family-article-count.rq",
   "encoding": {
     "nodes": {
       "field": ["species", "family"],

@@ -2,7 +2,7 @@
   "name": "Species linked by Conservation Status",
   "description": "Tests links based on data field and unique field to define nodes.",
   "endpoint": "https://query.wikidata.org/sparql",
-  "queryPath": "./test/queries/felidae-species-family-conservation.rq",
+  "queryPath": "../queries/felidae-species-family-conservation.rq",
   "encoding": {
     "nodes": {
       "field": "species",

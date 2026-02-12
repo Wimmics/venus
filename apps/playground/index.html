@@ -89,7 +89,7 @@
     </div>
 
     <script>
-      const SCENARIO_INDEX_PATH = "./test/encoding/scenarios.index.json";
+      const SCENARIO_INDEX_PATH = "./examples/encoding/scenarios.index.json";
       const SCENARIO_STORAGE_KEY = "kgnovis.playground.selectedScenarioId";
 
       async function fetchJson(path) {
@@ -118,17 +118,28 @@
         document.getElementById("scenarioDescription").textContent = text || "";
       }
 
+      function resolvePath(basePath, relativePath) {
+        try {
+          return new URL(relativePath, new URL(basePath, window.location.href)).pathname;
+        } catch {
+          return relativePath;
+        }
+      }
+
       async function loadScenarioCatalog() {
         const index = await fetchJson(SCENARIO_INDEX_PATH);
         const entries = Array.isArray(index.scenarios) ? index.scenarios : [];
 
         const configs = await Promise.all(
           entries.map(async (entry) => {
-            const config = await fetchJson(entry.configPath);
+            const resolvedConfigPath = resolvePath(SCENARIO_INDEX_PATH, entry.configPath);
+            const config = await fetchJson(resolvedConfigPath);
+            const resolvedQueryPath = resolvePath(resolvedConfigPath, config.queryPath);
             return {
               id: entry.id,
-              configPath: entry.configPath,
-              ...config
+              configPath: resolvedConfigPath,
+              ...config,
+              queryPath: resolvedQueryPath
             };
           })
         );
@@ -201,7 +212,7 @@
           const scenariosById = new Map(catalog.scenarios.map((scenario) => [scenario.id, scenario]));
 
           if (!catalog.scenarios.length) {
-            setStatus("No scenario found in test/encoding/scenarios.index.json", true);
+            setStatus("No scenario found in examples/encoding/scenarios.index.json", true);
             return;
           }
 

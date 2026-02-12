@@ -1,0 +1,13 @@
+.visualization-shell {
+  position: relative;
+  min-height: 0;
+  height: 100%;
+  flex: 1 1 auto;
+}
+
+.visualization-shell vis-graph,
+.visualization-shell vis-barchart {
+  display: block;
+  width: 100%;
+  height: 100%;
+}

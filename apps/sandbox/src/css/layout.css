@@ -1,0 +1,84 @@
+.sandbox-root {
+  height: 100vh;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow: hidden;
+}
+
+.workspace-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+  flex: 1 1 auto;
+  height: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.workspace-pane {
+  display: flex;
+  min-height: 0;
+}
+
+.workspace-pane-coding {
+  flex: 0 0 35%;
+  min-width: 280px;
+}
+
+.workspace-pane-visualization {
+  flex: 1 1 auto;
+  min-width: 280px;
+}
+
+.workspace-pane > article {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.workspace-splitter {
+  flex: 0 0 5px;
+  cursor: col-resize;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #d7d7d7, #bdbdbd);
+}
+
+.workspace-splitter:focus-visible {
+  outline: 2px solid #4b8efc;
+  outline-offset: 1px;
+}
+
+.workspace-splitter.is-dragging {
+  background: linear-gradient(180deg, #94b7ff, #6f9dff);
+}
+
+.workspace-row .card-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+#codingTabsContent {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+#codingTabsContent .tab-pane {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+#codingTabsContent .tab-pane > .editor,
+#codingTabsContent .tab-pane > .code {
+  position: absolute;
+  inset: 0;
+}
+
+

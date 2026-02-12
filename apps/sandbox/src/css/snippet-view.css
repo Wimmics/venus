@@ -1,0 +1,23 @@
+.code {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  background: #f8fafc;
+  min-height: 0;
+  height: 100%;
+  flex: 1 1 auto;
+}
+
+.code .cm-editor {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+}
+
+.code .cm-scroller {
+  position: absolute;
+  inset: 0;
+  overflow: auto !important;
+  font: 12px/1.45 Menlo, Consolas, Monaco, "Liberation Mono", monospace;
+}

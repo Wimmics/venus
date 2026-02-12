@@ -1,8 +1,8 @@
 {
-  "name": "Article Count (Explicit Domain)",
-  "description": "Uses explicit scale.domain [min, max] and automatic quartile binning for both color and size.",
+  "name": "Article Count (Manual Breaks)",
+  "description": "Uses explicit binning.breaks thresholds for both color and size, with automatic domain extent from data.",
   "endpoint": "https://query.wikidata.org/sparql",
-  "queryPath": "./test/queries/felidae-species-family-article-count.rq",
+  "queryPath": "../queries/felidae-species-family-article-count.rq",
   "encoding": {
     "nodes": {
       "field": ["species", "family"],
@@ -11,28 +11,24 @@
         "value": "#cccccc",
         "scale": {
           "type": "linear",
-          "domain": [40, 220],
           "range": "Blues",
           "binning": {
-            "method": "quartiles",
-            "bins": 5
+            "breaks": [60, 90, 130, 190]
           }
         },
-        "legend": { "title": "Article Count (Domain 40-220)", "position": "bottom", "display": true }
+        "legend": { "title": "Article Count (Manual Breaks)", "position": "bottom", "display": true }
       },
       "size": {
         "field": "articleCount",
         "value": 7,
         "scale": {
           "type": "sqrt",
-          "domain": [40, 220],
           "range": [4, 20],
           "binning": {
-            "method": "quartiles",
-            "bins": 5
+            "breaks": [60, 90, 130, 190]
           }
         },
-        "legend": { "title": "Node Size (Domain 40-220)", "position": "bottom", "display": true }
+        "legend": { "title": "Node Size (Manual Breaks)", "position": "bottom", "display": true }
       }
     },
     "links": {

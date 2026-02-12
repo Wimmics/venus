@@ -3,7 +3,7 @@
   "description": "Tests vis-barchart with vertical bars, Y quantitative scale, and data-driven color using a fixed language domain and Reds palette.",
   "visType": "bar-chart",
   "endpoint": "https://query.wikidata.org/sparql",
-  "queryPath": "./test/queries/countries-population-language.rq",
+  "queryPath": "../queries/countries-population-language.rq",
   "encoding": {
     "x": {
       "field": "name",

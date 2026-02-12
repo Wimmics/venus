@@ -1,0 +1,16 @@
+.description {
+  font-size: 0.9rem;
+  color: var(--muted);
+  line-height: 1.4;
+  min-height: 1.3rem;
+}
+
+.status {
+  font-size: 0.85rem;
+  color: var(--muted);
+  min-height: 1.1rem;
+}
+
+.status.error {
+  color: #9f1239;
+}

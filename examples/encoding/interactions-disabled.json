@@ -1,16 +1,20 @@
 {
-  "name": "Conservation Status Color",
-  "description": "Tests sparse optional labels by coloring species with IUCN conservation status while keeping a constant node radius.",
+  "name": "Interactions Disabled",
+  "description": "Disables drag-and-drop and zoom/pan using encoding.interactions.",
   "endpoint": "https://query.wikidata.org/sparql",
-  "queryPath": "./test/queries/felidae-species-family-conservation.rq",
+  "queryPath": "../queries/felidae-species-family-basic.rq",
   "encoding": {
+    "interactions": {
+      "drag": false,
+      "zoom": false
+    },
     "nodes": {
       "field": ["species", "family"],
       "color": {
-        "field": "iucnLabel",
+        "field": "speciesLabel",
         "value": "#cccccc",
-        "scale": { "type": "ordinal", "range": "Set1" },
-        "legend": { "title": "IUCN Status", "position": "left", "display": true }
+        "scale": { "type": "ordinal", "range": "Set3" },
+        "legend": { "title": "Species", "position": "left", "display": true }
       },
       "size": {
         "field": "links",

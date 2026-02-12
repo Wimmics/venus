@@ -2,7 +2,7 @@
   "name": "Family Color + Link Count Size",
   "description": "Colors by family label and sizes nodes by computed link degree to test topology-driven sizing.",
   "endpoint": "https://query.wikidata.org/sparql",
-  "queryPath": "./test/queries/felidae-species-family-basic.rq",
+  "queryPath": "../queries/felidae-species-family-basic.rq",
   "encoding": {
     "nodes": {
       "field": ["species", "family"],

@@ -4,6 +4,8 @@
   "workspaces": ["packages/*", "apps/*"],
   "scripts": {
     "build": "npm -w @wimmics/kgnovis-webcomponents run build",
+    "dev:playground": "npm -w @wimmics/kgnovis-playground run dev",
+    "dev:sandbox": "npm -w @wimmics/kgnovis-sandbox run dev",
     "dev": "npm -w @wimmics/kgnovis-playground run dev",
 
     "proxy": "npm -w @wimmics/kgnovis-sparql-proxy run start",

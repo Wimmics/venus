@@ -2,7 +2,7 @@
   "name": "Article Count with Custom Node Stroke",
   "description": "Tests nodes.stroke by applying a visible dark stroke color around nodes while keeping articleCount color/size quartiles.",
   "endpoint": "https://query.wikidata.org/sparql",
-  "queryPath": "./test/queries/felidae-species-family-article-count.rq",
+  "queryPath": "../queries/felidae-species-family-article-count.rq",
   "encoding": {
     "nodes": {
       "field": ["species", "family"],

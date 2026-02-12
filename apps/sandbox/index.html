@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>KGnoVis Sandbox</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./src/css/index.css" />
+    <script type="module" src="./index.js"></script>
+  </head>
+  <body class="sandbox-body">
+    <div class="container-fluid sandbox-root">
+      <section class="card shadow-sm mt-3">
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-12 d-flex gap-2 align-items-end">
+              <div class="flex-grow-1">
+                <label class="form-label fw-semibold mb-1" for="scenarioSelect">Demo</label>
+                <select class="form-select" id="scenarioSelect"></select>
+              </div>
+              <button class="btn btn-outline-secondary mb-0" id="loadScenario" type="button">
+                Load Demo
+              </button>
+            </div>
+            <div class="col-12">
+              <div class="description" id="scenarioDescription"></div>
+              <div class="status mt-1" id="status"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="workspace-row mt-1" id="workspaceRow">
+        <div class="workspace-pane workspace-pane-coding d-flex" id="codingPane">
+          <article class="card shadow-sm flex-fill d-flex">
+            <div class="card-header p-0 border-bottom-0">
+              <ul class="nav nav-tabs card-header-tabs px-2 pt-2" id="codingTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                  <button
+                    class="nav-link active"
+                    id="encoding-tab"
+                    data-bs-toggle="tab"
+                    data-bs-target="#encoding-pane"
+                    type="button"
+                    role="tab"
+                    aria-controls="encoding-pane"
+                    aria-selected="true"
+                  >
+                    Encoding JSON
+                  </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button
+                    class="nav-link"
+                    id="snippet-tab"
+                    data-bs-toggle="tab"
+                    data-bs-target="#snippet-pane"
+                    type="button"
+                    role="tab"
+                    aria-controls="snippet-pane"
+                    aria-selected="false"
+                  >
+                    Generated HTML / JS
+                  </button>
+                </li>
+              </ul>
+            </div>
+            <div class="card-body tab-content flex-fill pt-2" id="codingTabsContent">
+              <div
+                class="tab-pane fade show active h-100"
+                id="encoding-pane"
+                role="tabpanel"
+                aria-labelledby="encoding-tab"
+                tabindex="0"
+              >
+                <div class="editor cm-panel h-100" id="encodingEditor"></div>
+              </div>
+              <div
+                class="tab-pane fade h-100"
+                id="snippet-pane"
+                role="tabpanel"
+                aria-labelledby="snippet-tab"
+                tabindex="0"
+              >
+                <div class="code cm-panel h-100" id="generatedCode"></div>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div
+          class="workspace-splitter"
+          id="workspaceSplitter"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize coding and visualization panels"
+          tabindex="0"
+        ></div>
+
+        <div class="workspace-pane workspace-pane-visualization d-flex" id="visualizationPane">
+          <article class="card shadow-sm flex-fill d-flex">
+            <div class="card-header">
+              <h2 class="h6 mb-0">Visualization</h2>
+            </div>
+            <div class="card-body visualization-shell">
+              <vis-graph id="graph" width="100%" height="100%"></vis-graph>
+              <vis-barchart id="barChart" width="100%" height="100%" style="display:none;"></vis-barchart>
+              <vis-uri-meta id="metaPanel" width="900" height="600"></vis-uri-meta>
+            </div>
+          </article>
+        </div>
+      </section>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>

@@ -2,7 +2,7 @@
   "name": "Article Count Color + Size (No Labels)",
   "description": "Same quantitative articleCount color and size encoding as quartiles, but node labels are hidden.",
   "endpoint": "https://query.wikidata.org/sparql",
-  "queryPath": "./test/queries/felidae-species-family-article-count.rq",
+  "queryPath": "../queries/felidae-species-family-article-count.rq",
   "encoding": {
     "nodes": {
       "field": ["species", "family"],

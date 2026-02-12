@@ -1,0 +1,23 @@
+{
+  "name": "@wimmics/kgnovis-sandbox",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@codemirror/lang-html": "^6.4.9",
+    "@codemirror/lang-javascript": "^6.2.3",
+    "@codemirror/lang-json": "^6.0.2",
+    "@codemirror/state": "^6.4.1",
+    "@codemirror/view": "^6.36.1",
+    "@wimmics/kgnovis-webcomponents": "file:../../packages/components",
+    "codemirror": "^6.0.1",
+    "d3": "^7.0.0"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+}

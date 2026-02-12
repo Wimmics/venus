@@ -3,7 +3,7 @@
   "description": "Tests bar-chart stack option with grouped categories by country and stacked segments by language. Set stack to true, false, or \"normalize\".",
   "visType": "bar-chart",
   "endpoint": "https://query.wikidata.org/sparql",
-  "queryPath": "./test/queries/countries-official-languages-count.rq",
+  "queryPath": "../queries/countries-official-languages-count.rq",
   "encoding": {
     "stack": true,
     "x": {

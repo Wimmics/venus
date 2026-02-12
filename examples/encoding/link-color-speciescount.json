@@ -2,7 +2,7 @@
   "name": "Link Color by Species Count",
   "description": "Builds genus->family links and colors links by the number of species in each genus (speciesCount).",
   "endpoint": "https://query.wikidata.org/sparql",
-  "queryPath": "./test/queries/felidae-genus-family-speciescount.rq",
+  "queryPath": "../queries/felidae-genus-family-speciescount.rq",
   "encoding": {
     "nodes": {
       "field": ["genus", "family"],
