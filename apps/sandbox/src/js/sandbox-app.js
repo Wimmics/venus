@@ -29,8 +29,7 @@ export class SandboxApp {
 
     this.snippetGenerator = new SnippetGenerator();
     this.visualizationView = new VisualizationView({
-      graphEl: document.getElementById("graph"),
-      barChartEl: document.getElementById("barChart"),
+      hostEl: document.getElementById("visualizationHost"),
       metaPanelEl: document.getElementById("metaPanel")
     });
 
@@ -236,7 +235,7 @@ export class SandboxApp {
 
     await this.snippetPanelController.setText(
       this.snippetGenerator.generate({
-        visType: scenario.visType || "force-graph",
+        component: scenario.component || "vis-graph",
         endpoint,
         queryText,
         encoding: parsedEncoding.value,

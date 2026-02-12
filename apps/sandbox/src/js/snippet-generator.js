@@ -1,7 +1,9 @@
+import { toComponentVarName } from "./utils/component-tag.js";
+
 export class SnippetGenerator {
-  generate({ visType, endpoint, queryText, encoding, dataSource = "query", sparqlResult = null }) {
-    const tag = visType === "bar-chart" ? "vis-barchart" : "vis-graph";
-    const varName = visType === "bar-chart" ? "barChart" : "graph";
+  generate({ component, endpoint, queryText, encoding, dataSource = "query", sparqlResult = null }) {
+    const tag = component || "vis-graph";
+    const varName = toComponentVarName(tag);
     const prettyEncoding = JSON.stringify(encoding, null, 2);
     const lines = [
       '<script type="module">',

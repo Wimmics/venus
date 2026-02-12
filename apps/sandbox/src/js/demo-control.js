@@ -1,5 +1,6 @@
 import { fetchJson, fetchText } from "./utils/http-utils.js";
 import { resolvePath } from "./utils/path-utils.js";
+import { normalizeComponentTag } from "./utils/component-tag.js";
 
 export class DemoControl {
   constructor({ selectEl, descriptionEl, storageKey, indexPath }) {
@@ -41,10 +42,12 @@ export class DemoControl {
         const queryPath = resolvePath(configPath, config.queryPath);
 
         return {
+          ...entry,
           id: entry.id,
           configPath,
           ...config,
-          queryPath
+          queryPath,
+          component: normalizeComponentTag(entry.component || config.component || "vis-graph")
         };
       })
     );

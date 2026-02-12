@@ -1,41 +1,60 @@
 export class VisualizationView {
-  constructor({ graphEl, barChartEl, metaPanelEl }) {
-    this.graphEl = graphEl;
-    this.barChartEl = barChartEl;
+  constructor({ hostEl, metaPanelEl }) {
+    this.hostEl = hostEl;
     this.metaPanelEl = metaPanelEl;
+    this.activeComponentTag = null;
+    this.activeComponentEl = null;
   }
 
   async render({ scenario, endpoint, queryText, encoding, dataSource = "query", sparqlResult = null }) {
-    const visType = scenario?.visType || "force-graph";
+    const tag = scenario?.component || "vis-graph";
+    const component = await this._ensureComponent(tag);
 
-    this.graphEl.style.display = visType === "bar-chart" ? "none" : "block";
-    this.barChartEl.style.display = visType === "bar-chart" ? "block" : "none";
-    const activeVis = visType === "bar-chart" ? this.barChartEl : this.graphEl;
-
-    if (visType === "bar-chart") {
-      this.barChartEl.sparqlEndpoint = endpoint;
-      this.barChartEl.sparqlQuery = dataSource === "query" ? queryText : null;
-      this.barChartEl.sparqlResult = dataSource === "provided" ? sparqlResult : null;
-      this.barChartEl.encoding = encoding;
-      await this.barChartEl.launch();
-      return { sparqlData: this.barChartEl.sparqlData || null };
+    if (typeof component.launch !== "function") {
+      const ctorName = component?.constructor?.name || "UnknownElement";
+      throw new Error(
+        `Component "${tag}" is not launchable (instance: ${ctorName}). Expected a VisBase descendant.`
+      );
     }
 
-    this.graphEl.nodeDetailsPanel = this.metaPanelEl;
-    this.graphEl.sparqlEndpoint = endpoint;
-    this.graphEl.sparqlQuery = dataSource === "query" ? queryText : null;
-    this.graphEl.sparqlResult = dataSource === "provided" ? sparqlResult : null;
-    this.graphEl.encoding = encoding;
-    await this.graphEl.launch();
-    return { sparqlData: activeVis.sparqlData || null };
+    if (tag === "vis-graph" && this.metaPanelEl) {
+      component.nodeDetailsPanel = this.metaPanelEl;
+    }
+
+    component.sparqlEndpoint = endpoint;
+    component.sparqlQuery = dataSource === "query" ? queryText : null;
+    component.sparqlResult = dataSource === "provided" ? sparqlResult : null;
+    component.encoding = encoding;
+    await component.launch();
+
+    return { sparqlData: component.sparqlData || null };
   }
 
   refreshCurrent({ scenario }) {
-    const visType = scenario?.visType || "force-graph";
-    if (visType === "bar-chart") {
-      this.barChartEl?.render?.();
-      return;
+    const tag = scenario?.component || "vis-graph";
+    Promise.resolve(this._ensureComponent(tag)).then((component) => {
+      component?.render?.();
+    });
+  }
+
+  async _ensureComponent(tag) {
+    await customElements.whenDefined(tag);
+    const RegisteredCtor = customElements.get(tag);
+
+    if (this.activeComponentEl && this.activeComponentTag === tag) {
+      if (!RegisteredCtor || this.activeComponentEl instanceof RegisteredCtor) {
+        return this.activeComponentEl;
+      }
     }
-    this.graphEl?.render?.();
+
+    this.hostEl.innerHTML = "";
+    const next = RegisteredCtor ? new RegisteredCtor() : document.createElement(tag);
+    next.setAttribute("width", "100%");
+    next.setAttribute("height", "100%");
+    this.hostEl.appendChild(next);
+
+    this.activeComponentEl = next;
+    this.activeComponentTag = tag;
+    return next;
   }
 }

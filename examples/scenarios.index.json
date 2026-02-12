@@ -3,59 +3,73 @@
   "scenarios": [
     {
       "id": "species-palette-size-jenks",
-      "configPath": "./encoding/species-palette-size-jenks.json"
+      "configPath": "./encoding/species-palette-size-jenks.json",
+      "component": "vis-graph"
     },
     {
       "id": "family-color-links-size",
-      "configPath": "./encoding/family-color-links-size.json"
+      "configPath": "./encoding/family-color-links-size.json",
+      "component": "vis-graph"
     },
     {
       "id": "articlecount-color-and-size-quartiles",
-      "configPath": "./encoding/articlecount-color-and-size-quartiles.json"
+      "configPath": "./encoding/articlecount-color-and-size-quartiles.json",
+      "component": "vis-graph"
     },
     {
       "id": "articlecount-color-size-no-labels",
-      "configPath": "./encoding/articlecount-color-size-no-labels.json"
+      "configPath": "./encoding/articlecount-color-size-no-labels.json",
+      "component": "vis-graph"
     },
     {
       "id": "articlecount-stroke-custom",
-      "configPath": "./encoding/articlecount-stroke-custom.json"
+      "configPath": "./encoding/articlecount-stroke-custom.json",
+      "component": "vis-graph"
     },
     {
       "id": "conservation-color-constant-size",
-      "configPath": "./encoding/conservation-color-constant-size.json"
+      "configPath": "./encoding/conservation-color-constant-size.json",
+      "component": "vis-graph"
     },
     {
       "id": "articlecount-manual-breaks",
-      "configPath": "./encoding/articlecount-manual-breaks.json"
+      "configPath": "./encoding/articlecount-manual-breaks.json",
+      "component": "vis-graph"
     },
     {
       "id": "articlecount-explicit-domain",
-      "configPath": "./encoding/articlecount-explicit-domain.json"
+      "configPath": "./encoding/articlecount-explicit-domain.json",
+      "component": "vis-graph"
     },
     {
       "id": "link-color-speciescount",
-      "configPath": "./encoding/link-color-speciescount.json"
+      "configPath": "./encoding/link-color-speciescount.json",
+      "component": "vis-graph"
     },
     {
       "id": "link-by-conservation",
-      "configPath": "./encoding/links-by-conservation.json"
+      "configPath": "./encoding/links-by-conservation.json",
+      "component": "vis-graph"
     },
     {
       "id": "link-by-conservation-multifield",
-      "configPath": "./encoding/links-by-conservation-multifield.json"
+      "configPath": "./encoding/links-by-conservation-multifield.json",
+      "component": "vis-graph"
     },
     {
       "id": "interactions-disabled",
-      "configPath": "./encoding/interactions-disabled.json"
+      "configPath": "./encoding/interactions-disabled.json",
+      "component": "vis-graph"
     },
     {
       "id": "barchart-population-language",
-      "configPath": "./encoding/barchart-population-language.json"
+      "configPath": "./encoding/barchart-population-language.json",
+      "component": "vis-barchart"
     },
     {
       "id": "barchart-stacked-languages",
-      "configPath": "./encoding/barchart-stacked-languages.json"
+      "configPath": "./encoding/barchart-stacked-languages.json",
+      "component": "vis-barchart"
     }
   ]
 }
