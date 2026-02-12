@@ -105,6 +105,7 @@ export class SplitViewResizer {
 
     const visibleKeys = this.getVisiblePaneKeys();
     const totalWeight = visibleKeys.reduce((sum, key) => sum + Math.max(0.0001, this.weights[key]), 0);
+    const availablePaneWidth = this.getAvailablePaneWidth();
 
     for (const key of ORDER) {
       const pane = this.panes[key];
@@ -118,10 +119,13 @@ export class SplitViewResizer {
         continue;
       }
 
-      const basis = visibleKeys.length === 1 ? 100 : (this.weights[key] / totalWeight) * 100;
+      const basis =
+        visibleKeys.length === 1
+          ? Math.max(0, availablePaneWidth)
+          : (this.weights[key] / totalWeight) * availablePaneWidth;
       pane.style.display = "flex";
-      pane.style.flex = `0 0 ${basis.toFixed(4)}%`;
-      pane.style.flexBasis = `${basis.toFixed(4)}%`;
+      pane.style.flex = `0 0 ${basis.toFixed(2)}px`;
+      pane.style.flexBasis = `${basis.toFixed(2)}px`;
       pane.classList.toggle("is-compressed", Boolean(this.compressed[key]));
     }
 
@@ -145,6 +149,47 @@ export class SplitViewResizer {
       const show = dataVisible && resultVisible;
       splitterDataResult.style.display = show ? "block" : "none";
     }
+  }
+
+  getAvailablePaneWidth() {
+    if (!this.containerEl) return 0;
+
+    const containerWidth = this.containerEl.getBoundingClientRect().width;
+    const gap = this.getContainerGap();
+    const visiblePaneCount = this.getVisiblePaneKeys().length;
+    const visibleSplitterCount =
+      (this.visible.config && this.visible.data ? 1 : 0) +
+      (this.visible.data && this.visible.result ? 1 : 0);
+    const renderedItems = visiblePaneCount + visibleSplitterCount;
+    const totalGaps = gap * Math.max(0, renderedItems - 1);
+    const totalSplitterWidth = this.getTotalVisibleSplitterWidth();
+    return Math.max(0, containerWidth - totalSplitterWidth - totalGaps);
+  }
+
+  getContainerGap() {
+    if (!this.containerEl) return 0;
+    const computed = window.getComputedStyle(this.containerEl);
+    const gapValue = computed.columnGap || computed.gap || "0";
+    const parsed = parseFloat(gapValue);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  getTotalVisibleSplitterWidth() {
+    const configDataWidth = this.visible.config && this.visible.data
+      ? this.getSplitterWidth(this.splitters.configData)
+      : 0;
+    const dataResultWidth = this.visible.data && this.visible.result
+      ? this.getSplitterWidth(this.splitters.dataResult)
+      : 0;
+    return configDataWidth + dataResultWidth;
+  }
+
+  getSplitterWidth(splitterEl) {
+    if (!splitterEl) return 0;
+    const computed = window.getComputedStyle(splitterEl);
+    const parsed = parseFloat(computed.width || "");
+    if (Number.isFinite(parsed) && parsed > 0) return parsed;
+    return splitterEl.getBoundingClientRect().width || 0;
   }
 
   resolveDragPair(splitterKey) {

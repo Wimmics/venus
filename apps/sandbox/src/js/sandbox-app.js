@@ -1,17 +1,18 @@
 import { SCENARIO_INDEX_PATH, STORAGE_KEY } from "./constants.js";
 import { DemoControl } from "./demo-control.js";
-import { EncodingEditor } from "./encoding-editor.js";
 import { SnippetGenerator } from "./snippet-generator.js";
 import { VisualizationView } from "./visualization-view.js";
-import { CodeViewer } from "./code-viewer.js";
-import { TabToolbar } from "./tab-toolbar.js";
 import { SplitViewResizer } from "./split-view-resizer.js";
+import { SparqlPanelController } from "./sparql-panel-controller.js";
+import { EncodingPanelController } from "./encoding-panel-controller.js";
+import { ResultsPanelController } from "./results-panel-controller.js";
+import { SnippetPanelController } from "./snippet-panel-controller.js";
+import { safeRun, updateStatus } from "./utils/safe-run.js";
 
 export class SandboxApp {
   constructor() {
     this.selectEl = document.getElementById("scenarioSelect");
     this.descriptionEl = document.getElementById("scenarioDescription");
-    this.statusEl = document.getElementById("status");
 
     this.endpointInputEl = document.getElementById("endpointInput");
     this.resultsAsSourceToggleEl = document.getElementById("resultsAsSourceToggle");
@@ -25,11 +26,6 @@ export class SandboxApp {
       storageKey: STORAGE_KEY,
       indexPath: SCENARIO_INDEX_PATH
     });
-
-    this.encodingEditor = new EncodingEditor({ holderId: "encodingEditor" });
-    this.sparqlEditor = new CodeViewer({ holderId: "sparqlEditor", language: "sparql", readOnly: false });
-    this.resultsEditor = new CodeViewer({ holderId: "sparqlResults", language: "json", readOnly: false });
-    this.generatedCode = new CodeViewer({ holderId: "generatedCode", language: "html", readOnly: true });
 
     this.snippetGenerator = new SnippetGenerator();
     this.visualizationView = new VisualizationView({
@@ -55,98 +51,52 @@ export class SandboxApp {
     this.autoRenderTimer = null;
     this.lastRenderedSparqlData = null;
 
-    this.sparqlToolbar = new TabToolbar({
-      holderId: "sparqlToolbar",
-      actions: [
-        {
-          id: "sparql-copy",
-          title: "Copy SPARQL query",
-          iconClass: "bi bi-clipboard",
-          onClick: async () => this.copySparqlToClipboard()
-        },
-        {
-          id: "sparql-download",
-          title: "Download SPARQL query",
-          iconClass: "bi bi-download",
-          onClick: async () => this.downloadSparqlQuery()
-        }
-      ]
+    this.sparqlPanelController = new SparqlPanelController({
+      demoControl: this.demoControl,
+      onContentChanged: () => {
+        this.scheduleAutoRender();
+        void this.updateGeneratedCode();
+      },
+      onAfterReset: async () => {
+        await this.updateGeneratedCode();
+        await this.render();
+      }
     });
 
-    this.encodingToolbar = new TabToolbar({
-      holderId: "encodingToolbar",
-      actions: [
-        {
-          id: "encoding-copy",
-          title: "Copy encoding JSON",
-          iconClass: "bi bi-clipboard",
-          onClick: async () => this.copyEncodingToClipboard()
-        },
-        {
-          id: "encoding-download",
-          title: "Download encoding JSON",
-          iconClass: "bi bi-download",
-          onClick: async () => this.downloadEncodingJson()
-        },
-        {
-          id: "encoding-reset",
-          title: "Reload base encoding from demo",
-          iconClass: "bi bi-arrow-counterclockwise",
-          onClick: async () => this.restoreBaseEncoding()
-        }
-      ]
+    this.encodingPanelController = new EncodingPanelController({
+      demoControl: this.demoControl,
+      onContentChanged: () => {
+        this.scheduleAutoRender();
+        void this.updateGeneratedCode();
+      },
+      onAfterReset: async () => {
+        await this.updateGeneratedCode();
+        await this.render();
+      }
     });
 
-    this.resultsToolbar = new TabToolbar({
-      holderId: "resultsToolbar",
-      actions: [
-        {
-          id: "results-copy",
-          title: "Copy SPARQL results JSON",
-          iconClass: "bi bi-clipboard",
-          onClick: async () => this.copyResultsToClipboard()
-        },
-        {
-          id: "results-download",
-          title: "Download SPARQL results JSON",
-          iconClass: "bi bi-download",
-          onClick: async () => this.downloadResultsJson()
-        }
-      ]
+    this.resultsPanelController = new ResultsPanelController({
+      demoControl: this.demoControl,
+      onContentChanged: () => {
+        if (this.getDataSourceMode() !== "provided") return;
+        this.scheduleAutoRender();
+        void this.updateGeneratedCode();
+      }
     });
 
-    this.snippetToolbar = new TabToolbar({
-      holderId: "snippetToolbar",
-      actions: [
-        {
-          id: "snippet-copy",
-          title: "Copy integration code",
-          iconClass: "bi bi-clipboard",
-          onClick: async () => this.copySnippetToClipboard()
-        },
-        {
-          id: "snippet-download",
-          title: "Download integration code",
-          iconClass: "bi bi-download",
-          onClick: async () => this.downloadGeneratedSnippet()
-        }
-      ]
+    this.snippetPanelController = new SnippetPanelController({
+      demoControl: this.demoControl
     });
   }
 
   async init() {
     this.splitViewResizer.init();
     this.bindEvents();
-    this.sparqlToolbar.init();
-    this.encodingToolbar.init();
-    this.resultsToolbar.init();
-    this.snippetToolbar.init();
-
-    await this.sparqlEditor.init("");
-    await this.encodingEditor.init();
-    await this.resultsEditor.init("{}");
-    await this.resultsEditor.setReadOnly(true);
-    await this.generatedCode.init("// Generated integration snippet will appear here");
+    await this.sparqlPanelController.init("");
+    await this.encodingPanelController.init();
+    await this.resultsPanelController.init("{}");
+    await this.resultsPanelController.setReadOnly(true);
+    await this.snippetPanelController.init("// Generated integration snippet will appear here");
 
     await this.demoControl.init();
     if (!this.demoControl.hasScenarios()) {
@@ -184,22 +134,6 @@ export class SandboxApp {
     this.toggleDataExpandButton.addEventListener("click", () => {
       this.toggleDataCompression();
     });
-
-    this.encodingEditor.onChange = () => {
-      this.scheduleAutoRender();
-      void this.updateGeneratedCode();
-    };
-
-    this.sparqlEditor.onChange = () => {
-      this.scheduleAutoRender();
-      void this.updateGeneratedCode();
-    };
-
-    this.resultsEditor.onChange = () => {
-      if (this.getDataSourceMode() !== "provided") return;
-      this.scheduleAutoRender();
-      void this.updateGeneratedCode();
-    };
   }
 
   async loadScenarioAndRefresh() {
@@ -214,9 +148,9 @@ export class SandboxApp {
         this.resultsAsSourceToggleEl.checked = loadedScenario?.dataSource === "provided";
         await this.applyResultsEditorMode();
 
-        await this.sparqlEditor.setText(queryText || "");
-        await this.encodingEditor.setValue(loadedScenario.encoding || {});
-        await this.resultsEditor.setText(
+        await this.sparqlPanelController.setText(queryText || "");
+        await this.encodingPanelController.setValue(loadedScenario.encoding || {});
+        await this.resultsPanelController.setText(
           JSON.stringify(loadedScenario.sparqlResult || loadedScenario.results || {}, null, 2)
         );
 
@@ -232,7 +166,7 @@ export class SandboxApp {
   async render() {
     await this.safeRun(
       async () => {
-        const parsedEncoding = await this.encodingEditor.parseValue();
+        const parsedEncoding = await this.encodingPanelController.parseValue();
         if (parsedEncoding.error) {
           this.setStatus(`Invalid encoding JSON: ${parsedEncoding.error.message}`, true);
           return;
@@ -246,11 +180,11 @@ export class SandboxApp {
 
         const endpoint = this._resolveEndpoint(scenario.endpoint);
         const dataSource = this.getDataSourceMode();
-        const queryText = await this.sparqlEditor.getText();
+        const queryText = await this.sparqlPanelController.getText();
 
         let providedSparqlResult = null;
         if (dataSource === "provided") {
-          const parsedResults = await this.parseResultsJson();
+          const parsedResults = await this.resultsPanelController.parseJson();
           if (parsedResults.error) {
             this.setStatus(`Invalid SPARQL Results JSON: ${parsedResults.error.message}`, true);
             return;
@@ -271,7 +205,7 @@ export class SandboxApp {
         this.lastRenderedSparqlData = output?.sparqlData || null;
 
         if (dataSource === "query") {
-          await this.resultsEditor.setText(JSON.stringify(this.lastRenderedSparqlData || {}, null, 2));
+          await this.resultsPanelController.setText(JSON.stringify(this.lastRenderedSparqlData || {}, null, 2));
         }
 
         await this.updateGeneratedCode();
@@ -282,23 +216,25 @@ export class SandboxApp {
   }
 
   async updateGeneratedCode() {
-    const parsedEncoding = await this.encodingEditor.parseValue();
+    const parsedEncoding = await this.encodingPanelController.parseValue();
     const { scenario } = this.demoControl.getActiveContext();
     if (!scenario || parsedEncoding.error) {
-      await this.generatedCode.setText("// Invalid or missing configuration");
+      await this.snippetPanelController.setText("// Invalid or missing configuration");
       return;
     }
 
     const dataSource = this.getDataSourceMode();
     const endpoint = this._resolveEndpoint(scenario.endpoint);
-    const queryText = await this.sparqlEditor.getText();
-    const parsedResults = dataSource === "provided" ? await this.parseResultsJson() : { value: null, error: null };
+    const queryText = await this.sparqlPanelController.getText();
+    const parsedResults = dataSource === "provided"
+      ? await this.resultsPanelController.parseJson()
+      : { value: null, error: null };
     if (parsedResults.error) {
-      await this.generatedCode.setText("// Invalid SPARQL Results JSON for provided data mode");
+      await this.snippetPanelController.setText("// Invalid SPARQL Results JSON for provided data mode");
       return;
     }
 
-    await this.generatedCode.setText(
+    await this.snippetPanelController.setText(
       this.snippetGenerator.generate({
         visType: scenario.visType || "force-graph",
         endpoint,
@@ -321,16 +257,7 @@ export class SandboxApp {
 
   async applyResultsEditorMode() {
     const useResultsAsSource = this.getDataSourceMode() === "provided";
-    await this.resultsEditor.setReadOnly(!useResultsAsSource);
-  }
-
-  async parseResultsJson() {
-    const raw = await this.resultsEditor.getText();
-    try {
-      return { value: JSON.parse(raw), error: null };
-    } catch (error) {
-      return { value: null, error };
-    }
+    await this.resultsPanelController.setReadOnly(!useResultsAsSource);
   }
 
   toggleDataCompression() {
@@ -374,154 +301,10 @@ export class SandboxApp {
   }
 
   setStatus(message, isError = false) {
-    this.statusEl.textContent = message || "";
-    this.statusEl.classList.toggle("error", Boolean(isError));
+    updateStatus(message, { isError });
   }
 
   async safeRun(action, fallbackMessage) {
-    try {
-      return await action();
-    } catch (error) {
-      console.error(error);
-      this.setStatus(error.message || fallbackMessage, true);
-      return null;
-    }
-  }
-
-  async copySparqlToClipboard() {
-    await this.safeRun(
-      async () => {
-        const text = await this.sparqlEditor.getText();
-        await navigator.clipboard.writeText(text || "");
-        this.setStatus("SPARQL query copied to clipboard");
-      },
-      "Failed to copy SPARQL query"
-    );
-  }
-
-  async copyEncodingToClipboard() {
-    await this.safeRun(
-      async () => {
-        const text = await this.encodingEditor.getText();
-        await navigator.clipboard.writeText(text || "");
-        this.setStatus("Encoding JSON copied to clipboard");
-      },
-      "Failed to copy encoding JSON"
-    );
-  }
-
-  async copyResultsToClipboard() {
-    await this.safeRun(
-      async () => {
-        const text = await this.resultsEditor.getText();
-        await navigator.clipboard.writeText(text || "");
-        this.setStatus("SPARQL results copied to clipboard");
-      },
-      "Failed to copy SPARQL results JSON"
-    );
-  }
-
-  async copySnippetToClipboard() {
-    await this.safeRun(
-      async () => {
-        const text = await this.generatedCode.getText();
-        await navigator.clipboard.writeText(text || "");
-        this.setStatus("Integration code copied to clipboard");
-      },
-      "Failed to copy integration code"
-    );
-  }
-
-  async downloadSparqlQuery() {
-    await this.safeRun(
-      async () => {
-        const { scenario } = this.demoControl.getActiveContext();
-        const text = await this.sparqlEditor.getText();
-        const filename = `${this.buildSafeFileStem(scenario?.id || "query")}.rq`;
-        this.downloadTextFile(text, filename, "application/sparql-query");
-        this.setStatus(`Downloaded ${filename}`);
-      },
-      "Failed to download SPARQL query"
-    );
-  }
-
-  async downloadEncodingJson() {
-    await this.safeRun(
-      async () => {
-        const { scenario } = this.demoControl.getActiveContext();
-        const text = await this.encodingEditor.getText();
-        const filename = `${this.buildSafeFileStem(scenario?.id || "encoding")}.json`;
-        this.downloadTextFile(text, filename, "application/json");
-        this.setStatus(`Downloaded ${filename}`);
-      },
-      "Failed to download encoding JSON"
-    );
-  }
-
-  async downloadResultsJson() {
-    await this.safeRun(
-      async () => {
-        const { scenario } = this.demoControl.getActiveContext();
-        const text = await this.resultsEditor.getText();
-        const filename = `${this.buildSafeFileStem(scenario?.id || "results")}.json`;
-        this.downloadTextFile(text, filename, "application/json");
-        this.setStatus(`Downloaded ${filename}`);
-      },
-      "Failed to download SPARQL results JSON"
-    );
-  }
-
-  async downloadGeneratedSnippet() {
-    await this.safeRun(
-      async () => {
-        const { scenario } = this.demoControl.getActiveContext();
-        const text = await this.generatedCode.getText();
-        const filename = `${this.buildSafeFileStem(scenario?.id || "integration")}.html`;
-        this.downloadTextFile(text, filename, "text/html");
-        this.setStatus(`Downloaded ${filename}`);
-      },
-      "Failed to download integration code"
-    );
-  }
-
-  async restoreBaseEncoding() {
-    await this.safeRun(
-      async () => {
-        const { scenario } = this.demoControl.getActiveContext();
-        if (!scenario) {
-          this.setStatus("No demo selected.", true);
-          return;
-        }
-
-        await this.encodingEditor.setValue(scenario.encoding || {});
-        await this.updateGeneratedCode();
-        await this.render();
-        this.setStatus(`Base encoding reloaded: ${scenario.name || scenario.id}`);
-      },
-      "Failed to restore base encoding"
-    );
-  }
-
-  buildSafeFileStem(value) {
-    return (
-      String(value || "kgnovis")
-        .trim()
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "")
-        .slice(0, 80) || "kgnovis"
-    );
-  }
-
-  downloadTextFile(content, filename, mimeType) {
-    const blob = new Blob([String(content || "")], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = filename;
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    URL.revokeObjectURL(url);
+    return safeRun(action, { fallbackMessage });
   }
 }

@@ -22,4 +22,13 @@
   .workspace-splitter {
     display: none !important;
   }
+
+  .panel-header {
+    flex-wrap: wrap;
+  }
+
+  .panel-header-options {
+    width: 100%;
+    justify-content: flex-end;
+  }
 }
