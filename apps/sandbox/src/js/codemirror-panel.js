@@ -4,6 +4,7 @@ import { EditorView } from "@codemirror/view";
 import { html } from "@codemirror/lang-html";
 import { json } from "@codemirror/lang-json";
 import { javascript } from "@codemirror/lang-javascript";
+import { sparql } from "codemirror-lang-sparql";
 
 export class CodeMirrorPanel {
   constructor({ holderId, readOnly = false, language = "javascript" }) {
@@ -27,7 +28,8 @@ export class CodeMirrorPanel {
     const languageMap = {
       json: json(),
       html: html(),
-      javascript: javascript()
+      javascript: javascript(),
+      sparql: sparql()
     };
     const languageExt = languageMap[this.language] || javascript();
 

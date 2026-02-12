@@ -15,6 +15,7 @@
     "@codemirror/view": "^6.36.1",
     "@wimmics/kgnovis-webcomponents": "file:../../packages/components",
     "codemirror": "^6.0.1",
+    "codemirror-lang-sparql": "^2.0.0",
     "d3": "^7.0.0"
   },
   "devDependencies": {

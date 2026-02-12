@@ -12,7 +12,6 @@ export class SandboxApp {
     this.selectEl = document.getElementById("scenarioSelect");
     this.descriptionEl = document.getElementById("scenarioDescription");
     this.statusEl = document.getElementById("status");
-    this.loadButton = document.getElementById("loadScenario");
 
     this.endpointInputEl = document.getElementById("endpointInput");
     this.resultsAsSourceToggleEl = document.getElementById("resultsAsSourceToggle");
@@ -28,7 +27,7 @@ export class SandboxApp {
     });
 
     this.encodingEditor = new EncodingEditor({ holderId: "encodingEditor" });
-    this.sparqlEditor = new CodeViewer({ holderId: "sparqlEditor", language: "javascript", readOnly: false });
+    this.sparqlEditor = new CodeViewer({ holderId: "sparqlEditor", language: "sparql", readOnly: false });
     this.resultsEditor = new CodeViewer({ holderId: "sparqlResults", language: "json", readOnly: false });
     this.generatedCode = new CodeViewer({ holderId: "generatedCode", language: "html", readOnly: true });
 
@@ -160,10 +159,6 @@ export class SandboxApp {
   }
 
   bindEvents() {
-    this.loadButton.addEventListener("click", async () => {
-      await this.loadScenarioAndRefresh();
-    });
-
     this.selectEl.addEventListener("change", async () => {
       await this.loadScenarioAndRefresh();
     });
