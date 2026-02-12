@@ -4,7 +4,7 @@ import { createLegends, positionLegends } from "@wimmics/kgnovis-legends";
 
 export class VisBase extends HTMLElement {
   static get observedAttributes() {
-    return ["width", "height", "endpoint", "proxy-url"];
+    return ["width", "height", "resize"];
   }
 
   constructor({ componentName, visType, defaultWidth = 800, defaultHeight = 600 } = {}) {
@@ -27,31 +27,42 @@ export class VisBase extends HTMLElement {
     this._visualArtifacts = { scales: new Map(), channels: [], legends: [] };
     this.renderer = null;
     this.tooltipTimeout = null;
+    this.resizeObserver = null;
+    this.resizeRaf = null;
+    this._lastObservedSize = { width: 0, height: 0 };
+    this.resizeEnabled = true;
   }
 
   connectedCallback() {
+    this._applyDimensions();
+    this.resizeEnabled = this._parseBooleanAttributeValue(this.getAttribute("resize"), true);
+    this._applyResizeBehavior();
     this.render();
+  }
+
+  disconnectedCallback() {
+    this._stopResizeObserver();
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
     if (oldValue === newValue) return;
 
     if (name === "width") {
-      this.width = parseInt(newValue, 10) || this.width;
+      this.width = this._normalizeDimensionValue(newValue, this.width);
+      this._applyDimensions();
       this.render();
       return;
     }
     if (name === "height") {
-      this.height = parseInt(newValue, 10) || this.height;
+      this.height = this._normalizeDimensionValue(newValue, this.height);
+      this._applyDimensions();
       this.render();
       return;
     }
-    if (name === "endpoint") {
-      this.currentEndpoint = newValue || null;
-      return;
-    }
-    if (name === "proxy-url") {
-      this.currentProxyUrl = newValue || null;
+    if (name === "resize") {
+      this.resizeEnabled = this._parseBooleanAttributeValue(newValue, true);
+      this._applyResizeBehavior();
+      this.render();
     }
   }
 
@@ -157,10 +168,12 @@ export class VisBase extends HTMLElement {
   render() {
     const container = this._getContainerElement();
     if (container) {
+      this._applyDimensions();
       container.style.background = this._resolveBackgroundColor();
     }
 
     if (!this.renderer) return;
+    this._syncRendererSizeFromContainer(container);
     this._compileVisualArtifacts();
     this.renderer.render(this._getRenderPayload(), this.visualEncoding, this._visualArtifacts);
     this._manageLegends();
@@ -372,8 +385,8 @@ export class VisBase extends HTMLElement {
       <style>
         :host { display: block; font-family: Arial, sans-serif; }
         .${containerClass} {
-          width: ${this.width}px;
-          height: ${this.height}px;
+          width: 100%;
+          height: 100%;
           background: #ffffff;
           border: 1px solid #ddd;
           border-radius: 4px;
@@ -419,10 +432,98 @@ export class VisBase extends HTMLElement {
         <svg></svg>
       </div>
     `;
+    this._applyDimensions();
   }
 
   _getContainerElement() {
     const className = this._containerClassName || "vis-container";
     return this.shadowRoot?.querySelector(`.${className}`);
+  }
+
+  _normalizeDimensionValue(nextValue, fallbackValue) {
+    if (nextValue == null) return fallbackValue;
+    const normalized = String(nextValue).trim();
+    return normalized || fallbackValue;
+  }
+
+  _toCssDimension(value, fallbackPx) {
+    if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+      return `${value}px`;
+    }
+
+    const text = String(value ?? "").trim();
+    if (!text) return `${fallbackPx}px`;
+    if (/^\d+(\.\d+)?$/.test(text)) return `${text}px`;
+    return text;
+  }
+
+  _applyDimensions() {
+    const cssWidth = this._toCssDimension(this.width, 800);
+    const cssHeight = this._toCssDimension(this.height, 600);
+
+    this.style.width = cssWidth;
+    this.style.height = cssHeight;
+  }
+
+  _parseBooleanAttributeValue(value, defaultValue = true) {
+    if (value == null) return defaultValue;
+    const normalized = String(value).trim().toLowerCase();
+    if (!normalized) return true;
+    if (["false", "0", "no", "off"].includes(normalized)) return false;
+    return true;
+  }
+
+  _applyResizeBehavior() {
+    if (this.resizeEnabled) {
+      this._startResizeObserver();
+      return;
+    }
+    this._stopResizeObserver();
+  }
+
+  _syncRendererSizeFromContainer(container) {
+    if (!container || !this.renderer) return;
+    const bounds = container.getBoundingClientRect();
+    const width = Math.max(1, Math.round(bounds.width));
+    const height = Math.max(1, Math.round(bounds.height));
+
+    this.renderer.width = width;
+    this.renderer.height = height;
+  }
+
+  _startResizeObserver() {
+    if (typeof ResizeObserver === "undefined" || this.resizeObserver) return;
+
+    this.resizeObserver = new ResizeObserver((entries) => {
+      const entry = entries?.[0];
+      if (!entry) return;
+
+      const box = entry.contentRect;
+      const width = Math.round(box.width || 0);
+      const height = Math.round(box.height || 0);
+
+      if (width <= 0 || height <= 0) return;
+      if (width === this._lastObservedSize.width && height === this._lastObservedSize.height) return;
+
+      this._lastObservedSize = { width, height };
+
+      if (this.resizeRaf) cancelAnimationFrame(this.resizeRaf);
+      this.resizeRaf = requestAnimationFrame(() => {
+        this.resizeRaf = null;
+        this.render();
+      });
+    });
+
+    this.resizeObserver.observe(this);
+  }
+
+  _stopResizeObserver() {
+    if (this.resizeRaf) {
+      cancelAnimationFrame(this.resizeRaf);
+      this.resizeRaf = null;
+    }
+    if (!this.resizeObserver) return;
+    this.resizeObserver.disconnect();
+    this.resizeObserver = null;
   }
 }
