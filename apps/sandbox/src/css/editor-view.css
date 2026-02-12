@@ -6,7 +6,7 @@
   height: 100%;
   max-height: 100%;
   flex: 1 1 auto;
-  background: #f8fafc;
+  background: #ffffff;
 }
 
 .cm-panel {
@@ -21,7 +21,7 @@
   max-height: 100%;
   overflow: hidden;
   border: 0;
-  background: transparent;
+  background: #ffffff;
 }
 
 .cm-panel .cm-scroller {
@@ -33,4 +33,13 @@
 
 .cm-panel .cm-content {
   min-height: 100%;
+}
+
+.cm-panel .cm-gutters {
+  background: #ffffff;
+  border-right: 1px solid #e5e7eb;
+}
+
+.cm-panel .cm-activeLineGutter {
+  background: #ffffff;
 }

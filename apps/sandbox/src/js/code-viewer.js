@@ -12,4 +12,8 @@ export class CodeViewer {
   async setText(text) {
     await this.panel.setText(text || "");
   }
+
+  async getText() {
+    return this.panel.getText();
+  }
 }

@@ -32,4 +32,8 @@ export class EncodingEditor {
     await this.setValue(parsed.value);
     return parsed;
   }
+
+  async getText() {
+    return this.panel.getText();
+  }
 }

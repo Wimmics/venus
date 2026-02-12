@@ -68,17 +68,61 @@
   overflow: hidden;
 }
 
-#codingTabsContent .tab-pane {
-  position: relative;
+#codingTabsContent > .tab-pane {
   height: 100%;
   min-height: 0;
   overflow: hidden;
 }
 
-#codingTabsContent .tab-pane > .editor,
-#codingTabsContent .tab-pane > .code {
-  position: absolute;
-  inset: 0;
+#codingTabsContent > .tab-pane:not(.active) {
+  display: none;
 }
 
+#codingTabsContent > .tab-pane.active {
+  display: flex;
+  flex-direction: column;
+}
 
+.tab-toolbar {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 5;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.2rem;
+  backdrop-filter: blur(2px);
+  opacity: 0.55;
+  transition: opacity 140ms ease-in-out;
+}
+
+.tab-toolbar:hover,
+.tab-toolbar:focus-within {
+  opacity: 1;
+}
+
+.tab-toolbar .btn {
+  width: 2rem;
+  height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.tab-toolbar .btn i {
+  font-size: 0.9rem;
+}
+
+.tab-editor-shell {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.tab-editor-shell > .editor,
+.tab-editor-shell > .code {
+  height: 100%;
+}

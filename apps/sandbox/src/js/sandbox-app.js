@@ -5,6 +5,7 @@ import { SnippetGenerator } from "./snippet-generator.js";
 import { VisualizationView } from "./visualization-view.js";
 import { CodeViewer } from "./code-viewer.js";
 import { SplitViewResizer } from "./split-view-resizer.js";
+import { TabToolbar } from "./tab-toolbar.js";
 
 export class SandboxApp {
   constructor() {
@@ -43,11 +44,55 @@ export class SandboxApp {
 
     this.autoRenderDelayMs = 350;
     this.autoRenderTimer = null;
+
+    this.encodingToolbar = new TabToolbar({
+      holderId: "encodingToolbar",
+      actions: [
+        {
+          id: "encoding-copy",
+          title: "Copy encoding JSON",
+          iconClass: "bi bi-clipboard",
+          onClick: async () => this.copyEncodingToClipboard()
+        },
+        {
+          id: "encoding-download",
+          title: "Download encoding JSON",
+          iconClass: "bi bi-download",
+          onClick: async () => this.downloadEncodingJson()
+        },
+        {
+          id: "encoding-reset",
+          title: "Reload base encoding from demo",
+          iconClass: "bi bi-arrow-counterclockwise",
+          onClick: async () => this.restoreBaseEncoding()
+        }
+      ]
+    });
+
+    this.snippetToolbar = new TabToolbar({
+      holderId: "snippetToolbar",
+      actions: [
+        {
+          id: "snippet-copy",
+          title: "Copy generated HTML / JS",
+          iconClass: "bi bi-clipboard",
+          onClick: async () => this.copySnippetToClipboard()
+        },
+        {
+          id: "snippet-download",
+          title: "Download generated HTML / JS",
+          iconClass: "bi bi-download",
+          onClick: async () => this.downloadGeneratedSnippet()
+        }
+      ]
+    });
   }
 
   async init() {
     this.splitViewResizer.init();
     this.bindEvents();
+    this.encodingToolbar.init();
+    this.snippetToolbar.init();
     await this.editor.init();
     await this.generatedCode.init("// Generated snippet will appear here");
 
@@ -165,5 +210,92 @@ export class SandboxApp {
       this.setStatus(error.message || fallbackMessage, true);
       return null;
     }
+  }
+
+  async copyEncodingToClipboard() {
+    await this.safeRun(
+      async () => {
+        const text = await this.editor.getText();
+        await navigator.clipboard.writeText(text || "");
+        this.setStatus("Encoding JSON copied to clipboard");
+      },
+      "Failed to copy encoding JSON"
+    );
+  }
+
+  async copySnippetToClipboard() {
+    await this.safeRun(
+      async () => {
+        const text = await this.generatedCode.getText();
+        await navigator.clipboard.writeText(text || "");
+        this.setStatus("Generated HTML / JS copied to clipboard");
+      },
+      "Failed to copy generated snippet"
+    );
+  }
+
+  async downloadEncodingJson() {
+    await this.safeRun(
+      async () => {
+        const { scenario } = this.demoControl.getActiveContext();
+        const text = await this.editor.getText();
+        const filename = `${this.buildSafeFileStem(scenario?.id || "encoding")}.json`;
+        this.downloadTextFile(text, filename, "application/json");
+        this.setStatus(`Downloaded ${filename}`);
+      },
+      "Failed to download encoding JSON"
+    );
+  }
+
+  async downloadGeneratedSnippet() {
+    await this.safeRun(
+      async () => {
+        const { scenario } = this.demoControl.getActiveContext();
+        const text = await this.generatedCode.getText();
+        const filename = `${this.buildSafeFileStem(scenario?.id || "snippet")}.html`;
+        this.downloadTextFile(text, filename, "text/html");
+        this.setStatus(`Downloaded ${filename}`);
+      },
+      "Failed to download generated snippet"
+    );
+  }
+
+  async restoreBaseEncoding() {
+    await this.safeRun(
+      async () => {
+        const { scenario } = this.demoControl.getActiveContext();
+        if (!scenario) {
+          this.setStatus("No demo selected.", true);
+          return;
+        }
+
+        await this.editor.setValue(scenario.encoding || {});
+        await this.updateGeneratedCode();
+        await this.render();
+        this.setStatus(`Base encoding reloaded: ${scenario.name || scenario.id}`);
+      },
+      "Failed to restore base encoding"
+    );
+  }
+
+  buildSafeFileStem(value) {
+    return String(value || "kgnovis")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 80) || "kgnovis";
+  }
+
+  downloadTextFile(content, filename, mimeType) {
+    const blob = new Blob([String(content || "")], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
   }
 }
