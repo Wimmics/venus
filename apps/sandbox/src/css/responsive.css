@@ -13,12 +13,13 @@
     min-height: 340px;
   }
 
-  .workspace-pane-coding,
-  .workspace-pane-visualization {
+  .workspace-pane-config,
+  .workspace-pane-data,
+  .workspace-pane-result {
     flex: 1 1 auto;
   }
 
   .workspace-splitter {
-    display: none;
+    display: none !important;
   }
 }

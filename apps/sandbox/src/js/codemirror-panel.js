@@ -1,5 +1,5 @@
 import { basicSetup } from "codemirror";
-import { EditorState } from "@codemirror/state";
+import { Compartment, EditorState } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { html } from "@codemirror/lang-html";
 import { json } from "@codemirror/lang-json";
@@ -12,6 +12,8 @@ export class CodeMirrorPanel {
     this.language = language;
     this.view = null;
     this.onChange = null;
+    this.readOnlyCompartment = new Compartment();
+    this.editableCompartment = new Compartment();
   }
 
   async init(initialText = "") {
@@ -35,8 +37,8 @@ export class CodeMirrorPanel {
         extensions: [
           basicSetup,
           languageExt,
-          EditorState.readOnly.of(this.readOnly),
-          EditorView.editable.of(!this.readOnly),
+          this.readOnlyCompartment.of(EditorState.readOnly.of(this.readOnly)),
+          this.editableCompartment.of(EditorView.editable.of(!this.readOnly)),
           EditorView.lineWrapping,
           EditorView.updateListener.of((update) => {
             if (update.docChanged) {
@@ -63,5 +65,17 @@ export class CodeMirrorPanel {
   async getText() {
     if (!this.view) return "";
     return this.view.state.doc.toString();
+  }
+
+  async setReadOnly(readOnly) {
+    this.readOnly = Boolean(readOnly);
+    if (!this.view) return;
+
+    this.view.dispatch({
+      effects: [
+        this.readOnlyCompartment.reconfigure(EditorState.readOnly.of(this.readOnly)),
+        this.editableCompartment.reconfigure(EditorView.editable.of(!this.readOnly))
+      ]
+    });
   }
 }

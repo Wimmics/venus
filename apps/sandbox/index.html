@@ -38,43 +38,69 @@
       </section>
 
       <section class="workspace-row mt-1" id="workspaceRow">
-        <div class="workspace-pane workspace-pane-coding d-flex" id="codingPane">
+        <div class="workspace-pane workspace-pane-config d-flex" id="configPane">
           <article class="card shadow-sm flex-fill d-flex">
             <div class="card-header p-0 border-bottom-0">
-              <ul class="nav nav-tabs card-header-tabs px-2 pt-2" id="codingTabs" role="tablist">
+              <ul class="nav nav-tabs card-header-tabs px-2 pt-2" id="configTabs" role="tablist">
                 <li class="nav-item" role="presentation">
                   <button
                     class="nav-link active"
+                    id="sparql-tab"
+                    data-bs-toggle="tab"
+                    data-bs-target="#sparql-pane"
+                    type="button"
+                    role="tab"
+                    aria-controls="sparql-pane"
+                    aria-selected="true"
+                  >
+                    SPARQL
+                  </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button
+                    class="nav-link"
                     id="encoding-tab"
                     data-bs-toggle="tab"
                     data-bs-target="#encoding-pane"
                     type="button"
                     role="tab"
                     aria-controls="encoding-pane"
-                    aria-selected="true"
+                    aria-selected="false"
                   >
                     Encoding
                   </button>
                 </li>
-                <li class="nav-item" role="presentation">
-                  <button
-                    class="nav-link"
-                    id="snippet-tab"
-                    data-bs-toggle="tab"
-                    data-bs-target="#snippet-pane"
-                    type="button"
-                    role="tab"
-                    aria-controls="snippet-pane"
-                    aria-selected="false"
-                  >
-                    Integration
-                  </button>
-                </li>
               </ul>
             </div>
-            <div class="card-body tab-content flex-fill pt-2" id="codingTabsContent">
+            <div class="card-body tab-content tab-content-fill flex-fill pt-2" id="configTabsContent">
               <div
                 class="tab-pane fade show active h-100"
+                id="sparql-pane"
+                role="tabpanel"
+                aria-labelledby="sparql-tab"
+                tabindex="0"
+              >
+                <div class="sparql-pane-layout">
+                  <div class="mb-2">
+                    <label class="form-label fw-semibold mb-1" for="endpointInput">Endpoint</label>
+                    <input
+                      class="form-control form-control-sm"
+                      id="endpointInput"
+                      type="text"
+                      placeholder="SPARQL endpoint URL"
+                    />
+                  </div>
+                  <div class="sparql-query-block">
+                    <label class="form-label fw-semibold mb-1" for="sparqlEditor">Query</label>
+                    <div class="tab-editor-shell">
+                      <div class="tab-toolbar d-flex justify-content-end gap-1" id="sparqlToolbar"></div>
+                      <div class="code cm-panel h-100" id="sparqlEditor"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div
+                class="tab-pane fade h-100"
                 id="encoding-pane"
                 role="tabpanel"
                 aria-labelledby="encoding-tab"
@@ -85,11 +111,124 @@
                   <div class="editor cm-panel h-100" id="encodingEditor"></div>
                 </div>
               </div>
+            </div>
+          </article>
+        </div>
+
+        <div
+          class="workspace-splitter"
+          id="splitterConfigData"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize Config and Data panels"
+          tabindex="0"
+        ></div>
+
+        <div class="workspace-pane workspace-pane-data d-flex" id="dataPane">
+          <article class="card shadow-sm flex-fill d-flex">
+            <div class="card-header d-flex align-items-center justify-content-between">
+              <button
+                  class="btn btn-sm btn-outline-secondary"
+                  id="toggleDataCompress"
+                  type="button"
+                  title="Compress or expand Results panel"
+                  aria-label="Compress Results panel"
+                >
+                  <i class="bi bi-arrows-collapse-vertical" aria-hidden="true"></i>
+              </button>
+              <h2 class="h6 mb-0">SPARQL Results</h2>
+              <div class="d-flex align-items-center gap-2">
+                
+                <div class="form-check form-switch m-0">
+                  <input class="form-check-input" type="checkbox" role="switch" id="resultsAsSourceToggle" />
+                  <label class="form-check-label small fw-semibold" for="resultsAsSourceToggle">
+                    Use As Source
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div class="card-body d-flex flex-column min-h-0">
+              <div class="tab-editor-shell">
+                <div class="tab-toolbar d-flex justify-content-end gap-1" id="resultsToolbar"></div>
+                <div class="code cm-panel h-100" id="sparqlResults"></div>
+              </div>
+            </div>
+          </article>
+          <div class="pane-collapsed-bar" id="dataPaneCollapsedBar" aria-hidden="true">
+            <button
+              class="btn btn-sm btn-outline-secondary"
+              id="toggleDataExpand"
+              type="button"
+              title="Expand Results panel"
+              aria-label="Expand Results panel"
+            >
+              <i class="bi bi-arrows-expand-vertical" aria-hidden="true"></i>
+            </button>
+          </div>
+        </div>
+
+        <div
+          class="workspace-splitter"
+          id="splitterDataResult"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize Data and Result panels"
+          tabindex="0"
+        ></div>
+
+        <div class="workspace-pane workspace-pane-result d-flex" id="resultPane">
+          <article class="card shadow-sm flex-fill d-flex">
+            <div class="card-header p-0 border-bottom-0">
+              <ul class="nav nav-tabs card-header-tabs px-2 pt-2" id="resultTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                  <button
+                    class="nav-link active"
+                    id="visualization-tab"
+                    data-bs-toggle="tab"
+                    data-bs-target="#visualization-pane"
+                    type="button"
+                    role="tab"
+                    aria-controls="visualization-pane"
+                    aria-selected="true"
+                  >
+                    Visualization
+                  </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button
+                    class="nav-link"
+                    id="integration-tab"
+                    data-bs-toggle="tab"
+                    data-bs-target="#integration-pane"
+                    type="button"
+                    role="tab"
+                    aria-controls="integration-pane"
+                    aria-selected="false"
+                  >
+                    Integration
+                  </button>
+                </li>
+              </ul>
+            </div>
+            <div class="card-body tab-content tab-content-fill flex-fill pt-2" id="resultTabsContent">
+              <div
+                class="tab-pane fade show active h-100"
+                id="visualization-pane"
+                role="tabpanel"
+                aria-labelledby="visualization-tab"
+                tabindex="0"
+              >
+                <div class="visualization-shell">
+                  <vis-graph id="graph" width="100%" height="100%"></vis-graph>
+                  <vis-barchart id="barChart" width="100%" height="100%" style="display:none;"></vis-barchart>
+                  <vis-uri-meta id="metaPanel" width="900" height="600"></vis-uri-meta>
+                </div>
+              </div>
               <div
                 class="tab-pane fade h-100"
-                id="snippet-pane"
+                id="integration-pane"
                 role="tabpanel"
-                aria-labelledby="snippet-tab"
+                aria-labelledby="integration-tab"
                 tabindex="0"
               >
                 <div class="tab-editor-shell">
@@ -97,28 +236,6 @@
                   <div class="code cm-panel h-100" id="generatedCode"></div>
                 </div>
               </div>
-            </div>
-          </article>
-        </div>
-
-        <div
-          class="workspace-splitter"
-          id="workspaceSplitter"
-          role="separator"
-          aria-orientation="vertical"
-          aria-label="Resize coding and visualization panels"
-          tabindex="0"
-        ></div>
-
-        <div class="workspace-pane workspace-pane-visualization d-flex" id="visualizationPane">
-          <article class="card shadow-sm flex-fill d-flex">
-            <div class="card-header">
-              <h2 class="h6 mb-0">Visualization</h2>
-            </div>
-            <div class="card-body visualization-shell">
-              <vis-graph id="graph" width="100%" height="100%" resize="false"></vis-graph>
-              <vis-barchart id="barChart" width="100%" height="100%" style="display:none;"></vis-barchart>
-              <vis-uri-meta id="metaPanel" width="900" height="600"></vis-uri-meta>
             </div>
           </article>
         </div>

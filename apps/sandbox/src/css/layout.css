@@ -10,7 +10,7 @@
 .workspace-row {
   display: flex;
   align-items: stretch;
-  gap: 0.5rem;
+  gap: 0.65rem;
   flex: 1 1 auto;
   height: 0;
   min-height: 0;
@@ -22,12 +22,21 @@
   min-height: 0;
 }
 
-.workspace-pane-coding {
-  flex: 0 0 35%;
+.workspace-pane-config {
+  flex: 0 0 31%;
   min-width: 280px;
 }
 
-.workspace-pane-visualization {
+.workspace-pane-data {
+  flex: 0 0 29%;
+  min-width: 280px;
+}
+
+.workspace-pane.is-compressed {
+  min-width: 44px !important;
+}
+
+.workspace-pane-result {
   flex: 1 1 auto;
   min-width: 280px;
 }
@@ -40,10 +49,20 @@
 }
 
 .workspace-splitter {
-  flex: 0 0 5px;
-  cursor: col-resize;
+  width: 6px;
+  flex: 0 0 6px;
   border-radius: 999px;
   background: linear-gradient(180deg, #d7d7d7, #bdbdbd);
+  cursor: col-resize;
+}
+
+.workspace-row.data-compressed {
+  gap: 0.3rem;
+}
+
+.workspace-row.data-compressed .workspace-splitter {
+  width: 4px;
+  flex: 0 0 4px;
 }
 
 .workspace-splitter:focus-visible {
@@ -62,23 +81,23 @@
   overflow: hidden;
 }
 
-#codingTabsContent {
+.tab-content-fill {
   flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
 }
 
-#codingTabsContent > .tab-pane {
+.tab-content-fill > .tab-pane {
   height: 100%;
   min-height: 0;
   overflow: hidden;
 }
 
-#codingTabsContent > .tab-pane:not(.active) {
+.tab-content-fill > .tab-pane:not(.active) {
   display: none;
 }
 
-#codingTabsContent > .tab-pane.active {
+.tab-content-fill > .tab-pane.active {
   display: flex;
   flex-direction: column;
 }
@@ -125,4 +144,37 @@
 .tab-editor-shell > .editor,
 .tab-editor-shell > .code {
   height: 100%;
+}
+
+.sparql-pane-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.sparql-query-block {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.workspace-pane-data .pane-collapsed-bar {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: #ffffff;
+}
+
+.workspace-pane-data.is-compressed > article {
+  display: none !important;
+}
+
+.workspace-pane-data.is-compressed .pane-collapsed-bar {
+  display: flex;
 }

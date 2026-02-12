@@ -4,16 +4,21 @@ import { EncodingEditor } from "./encoding-editor.js";
 import { SnippetGenerator } from "./snippet-generator.js";
 import { VisualizationView } from "./visualization-view.js";
 import { CodeViewer } from "./code-viewer.js";
-import { SplitViewResizer } from "./split-view-resizer.js";
 import { TabToolbar } from "./tab-toolbar.js";
+import { SplitViewResizer } from "./split-view-resizer.js";
 
 export class SandboxApp {
   constructor() {
     this.selectEl = document.getElementById("scenarioSelect");
     this.descriptionEl = document.getElementById("scenarioDescription");
     this.statusEl = document.getElementById("status");
-
     this.loadButton = document.getElementById("loadScenario");
+
+    this.endpointInputEl = document.getElementById("endpointInput");
+    this.resultsAsSourceToggleEl = document.getElementById("resultsAsSourceToggle");
+    this.toggleDataCompressButton = document.getElementById("toggleDataCompress");
+    this.toggleDataExpandButton = document.getElementById("toggleDataExpand");
+    this.visualizationTabButton = document.getElementById("visualization-tab");
 
     this.demoControl = new DemoControl({
       selectEl: this.selectEl,
@@ -22,13 +27,12 @@ export class SandboxApp {
       indexPath: SCENARIO_INDEX_PATH
     });
 
-    this.editor = new EncodingEditor({
-      holderId: "encodingEditor"
-    });
-    this.generatedCode = new CodeViewer({ holderId: "generatedCode" });
+    this.encodingEditor = new EncodingEditor({ holderId: "encodingEditor" });
+    this.sparqlEditor = new CodeViewer({ holderId: "sparqlEditor", language: "javascript", readOnly: false });
+    this.resultsEditor = new CodeViewer({ holderId: "sparqlResults", language: "json", readOnly: false });
+    this.generatedCode = new CodeViewer({ holderId: "generatedCode", language: "html", readOnly: true });
 
     this.snippetGenerator = new SnippetGenerator();
-
     this.visualizationView = new VisualizationView({
       graphEl: document.getElementById("graph"),
       barChartEl: document.getElementById("barChart"),
@@ -37,13 +41,38 @@ export class SandboxApp {
 
     this.splitViewResizer = new SplitViewResizer({
       containerEl: document.getElementById("workspaceRow"),
-      leftPaneEl: document.getElementById("codingPane"),
-      rightPaneEl: document.getElementById("visualizationPane"),
-      splitterEl: document.getElementById("workspaceSplitter")
+      panes: {
+        config: document.getElementById("configPane"),
+        data: document.getElementById("dataPane"),
+        result: document.getElementById("resultPane")
+      },
+      splitters: {
+        configData: document.getElementById("splitterConfigData"),
+        dataResult: document.getElementById("splitterDataResult")
+      }
     });
 
     this.autoRenderDelayMs = 350;
     this.autoRenderTimer = null;
+    this.lastRenderedSparqlData = null;
+
+    this.sparqlToolbar = new TabToolbar({
+      holderId: "sparqlToolbar",
+      actions: [
+        {
+          id: "sparql-copy",
+          title: "Copy SPARQL query",
+          iconClass: "bi bi-clipboard",
+          onClick: async () => this.copySparqlToClipboard()
+        },
+        {
+          id: "sparql-download",
+          title: "Download SPARQL query",
+          iconClass: "bi bi-download",
+          onClick: async () => this.downloadSparqlQuery()
+        }
+      ]
+    });
 
     this.encodingToolbar = new TabToolbar({
       holderId: "encodingToolbar",
@@ -69,18 +98,36 @@ export class SandboxApp {
       ]
     });
 
+    this.resultsToolbar = new TabToolbar({
+      holderId: "resultsToolbar",
+      actions: [
+        {
+          id: "results-copy",
+          title: "Copy SPARQL results JSON",
+          iconClass: "bi bi-clipboard",
+          onClick: async () => this.copyResultsToClipboard()
+        },
+        {
+          id: "results-download",
+          title: "Download SPARQL results JSON",
+          iconClass: "bi bi-download",
+          onClick: async () => this.downloadResultsJson()
+        }
+      ]
+    });
+
     this.snippetToolbar = new TabToolbar({
       holderId: "snippetToolbar",
       actions: [
         {
           id: "snippet-copy",
-          title: "Copy generated HTML / JS",
+          title: "Copy integration code",
           iconClass: "bi bi-clipboard",
           onClick: async () => this.copySnippetToClipboard()
         },
         {
           id: "snippet-download",
-          title: "Download generated HTML / JS",
+          title: "Download integration code",
           iconClass: "bi bi-download",
           onClick: async () => this.downloadGeneratedSnippet()
         }
@@ -91,10 +138,16 @@ export class SandboxApp {
   async init() {
     this.splitViewResizer.init();
     this.bindEvents();
+    this.sparqlToolbar.init();
     this.encodingToolbar.init();
+    this.resultsToolbar.init();
     this.snippetToolbar.init();
-    await this.editor.init();
-    await this.generatedCode.init("// Generated snippet will appear here");
+
+    await this.sparqlEditor.init("");
+    await this.encodingEditor.init();
+    await this.resultsEditor.init("{}");
+    await this.resultsEditor.setReadOnly(true);
+    await this.generatedCode.init("// Generated integration snippet will appear here");
 
     await this.demoControl.init();
     if (!this.demoControl.hasScenarios()) {
@@ -102,10 +155,8 @@ export class SandboxApp {
       return;
     }
 
-    const { scenario } = this.demoControl.getActiveContext();
-    await this.editor.setValue(scenario.encoding || {});
-    await this.updateGeneratedCode();
-    await this.render();
+    await this.loadScenarioAndRefresh();
+    this.updateDataCompressButton();
   }
 
   bindEvents() {
@@ -117,50 +168,116 @@ export class SandboxApp {
       await this.loadScenarioAndRefresh();
     });
 
-    this.editor.onChange = () => {
-      void this.updateGeneratedCode();
+    this.endpointInputEl.addEventListener("input", () => {
       this.scheduleAutoRender();
+      void this.updateGeneratedCode();
+    });
+
+    this.resultsAsSourceToggleEl.addEventListener("change", async () => {
+      await this.applyResultsEditorMode();
+      this.scheduleAutoRender();
+      void this.updateGeneratedCode();
+    });
+
+    this.visualizationTabButton.addEventListener("shown.bs.tab", () => {
+      this.refreshVisualizationTab();
+    });
+
+    this.toggleDataCompressButton.addEventListener("click", () => {
+      this.toggleDataCompression();
+    });
+    this.toggleDataExpandButton.addEventListener("click", () => {
+      this.toggleDataCompression();
+    });
+
+    this.encodingEditor.onChange = () => {
+      this.scheduleAutoRender();
+      void this.updateGeneratedCode();
+    };
+
+    this.sparqlEditor.onChange = () => {
+      this.scheduleAutoRender();
+      void this.updateGeneratedCode();
+    };
+
+    this.resultsEditor.onChange = () => {
+      if (this.getDataSourceMode() !== "provided") return;
+      this.scheduleAutoRender();
+      void this.updateGeneratedCode();
     };
   }
 
   async loadScenarioAndRefresh() {
-    const scenario = await this.safeRun(
+    await this.safeRun(
       async () => {
         this.setStatus(`Loading demo: ${this.selectEl.value}...`);
+
         const loadedScenario = await this.demoControl.loadSelectedScenario();
-        await this.editor.setValue(loadedScenario.encoding || {});
+        const { queryText } = this.demoControl.getActiveContext();
+
+        this.endpointInputEl.value = loadedScenario.endpoint || "";
+        this.resultsAsSourceToggleEl.checked = loadedScenario?.dataSource === "provided";
+        await this.applyResultsEditorMode();
+
+        await this.sparqlEditor.setText(queryText || "");
+        await this.encodingEditor.setValue(loadedScenario.encoding || {});
+        await this.resultsEditor.setText(
+          JSON.stringify(loadedScenario.sparqlResult || loadedScenario.results || {}, null, 2)
+        );
+
         await this.updateGeneratedCode();
+        await this.render();
+
         this.setStatus(`Loaded demo: ${loadedScenario.name || loadedScenario.id}`);
-        return loadedScenario;
       },
       "Failed to load demo"
     );
-
-    if (!scenario) return;
-    await this.render();
   }
 
   async render() {
     await this.safeRun(
       async () => {
-        const parsed = await this.editor.parseValue();
-        if (parsed.error) {
-          this.setStatus(`Invalid JSON: ${parsed.error.message}`, true);
+        const parsedEncoding = await this.encodingEditor.parseValue();
+        if (parsedEncoding.error) {
+          this.setStatus(`Invalid encoding JSON: ${parsedEncoding.error.message}`, true);
           return;
         }
 
-        const { scenario, queryText } = this.demoControl.getActiveContext();
+        const { scenario } = this.demoControl.getActiveContext();
         if (!scenario) {
           this.setStatus("Select a scenario first.", true);
           return;
         }
 
+        const endpoint = this._resolveEndpoint(scenario.endpoint);
+        const dataSource = this.getDataSourceMode();
+        const queryText = await this.sparqlEditor.getText();
+
+        let providedSparqlResult = null;
+        if (dataSource === "provided") {
+          const parsedResults = await this.parseResultsJson();
+          if (parsedResults.error) {
+            this.setStatus(`Invalid SPARQL Results JSON: ${parsedResults.error.message}`, true);
+            return;
+          }
+          providedSparqlResult = parsedResults.value;
+        }
+
         this.setStatus("Rendering...");
-        await this.visualizationView.render({
+        const output = await this.visualizationView.render({
           scenario,
+          endpoint,
           queryText,
-          encoding: parsed.value
+          encoding: parsedEncoding.value,
+          dataSource,
+          sparqlResult: providedSparqlResult
         });
+
+        this.lastRenderedSparqlData = output?.sparqlData || null;
+
+        if (dataSource === "query") {
+          await this.resultsEditor.setText(JSON.stringify(this.lastRenderedSparqlData || {}, null, 2));
+        }
 
         await this.updateGeneratedCode();
         this.setStatus(`Rendered: ${scenario.name || scenario.id}`);
@@ -170,36 +287,100 @@ export class SandboxApp {
   }
 
   async updateGeneratedCode() {
-    const parsed = await this.editor.parseValue();
-    const { scenario, queryText } = this.demoControl.getActiveContext();
-
-    if (!scenario || parsed.error) {
-      await this.generatedCode.setText("// Invalid or missing encoding JSON");
+    const parsedEncoding = await this.encodingEditor.parseValue();
+    const { scenario } = this.demoControl.getActiveContext();
+    if (!scenario || parsedEncoding.error) {
+      await this.generatedCode.setText("// Invalid or missing configuration");
       return;
     }
 
-    await this.generatedCode.setText(this.snippetGenerator.generate({
-      visType: scenario.visType || "force-graph",
-      endpoint: scenario.endpoint,
-      queryText,
-      encoding: parsed.value
-    }));
+    const dataSource = this.getDataSourceMode();
+    const endpoint = this._resolveEndpoint(scenario.endpoint);
+    const queryText = await this.sparqlEditor.getText();
+    const parsedResults = dataSource === "provided" ? await this.parseResultsJson() : { value: null, error: null };
+    if (parsedResults.error) {
+      await this.generatedCode.setText("// Invalid SPARQL Results JSON for provided data mode");
+      return;
+    }
+
+    await this.generatedCode.setText(
+      this.snippetGenerator.generate({
+        visType: scenario.visType || "force-graph",
+        endpoint,
+        queryText,
+        encoding: parsedEncoding.value,
+        dataSource,
+        sparqlResult: parsedResults.value
+      })
+    );
   }
 
-  setStatus(message, isError = false) {
-    this.statusEl.textContent = message || "";
-    this.statusEl.classList.toggle("error", Boolean(isError));
+  _resolveEndpoint(fallback = "") {
+    const typed = String(this.endpointInputEl.value || "").trim();
+    return typed || fallback || "https://dbpedia.org/sparql";
+  }
+
+  getDataSourceMode() {
+    return this.resultsAsSourceToggleEl.checked ? "provided" : "query";
+  }
+
+  async applyResultsEditorMode() {
+    const useResultsAsSource = this.getDataSourceMode() === "provided";
+    await this.resultsEditor.setReadOnly(!useResultsAsSource);
+  }
+
+  async parseResultsJson() {
+    const raw = await this.resultsEditor.getText();
+    try {
+      return { value: JSON.parse(raw), error: null };
+    } catch (error) {
+      return { value: null, error };
+    }
+  }
+
+  toggleDataCompression() {
+    const changed = this.splitViewResizer.toggleCompressPane("data");
+    if (!changed) return;
+    this.updateDataCompressButton();
+  }
+
+  updateDataCompressButton() {
+    const compressed = this.splitViewResizer.isPaneCompressed("data");
+    this.toggleDataCompressButton.classList.toggle("active", compressed);
+    this.toggleDataCompressButton.title = compressed
+      ? "Expand Results panel"
+      : "Compress Results panel";
+    this.toggleDataCompressButton.setAttribute(
+      "aria-label",
+      compressed ? "Expand Results panel" : "Compress Results panel"
+    );
+    this.toggleDataCompressButton.innerHTML = compressed
+      ? '<i class="bi bi-arrows-expand-vertical" aria-hidden="true"></i>'
+      : '<i class="bi bi-arrows-collapse-vertical" aria-hidden="true"></i>';
+    this.toggleDataExpandButton.innerHTML = '<i class="bi bi-arrows-expand-vertical" aria-hidden="true"></i>';
   }
 
   scheduleAutoRender() {
     if (this.autoRenderTimer) {
       clearTimeout(this.autoRenderTimer);
     }
-
     this.autoRenderTimer = setTimeout(() => {
       this.autoRenderTimer = null;
       void this.render();
     }, this.autoRenderDelayMs);
+  }
+
+  refreshVisualizationTab() {
+    const { scenario } = this.demoControl.getActiveContext();
+    if (!scenario) return;
+    requestAnimationFrame(() => {
+      this.visualizationView.refreshCurrent({ scenario });
+    });
+  }
+
+  setStatus(message, isError = false) {
+    this.statusEl.textContent = message || "";
+    this.statusEl.classList.toggle("error", Boolean(isError));
   }
 
   async safeRun(action, fallbackMessage) {
@@ -212,14 +393,36 @@ export class SandboxApp {
     }
   }
 
+  async copySparqlToClipboard() {
+    await this.safeRun(
+      async () => {
+        const text = await this.sparqlEditor.getText();
+        await navigator.clipboard.writeText(text || "");
+        this.setStatus("SPARQL query copied to clipboard");
+      },
+      "Failed to copy SPARQL query"
+    );
+  }
+
   async copyEncodingToClipboard() {
     await this.safeRun(
       async () => {
-        const text = await this.editor.getText();
+        const text = await this.encodingEditor.getText();
         await navigator.clipboard.writeText(text || "");
         this.setStatus("Encoding JSON copied to clipboard");
       },
       "Failed to copy encoding JSON"
+    );
+  }
+
+  async copyResultsToClipboard() {
+    await this.safeRun(
+      async () => {
+        const text = await this.resultsEditor.getText();
+        await navigator.clipboard.writeText(text || "");
+        this.setStatus("SPARQL results copied to clipboard");
+      },
+      "Failed to copy SPARQL results JSON"
     );
   }
 
@@ -228,9 +431,22 @@ export class SandboxApp {
       async () => {
         const text = await this.generatedCode.getText();
         await navigator.clipboard.writeText(text || "");
-        this.setStatus("Generated HTML / JS copied to clipboard");
+        this.setStatus("Integration code copied to clipboard");
       },
-      "Failed to copy generated snippet"
+      "Failed to copy integration code"
+    );
+  }
+
+  async downloadSparqlQuery() {
+    await this.safeRun(
+      async () => {
+        const { scenario } = this.demoControl.getActiveContext();
+        const text = await this.sparqlEditor.getText();
+        const filename = `${this.buildSafeFileStem(scenario?.id || "query")}.rq`;
+        this.downloadTextFile(text, filename, "application/sparql-query");
+        this.setStatus(`Downloaded ${filename}`);
+      },
+      "Failed to download SPARQL query"
     );
   }
 
@@ -238,7 +454,7 @@ export class SandboxApp {
     await this.safeRun(
       async () => {
         const { scenario } = this.demoControl.getActiveContext();
-        const text = await this.editor.getText();
+        const text = await this.encodingEditor.getText();
         const filename = `${this.buildSafeFileStem(scenario?.id || "encoding")}.json`;
         this.downloadTextFile(text, filename, "application/json");
         this.setStatus(`Downloaded ${filename}`);
@@ -247,16 +463,29 @@ export class SandboxApp {
     );
   }
 
+  async downloadResultsJson() {
+    await this.safeRun(
+      async () => {
+        const { scenario } = this.demoControl.getActiveContext();
+        const text = await this.resultsEditor.getText();
+        const filename = `${this.buildSafeFileStem(scenario?.id || "results")}.json`;
+        this.downloadTextFile(text, filename, "application/json");
+        this.setStatus(`Downloaded ${filename}`);
+      },
+      "Failed to download SPARQL results JSON"
+    );
+  }
+
   async downloadGeneratedSnippet() {
     await this.safeRun(
       async () => {
         const { scenario } = this.demoControl.getActiveContext();
         const text = await this.generatedCode.getText();
-        const filename = `${this.buildSafeFileStem(scenario?.id || "snippet")}.html`;
+        const filename = `${this.buildSafeFileStem(scenario?.id || "integration")}.html`;
         this.downloadTextFile(text, filename, "text/html");
         this.setStatus(`Downloaded ${filename}`);
       },
-      "Failed to download generated snippet"
+      "Failed to download integration code"
     );
   }
 
@@ -269,7 +498,7 @@ export class SandboxApp {
           return;
         }
 
-        await this.editor.setValue(scenario.encoding || {});
+        await this.encodingEditor.setValue(scenario.encoding || {});
         await this.updateGeneratedCode();
         await this.render();
         this.setStatus(`Base encoding reloaded: ${scenario.name || scenario.id}`);
@@ -279,12 +508,14 @@ export class SandboxApp {
   }
 
   buildSafeFileStem(value) {
-    return String(value || "kgnovis")
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "")
-      .slice(0, 80) || "kgnovis";
+    return (
+      String(value || "kgnovis")
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 80) || "kgnovis"
+    );
   }
 
   downloadTextFile(content, filename, mimeType) {

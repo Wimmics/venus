@@ -5,25 +5,37 @@ export class VisualizationView {
     this.metaPanelEl = metaPanelEl;
   }
 
-  async render({ scenario, queryText, encoding }) {
+  async render({ scenario, endpoint, queryText, encoding, dataSource = "query", sparqlResult = null }) {
     const visType = scenario?.visType || "force-graph";
-    const endpoint = scenario?.endpoint;
 
     this.graphEl.style.display = visType === "bar-chart" ? "none" : "block";
     this.barChartEl.style.display = visType === "bar-chart" ? "block" : "none";
+    const activeVis = visType === "bar-chart" ? this.barChartEl : this.graphEl;
 
     if (visType === "bar-chart") {
       this.barChartEl.sparqlEndpoint = endpoint;
-      this.barChartEl.sparqlQuery = queryText;
+      this.barChartEl.sparqlQuery = dataSource === "query" ? queryText : null;
+      this.barChartEl.sparqlResult = dataSource === "provided" ? sparqlResult : null;
       this.barChartEl.encoding = encoding;
       await this.barChartEl.launch();
-      return;
+      return { sparqlData: this.barChartEl.sparqlData || null };
     }
 
     this.graphEl.nodeDetailsPanel = this.metaPanelEl;
     this.graphEl.sparqlEndpoint = endpoint;
-    this.graphEl.sparqlQuery = queryText;
+    this.graphEl.sparqlQuery = dataSource === "query" ? queryText : null;
+    this.graphEl.sparqlResult = dataSource === "provided" ? sparqlResult : null;
     this.graphEl.encoding = encoding;
     await this.graphEl.launch();
+    return { sparqlData: activeVis.sparqlData || null };
+  }
+
+  refreshCurrent({ scenario }) {
+    const visType = scenario?.visType || "force-graph";
+    if (visType === "bar-chart") {
+      this.barChartEl?.render?.();
+      return;
+    }
+    this.graphEl?.render?.();
   }
 }
