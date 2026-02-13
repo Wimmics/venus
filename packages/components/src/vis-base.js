@@ -174,10 +174,10 @@ export class VisBase extends HTMLElement {
     }
 
     if (!this.renderer) return;
-    this._syncRendererSizeFromContainer(container);
     this._compileVisualArtifacts();
-    this.renderer.render(this._getRenderPayload(), this.visualEncoding, this._visualArtifacts);
     this._manageLegends();
+    this._syncRendererSizeFromContainer(container);
+    this.renderer.render(this._getRenderPayload(), this.visualEncoding, this._visualArtifacts);
   }
 
   _manageLegends() {
@@ -202,6 +202,7 @@ export class VisBase extends HTMLElement {
         stackGap: 12,
         topInset
       });
+      this._applyLegendSurfaceInsets(container);
     };
 
     newLegends.forEach((legend) => {
@@ -257,6 +258,49 @@ export class VisBase extends HTMLElement {
     const titleElement = container?.querySelector(".vis-title");
     if (!titleElement || titleElement.style.display === "none") return 0;
     return Math.max(0, Math.round(titleElement.getBoundingClientRect().height));
+  }
+
+  _applyLegendSurfaceInsets(container) {
+    const surface = container?.querySelector(".vis-surface");
+    if (!surface) return;
+
+    const reservingLegends = this._legends.filter((legend) => legend?._legendCompact === false);
+    if (!reservingLegends.length) {
+      surface.style.paddingTop = "0px";
+      surface.style.paddingRight = "0px";
+      surface.style.paddingBottom = "0px";
+      surface.style.paddingLeft = "0px";
+      return;
+    }
+
+    const surfaceRect = surface.getBoundingClientRect();
+    const inset = { top: 0, right: 0, bottom: 0, left: 0 };
+    const reserveGap = 8;
+
+    reservingLegends.forEach((legend) => {
+      const rect = legend.getBoundingClientRect();
+      const position = legend?._legendPosition || "bottom";
+
+      if (position === "top" || position === "top-left" || position === "top-right") {
+        inset.top = Math.max(inset.top, Math.round(rect.bottom - surfaceRect.top + reserveGap));
+      }
+      if (position === "bottom" || position === "bottom-left" || position === "bottom-right") {
+        inset.bottom = Math.max(inset.bottom, Math.round(surfaceRect.bottom - rect.top + reserveGap));
+      }
+      if (position === "left" || position === "top-left" || position === "bottom-left") {
+        inset.left = Math.max(inset.left, Math.round(rect.right - surfaceRect.left + reserveGap));
+      }
+      if (position === "right" || position === "top-right" || position === "bottom-right") {
+        inset.right = Math.max(inset.right, Math.round(surfaceRect.right - rect.left + reserveGap));
+      }
+    });
+
+    const maxHorizontal = Math.max(0, Math.floor(surfaceRect.width / 2) - 1);
+    const maxVertical = Math.max(0, Math.floor(surfaceRect.height / 2) - 1);
+    surface.style.paddingTop = `${Math.max(0, Math.min(inset.top, maxVertical))}px`;
+    surface.style.paddingRight = `${Math.max(0, Math.min(inset.right, maxHorizontal))}px`;
+    surface.style.paddingBottom = `${Math.max(0, Math.min(inset.bottom, maxVertical))}px`;
+    surface.style.paddingLeft = `${Math.max(0, Math.min(inset.left, maxHorizontal))}px`;
   }
 
   _updateTitle(container) {
@@ -351,16 +395,11 @@ export class VisBase extends HTMLElement {
   }
 
   _resolveEndpoint() {
-    return (
-      this.currentEndpoint ||
-      this.sparqlEndpoint ||
-      this.getAttribute("endpoint") ||
-      "https://dbpedia.org/sparql"
-    );
+    return this.currentEndpoint || this.sparqlEndpoint || "https://dbpedia.org/sparql";
   }
 
   _resolveProxyUrl() {
-    return this.currentProxyUrl || this.proxy || this.getAttribute("proxy-url") || null;
+    return this.currentProxyUrl || this.proxy || null;
   }
 
   _createAdaptiveEncoding(meta) {
@@ -437,6 +476,7 @@ export class VisBase extends HTMLElement {
           flex: 1 1 auto;
           min-height: 0;
           position: relative;
+          box-sizing: border-box;
         }
         svg { width: 100%; height: 100%; display: block; }
         .notification {
@@ -532,7 +572,8 @@ export class VisBase extends HTMLElement {
   _syncRendererSizeFromContainer(container) {
     if (!container || !this.renderer) return;
     const surface = container.querySelector(".vis-surface") || container;
-    const bounds = surface.getBoundingClientRect();
+    const svg = surface.querySelector("svg");
+    const bounds = (svg || surface).getBoundingClientRect();
     const width = Math.max(1, Math.round(bounds.width));
     const height = Math.max(1, Math.round(bounds.height));
 

@@ -33,6 +33,9 @@ export function createLegends(config) {
         display: item.display !== false
       }
     };
+    const isCompact =
+      legendEncoding.legend.compact !== false;
+    legendEncoding.legend.compact = isCompact;
 
     const dataKey = typeof item.dataKey === "string" ? item.dataKey : "nodes";
     const data = config.datasets?.[dataKey] || config.data || [];
@@ -45,6 +48,7 @@ export function createLegends(config) {
       colorLegend.encoding = legendEncoding;
       colorLegend.data = data;
       colorLegend._legendPosition = legendEncoding.legend.position;
+      colorLegend._legendCompact = isCompact;
       if (scale) colorLegend.d3Scale = scale;
       legends.push(colorLegend);
       continue;
@@ -55,6 +59,7 @@ export function createLegends(config) {
       sizeLegend.encoding = legendEncoding;
       sizeLegend.data = data;
       sizeLegend._legendPosition = legendEncoding.legend.position;
+      sizeLegend._legendCompact = isCompact;
       if (scale) sizeLegend.d3Scale = scale;
       legends.push(sizeLegend);
     }
@@ -107,10 +112,15 @@ export function positionLegends(container, legends, options = {}) {
       // Top/bottom are centered and laid out horizontally.
       const widths = groupLegends.map((legend) => getLegendSize(legend).width);
       const totalWidth = widths.reduce((sum, width) => sum + width, 0) + Math.max(0, groupLegends.length - 1) * gap;
-      let cursor = -totalWidth / 2;
+      const containerWidth = container?.getBoundingClientRect?.().width || 0;
+      const availableWidth = Math.max(0, containerWidth - spacing * 2);
+      const useEvenLayout = availableWidth > 0 && totalWidth > availableWidth && groupLegends.length > 1;
+      let cursor = useEvenLayout ? -availableWidth / 2 : -totalWidth / 2;
 
       groupLegends.forEach((legend, index) => {
-        const centerOffset = cursor + widths[index] / 2;
+        const centerOffset = useEvenLayout
+          ? (-availableWidth / 2 + (index + 0.5) * (availableWidth / groupLegends.length))
+          : (cursor + widths[index] / 2);
         if (legendPosition === 'top') {
           applyStyle(
             legend,
@@ -119,7 +129,9 @@ export function positionLegends(container, legends, options = {}) {
         } else {
           applyStyle(legend, `bottom: ${spacing}px; left: calc(50% + ${centerOffset}px); transform: translateX(-50%);`);
         }
-        cursor += widths[index] + gap;
+        if (!useEvenLayout) {
+          cursor += widths[index] + gap;
+        }
       });
       return;
     }

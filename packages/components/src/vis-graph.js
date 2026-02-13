@@ -7,15 +7,15 @@
  * - Emit node selection / details requests
  *
  * Composition:
- * - A node-details component can be "provided" to VisGraph via the `nodeDetailsPanel` property
- *   (any element with a compatible API: { open, node, endpoint, proxy })
- * - VisGraph will drive it (set props) when the user requests details.
+ * - VisGraph creates and owns a `vis-uri-meta` panel when `interactions.nodeDetailsPanel !== false`.
+ * - This owned panel shares the lifecycle of the VisGraph instance.
  */
 import { createRenderer } from "@wimmics/kgnovis-d3renderer";
 import { createEncodingManager } from "@wimmics/kgnovis-encoding";
 import { VIS_TYPES } from "@wimmics/kgnovis-core";
 import { buildForceGraph } from "@wimmics/kgnovis-datasource";
 import { VisBase } from "./vis-base.js";
+import "./vis-uri-metadata.js";
 
 export class VisGraph extends VisBase {
   constructor() {
@@ -31,6 +31,7 @@ export class VisGraph extends VisBase {
     this.selectedNode = null;
 
     this._nodeDetailsPanel = null;
+    this._ownsNodeDetailsPanel = false;
 
     this.encodingManager = createEncodingManager(VIS_TYPES.FORCE_GRAPH);
     this.visualEncoding = this.encodingManager.getDefaultEncoding();
@@ -39,10 +40,14 @@ export class VisGraph extends VisBase {
   }
 
   /**
-   * Provide a node-details panel element.
-   * The element is not created/owned by VisGraph.
+   * Optional backward-compatible external override.
+   * When set, VisGraph stops owning an internal `vis-uri-meta` panel.
    */
   set nodeDetailsPanel(el) {
+    if (this._ownsNodeDetailsPanel && this._nodeDetailsPanel && this._nodeDetailsPanel !== el) {
+      this._nodeDetailsPanel.remove();
+    }
+    this._ownsNodeDetailsPanel = false;
     this._nodeDetailsPanel = el || null;
   }
   get nodeDetailsPanel() {
@@ -70,6 +75,7 @@ export class VisGraph extends VisBase {
     const panel = this._nodeDetailsPanel;
     if (panel) {
       try {
+        panel.sparqlEndpoint = endpoint;
         panel.endpoint = endpoint;
         panel.proxy = proxyUrl;
         panel.node = node;
@@ -78,6 +84,11 @@ export class VisGraph extends VisBase {
         this.logger.warn("Failed to drive nodeDetailsPanel", { message: error?.message });
       }
     }
+  }
+
+  disconnectedCallback() {
+    this._teardownOwnedNodeDetailsPanel();
+    super.disconnectedCallback();
   }
 
   _buildVisualization(params) {
@@ -194,6 +205,37 @@ export class VisGraph extends VisBase {
     this._initGlobalHandlers();
   }
 
+  _isNodeDetailsPanelEnabled() {
+    return this.visualEncoding?.interactions?.nodeDetailsPanel !== false;
+  }
+
+  _ensureNodeDetailsPanel() {
+    if (!this._isNodeDetailsPanelEnabled()) {
+      this._teardownOwnedNodeDetailsPanel();
+      return;
+    }
+
+    if (this._nodeDetailsPanel) return;
+    const container = this._getContainerElement();
+    if (!container) return;
+
+    const panel = document.createElement("vis-uri-meta");
+    panel.logger = this.logger;
+    panel.proxy = this._resolveProxyUrl();
+    panel.sparqlEndpoint = this._resolveEndpoint();
+    container.appendChild(panel);
+
+    this._nodeDetailsPanel = panel;
+    this._ownsNodeDetailsPanel = true;
+  }
+
+  _teardownOwnedNodeDetailsPanel() {
+    if (!this._ownsNodeDetailsPanel || !this._nodeDetailsPanel) return;
+    this._nodeDetailsPanel.remove();
+    this._nodeDetailsPanel = null;
+    this._ownsNodeDetailsPanel = false;
+  }
+
   _initGlobalHandlers() {
     const container = this._getContainerElement();
     if (!container) return;
@@ -286,6 +328,11 @@ export class VisGraph extends VisBase {
 
   _hideLinkTooltip() {
     super._hideTooltip("tooltip link-tooltip");
+  }
+
+  render() {
+    this._ensureNodeDetailsPanel();
+    super.render();
   }
 }
 

@@ -21,7 +21,8 @@ export class ForceGraphEncodingManager extends EncodingManager {
       interactions: {
         enabled: true,
         drag: true,
-        zoom: true
+        zoom: true,
+        nodeDetailsPanel: false
       },
       nodes: {
         field: ["source"],

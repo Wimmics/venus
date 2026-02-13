@@ -47,6 +47,7 @@ export class ColorLegend extends HTMLElement {
   }
 
   _toggleMinimized() {
+    if (this._encoding?.legend?.compact === false) return;
     this._minimized = !this._minimized;
     this.render();
     this.dispatchEvent(new CustomEvent('legendtoggle', { bubbles: true, composed: true }));
@@ -90,6 +91,8 @@ export class ColorLegend extends HTMLElement {
 
   render() {
     if (!this._encoding?.field || !this._encoding?.scale) return;
+    const isCompact = this._encoding?.legend?.compact !== false;
+    if (!isCompact) this._minimized = false;
 
     const domain = this._encoding.scale.domain || [];
     const range = this._encoding.scale.range || [];
@@ -144,6 +147,7 @@ export class ColorLegend extends HTMLElement {
           border-radius: 4px;
           box-shadow: 0 2px 8px rgba(0,0,0,0.1);
           min-width: 180px;
+          max-width: 260px;
           overflow: hidden;
         }
         .legend-header {
@@ -195,7 +199,9 @@ export class ColorLegend extends HTMLElement {
           flex-shrink: 0;
         }
         .label {
+          display: block;
           color: #666;
+          white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
         }
@@ -209,7 +215,11 @@ export class ColorLegend extends HTMLElement {
       <div class="legend-container">
         <div class="legend-header">
           <div class="legend-title">${title}</div>
-          <button class="legend-toggle" type="button" aria-label="${this._minimized ? 'Expand legend' : 'Minimize legend'}">${this._minimized ? '+' : '-'}</button>
+          ${
+            isCompact
+              ? `<button class="legend-toggle" type="button" aria-label="${this._minimized ? 'Expand legend' : 'Minimize legend'}">${this._minimized ? '+' : '-'}</button>`
+              : ""
+          }
         </div>
         <div class="legend-content" style="display: ${this._minimized ? 'none' : 'block'};">
           ${items}
@@ -218,7 +228,7 @@ export class ColorLegend extends HTMLElement {
       </div>
     `;
 
-    const toggleButton = this.shadowRoot.querySelector('.legend-toggle');
+    const toggleButton = isCompact ? this.shadowRoot.querySelector('.legend-toggle') : null;
     if (toggleButton) {
       toggleButton.addEventListener('click', () => this._toggleMinimized());
     }

@@ -11,13 +11,15 @@ Encoding engine that turns user encoding into validated domains and D3-ready sca
 - Creates and caches D3 scales in the encoding manager.
 
 ## Encoding Model
+- Optional top-level `title`: when provided, components render it above the chart area.
+- Optional top-level `background`: chart background color (`"#ffffff"`, `"white"`, etc.).
 - Force graph: `nodes` / `links` channels (`color`, `size`, `stroke`, `labels`, `interactions`).
 - Bar chart: `x`, `y`, `color`, `direction`.
 
 ## Force-Graph Example
 ```js
 graph.encoding = {
-  interactions: { enabled: true, drag: true, zoom: true },
+  interactions: { enabled: true, drag: true, zoom: true, nodeDetailsPanel: true },
   nodes: {
     field: ["species", "family"],
     labels: { display: true },
@@ -50,6 +52,7 @@ graph.encoding = {
 - `enabled`: `true | false` global interaction switch (default `true`)
 - `drag`: enable/disable node drag and drop (default `true`)
 - `zoom`: enable/disable pan and zoom (default `true`)
+- `nodeDetailsPanel`: enable/disable internal node details panel (`vis-uri-meta`) lifecycle in `vis-graph` (default `false`)
 
 `nodes.field` accepts:
 - A string (for example `"species"`)
@@ -67,6 +70,14 @@ In co-occurrence mode, nodes are connected when they share the same resolved val
 - `value`: CSS color string (name or hex), for example `"white"` or `"#ffffff"` (default `"#ffffff"`)
 - `width`: stroke width as a number (`2`) or CSS-like pixel string (`"2px"`) (default `1.5`)
 - `display`: `true | false` (default `true`)
+
+`links` style options:
+- `distance`: preferred simulation link distance (number, default `100`)
+- `width.value`: constant link stroke width (number, default `1.5`)
+
+`links.color` options:
+- `value`: constant link color fallback (default `"#999"`)
+- `field` + `scale`: data-driven link coloring. If both are present, a color legend can be generated.
 
 ## Bar-Chart Example
 ```js
@@ -126,7 +137,7 @@ bar.encoding = {
 
 ## Scale Types
 - Ordinal-like: `ordinal`
-- Quantitative-like: `linear`, `sqrt`, `log`, `count`, `quantitative`, `sequential`
+- Quantitative-like: `linear`, `sqrt`, `log`, `pow`, `count`, `quantitative`, `sequential`
 
 For quantitative scales, domains are numeric extents. For ordinal scales, domains are unique values.
 For bar charts, `y.scale.type: "count"` behaves like a linear scale with integer-oriented defaults (`tickFormat: "integer"` and step `1` if not provided).
@@ -224,11 +235,18 @@ Use `legend` inside `color` or `size`:
 - `legend.title`: custom title 
 - `legend.position`: `left | right | top | bottom` (also supports corner variants: `top-left, bottom-right`, etc.) 
 - `legend.display`: `true | false` 
+- `legend.compact`: `true | false`
+  - `true` (default): legend is compact/collapsible (starts collapsed)
+  - `false`: legend is always expanded and reserves rendering space
 
 Defaults:
 - `display: true`
 - `position: "bottom"`
 - `title: <field name>`
+- `compact: true`
+
+Notes:
+- For top legend positions (`top`, `top-left`, `top-right`), placement accounts for chart `title` when present.
 
 ## Public Exports
 - `createEncodingManager`
