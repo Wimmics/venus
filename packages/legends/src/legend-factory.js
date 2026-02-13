@@ -74,7 +74,8 @@ export function positionLegends(container, legends, options = {}) {
     position = 'bottom',
     spacing = 20,
     gap = 20,
-    stackGap = 12
+    stackGap = 12,
+    topInset = 0
   } = options;
 
   const groups = new Map();
@@ -111,7 +112,10 @@ export function positionLegends(container, legends, options = {}) {
       groupLegends.forEach((legend, index) => {
         const centerOffset = cursor + widths[index] / 2;
         if (legendPosition === 'top') {
-          applyStyle(legend, `top: ${spacing}px; left: calc(50% + ${centerOffset}px); transform: translateX(-50%);`);
+          applyStyle(
+            legend,
+            `top: ${spacing + topInset}px; left: calc(50% + ${centerOffset}px); transform: translateX(-50%);`
+          );
         } else {
           applyStyle(legend, `bottom: ${spacing}px; left: calc(50% + ${centerOffset}px); transform: translateX(-50%);`);
         }
@@ -145,10 +149,10 @@ export function positionLegends(container, legends, options = {}) {
       const height = heights[index];
       switch (legendPosition) {
         case 'top-left':
-          applyStyle(legend, `top: ${spacing + offset}px; left: ${spacing}px;`);
+          applyStyle(legend, `top: ${spacing + topInset + offset}px; left: ${spacing}px;`);
           break;
         case 'top-right':
-          applyStyle(legend, `top: ${spacing + offset}px; right: ${spacing}px;`);
+          applyStyle(legend, `top: ${spacing + topInset + offset}px; right: ${spacing}px;`);
           break;
         case 'bottom-left':
           applyStyle(legend, `bottom: ${spacing + offset}px; left: ${spacing}px;`);

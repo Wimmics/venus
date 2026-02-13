@@ -170,6 +170,7 @@ export class VisBase extends HTMLElement {
     if (container) {
       this._applyDimensions();
       container.style.background = this._resolveBackgroundColor();
+      this._updateTitle(container);
     }
 
     if (!this.renderer) return;
@@ -193,11 +194,13 @@ export class VisBase extends HTMLElement {
 
     const newLegends = createLegends(legendConfig);
     const relayoutLegends = () => {
+      const topInset = this._getLegendTopInset(container);
       positionLegends(container, this._legends, {
         position: "bottom",
         spacing: 20,
         gap: 20,
-        stackGap: 12
+        stackGap: 12,
+        topInset
       });
     };
 
@@ -242,6 +245,31 @@ export class VisBase extends HTMLElement {
       return background.value;
     }
     return "#ffffff";
+  }
+
+  _resolveTitleText() {
+    const title = this.visualEncoding?.title;
+    if (typeof title === "string" && title.trim()) return title.trim();
+    return null;
+  }
+
+  _getLegendTopInset(container) {
+    const titleElement = container?.querySelector(".vis-title");
+    if (!titleElement || titleElement.style.display === "none") return 0;
+    return Math.max(0, Math.round(titleElement.getBoundingClientRect().height));
+  }
+
+  _updateTitle(container) {
+    const titleElement = container?.querySelector(".vis-title");
+    if (!titleElement) return;
+    const title = this._resolveTitleText();
+    if (title) {
+      titleElement.textContent = title;
+      titleElement.style.display = "block";
+      return;
+    }
+    titleElement.textContent = "";
+    titleElement.style.display = "none";
   }
 
   _notify(message, type = "info") {
@@ -392,8 +420,25 @@ export class VisBase extends HTMLElement {
           border-radius: 4px;
           overflow: hidden;
           position: relative;
+          display: flex;
+          flex-direction: column;
         }
-        svg { width: 100%; height: 100%; }
+        .vis-title {
+          display: none;
+          flex: 0 0 auto;
+          padding: 10px 12px 0 12px;
+          margin: 0;
+          font-size: 14px;
+          font-weight: 600;
+          line-height: 1.25;
+          color: #222;
+        }
+        .vis-surface {
+          flex: 1 1 auto;
+          min-height: 0;
+          position: relative;
+        }
+        svg { width: 100%; height: 100%; display: block; }
         .notification {
           position: absolute;
           bottom: 20px;
@@ -429,7 +474,10 @@ export class VisBase extends HTMLElement {
         ${extraStyles}
       </style>
       <div class="${containerClass}">
-        <svg></svg>
+        <div class="vis-title"></div>
+        <div class="vis-surface">
+          <svg></svg>
+        </div>
       </div>
     `;
     this._applyDimensions();
@@ -483,7 +531,8 @@ export class VisBase extends HTMLElement {
 
   _syncRendererSizeFromContainer(container) {
     if (!container || !this.renderer) return;
-    const bounds = container.getBoundingClientRect();
+    const surface = container.querySelector(".vis-surface") || container;
+    const bounds = surface.getBoundingClientRect();
     const width = Math.max(1, Math.round(bounds.width));
     const height = Math.max(1, Math.round(bounds.height));
 

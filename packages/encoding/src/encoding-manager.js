@@ -136,6 +136,97 @@ export class EncodingManager {
     throw new Error("createD3Scale must be implemented by subclass");
   }
 
+  _isQuantitativeScaleType(type, extraTypes = []) {
+    const baseTypes = ["linear", "sqrt", "log", "quantitative", "sequential"];
+    return baseTypes.includes(type) || extraTypes.includes(type);
+  }
+
+  _resolveScaleDomain(scaleConfig, data, field, type, { requireArrayData = false } = {}) {
+    if (!scaleConfig) return null;
+
+    if (requireArrayData) {
+      if (Array.isArray(data) && data.length && field && this.domainCalculator) {
+        const resolvedDomain = this.domainCalculator.getDomain(data, field, scaleConfig.domain, type);
+        return resolvedDomain?.length ? resolvedDomain : null;
+      }
+    } else if (data && field && this.domainCalculator) {
+      const resolvedDomain = this.domainCalculator.getDomain(data, field, scaleConfig.domain, type);
+      return resolvedDomain?.length ? resolvedDomain : null;
+    }
+
+    if (Array.isArray(scaleConfig.domain) && scaleConfig.domain.length) {
+      return scaleConfig.domain;
+    }
+
+    return null;
+  }
+
+  _extractNumericValues(data, field) {
+    return (Array.isArray(data) ? data : [])
+      .map((item) => this.domainCalculator.convertToNumber(item?.[field]))
+      .filter((value) => !isNaN(value));
+  }
+
+  _resolveBinningOptions(scaleConfig) {
+    const raw = scaleConfig?.binning;
+    if (raw === false) {
+      return { enabled: false, method: "jenks", bins: 1, breaks: null, min: null, max: null };
+    }
+
+    const method = raw?.method === "quartiles" ? "quartiles" : "jenks";
+    const bins = Number.isFinite(raw?.bins) ? Math.max(1, Math.floor(raw.bins)) : 5;
+    const breaks = Array.isArray(raw?.breaks) ? raw.breaks : null;
+    const min = Number.isFinite(raw?.min) ? Number(raw.min) : null;
+    const max = Number.isFinite(raw?.max) ? Number(raw.max) : null;
+    return { enabled: true, method, bins, breaks, min, max };
+  }
+
+  _computeQuantitativeBreaks(scaleConfig, finalDomain, numericValues, label) {
+    const binningOptions = this._resolveBinningOptions(scaleConfig);
+    if (!binningOptions.enabled || numericValues.length <= 1 || !this.binBreaksCalculator) {
+      return null;
+    }
+
+    const domainMin = Number(finalDomain[0]);
+    const domainMax = Number(finalDomain[finalDomain.length - 1]);
+    const effectiveMin = Number.isFinite(binningOptions.min)
+      ? binningOptions.min
+      : (Number.isFinite(domainMin) ? domainMin : null);
+    const effectiveMax = Number.isFinite(binningOptions.max)
+      ? binningOptions.max
+      : (Number.isFinite(domainMax) ? domainMax : null);
+
+    return this.binBreaksCalculator.computeBreaks(numericValues, {
+      method: binningOptions.method,
+      bins: binningOptions.bins,
+      breaks: binningOptions.breaks,
+      min: effectiveMin,
+      max: effectiveMax,
+      label,
+      quantitative: true
+    });
+  }
+
+  _buildThresholdColorRange(range, binCount, field) {
+    const dummyDomain = Array.from({ length: binCount }, (_, index) => index);
+    const paletteScale = this.colorScaleCalculator.createColorScale({
+      domain: dummyDomain,
+      range,
+      scaleType: "ordinal",
+      fallbackInterpolator: null,
+      label: `Color[${field}]`
+    });
+
+    const palette = paletteScale?.range?.() || [];
+    if (palette.length >= binCount) return palette.slice(0, binCount);
+
+    const fallback = this.colorScaleCalculator.getColorPalette("Category10", binCount, "ordinal");
+    return Array.from(
+      { length: binCount },
+      (_, index) => palette[index % palette.length] || fallback[index % fallback.length] || "#999"
+    );
+  }
+
   /**
    * Clear scale-related caches.
    */

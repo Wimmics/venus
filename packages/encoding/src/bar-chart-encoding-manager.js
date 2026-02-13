@@ -4,10 +4,6 @@ import { EncodingManager } from "./encoding-manager.js";
 export class BarChartEncodingManager extends EncodingManager {
   getDefaultEncoding() {
     return {
-      description: "Default bar-chart encoding",
-      width: 800,
-      height: 500,
-      autosize: "none",
       direction: "vertical",
       stack: false,
       x: {
@@ -108,53 +104,22 @@ export class BarChartEncodingManager extends EncodingManager {
   createD3Scale(scaleConfig, data, field, isColorScale) {
     if (!scaleConfig) return null;
     const type = scaleConfig.type || "ordinal";
-    const isQuant =
-      type === "linear" ||
-      type === "sqrt" ||
-      type === "log" ||
-      type === "pow" ||
-      type === "count" ||
-      type === "quantitative" ||
-      type === "sequential";
+    // Bar charts accept extra quantitative aliases used in mappings (`count`, `pow`).
+    const isQuant = this._isQuantitativeScaleType(type, ["pow", "count"]);
 
-    let finalDomain = null;
-    if (Array.isArray(data) && data.length && field) {
-      finalDomain = this.domainCalculator.getDomain(data, field, scaleConfig.domain, type);
-    } else if (Array.isArray(scaleConfig.domain) && scaleConfig.domain.length) {
-      finalDomain = scaleConfig.domain;
-    }
+    // For bars, domain should be driven by actual row arrays; otherwise use explicit user domain.
+    const finalDomain = this._resolveScaleDomain(scaleConfig, data, field, type, { requireArrayData: true });
     if (!finalDomain?.length) return null;
 
     if (isColorScale) {
       if (isQuant) {
-        const binningOptions = this._resolveBinningOptions(scaleConfig);
-        const numericValues = (Array.isArray(data) ? data : [])
-          .map((item) => this.domainCalculator.convertToNumber(item?.[field]))
-          .filter((value) => !isNaN(value));
-
-        if (binningOptions.enabled && numericValues.length > 1 && this.binBreaksCalculator) {
-          const domainMin = Number(finalDomain[0]);
-          const domainMax = Number(finalDomain[finalDomain.length - 1]);
-          const effectiveMin =
-            Number.isFinite(binningOptions.min) ? binningOptions.min : (Number.isFinite(domainMin) ? domainMin : null);
-          const effectiveMax =
-            Number.isFinite(binningOptions.max) ? binningOptions.max : (Number.isFinite(domainMax) ? domainMax : null);
-          const breaks = this.binBreaksCalculator.computeBreaks(numericValues, {
-            method: binningOptions.method,
-            bins: binningOptions.bins,
-            breaks: binningOptions.breaks,
-            min: effectiveMin,
-            max: effectiveMax,
-            label: `Color[${field}]`,
-            quantitative: true
-          });
-          const binCount = breaks.bins;
-          if (binCount > 1) {
-            const colors = this._buildThresholdColorRange(scaleConfig.range, binCount, field);
-            const thresholdScale = d3.scaleThreshold().domain(breaks.thresholds).range(colors);
-            thresholdScale.__kgnovisBounds = { min: breaks.min, max: breaks.max };
-            return thresholdScale;
-          }
+        const numericValues = this._extractNumericValues(data, field);
+        const breaks = this._computeQuantitativeBreaks(scaleConfig, finalDomain, numericValues, `Color[${field}]`);
+        if (breaks?.bins > 1) {
+          const colors = this._buildThresholdColorRange(scaleConfig.range, breaks.bins, field);
+          const thresholdScale = d3.scaleThreshold().domain(breaks.thresholds).range(colors);
+          thresholdScale.__kgnovisBounds = { min: breaks.min, max: breaks.max };
+          return thresholdScale;
         }
       }
 
@@ -167,6 +132,8 @@ export class BarChartEncodingManager extends EncodingManager {
       });
     }
 
+    // Non-color scales in bar charts are positional axes, so keep them continuous
+    // (no threshold/binning for position) and default to normalized [0, 1] range.
     const range = scaleConfig.range || null;
     if (type === "linear") return d3.scaleLinear().domain(finalDomain).range(range || [0, 1]);
     if (type === "count") return d3.scaleLinear().domain(finalDomain).range(range || [0, 1]);
@@ -177,34 +144,5 @@ export class BarChartEncodingManager extends EncodingManager {
       return d3.scalePow().exponent(exponent).domain(finalDomain).range(range || [0, 1]);
     }
     return d3.scaleOrdinal().domain(finalDomain).range(range || []);
-  }
-
-  _resolveBinningOptions(scaleConfig) {
-    const raw = scaleConfig?.binning;
-    if (raw === false) return { enabled: false, method: "jenks", bins: 1, breaks: null, min: null, max: null };
-    const method = raw?.method === "quartiles" ? "quartiles" : "jenks";
-    const bins = Number.isFinite(raw?.bins) ? Math.max(1, Math.floor(raw.bins)) : 5;
-    const breaks = Array.isArray(raw?.breaks) ? raw.breaks : null;
-    const min = Number.isFinite(raw?.min) ? Number(raw.min) : null;
-    const max = Number.isFinite(raw?.max) ? Number(raw.max) : null;
-    return { enabled: true, method, bins, breaks, min, max };
-  }
-
-  _buildThresholdColorRange(range, binCount, field) {
-    const dummyDomain = Array.from({ length: binCount }, (_, index) => index);
-    const paletteScale = this.colorScaleCalculator.createColorScale({
-      domain: dummyDomain,
-      range,
-      scaleType: "ordinal",
-      fallbackInterpolator: null,
-      label: `Color[${field}]`
-    });
-    const palette = paletteScale?.range?.() || [];
-    if (palette.length >= binCount) return palette.slice(0, binCount);
-    const fallback = this.colorScaleCalculator.getColorPalette("Category10", binCount, "ordinal");
-    return Array.from(
-      { length: binCount },
-      (_, index) => palette[index % palette.length] || fallback[index % fallback.length] || "#999"
-    );
   }
 }

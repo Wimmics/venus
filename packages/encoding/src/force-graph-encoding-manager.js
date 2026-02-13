@@ -18,10 +18,6 @@ export class ForceGraphEncodingManager extends EncodingManager {
    */
   getDefaultEncoding() {
     return {
-      description: "Default force-graph encoding",
-      width: 800,
-      height: 600,
-      autosize: "none",
       interactions: {
         enabled: true,
         drag: true,
@@ -260,63 +256,40 @@ export class ForceGraphEncodingManager extends EncodingManager {
    * @returns {Function|null} D3 scale or null
    */
   createD3Scale(scaleConfig, data, field, isColorScale) {
-    
-
     if (!scaleConfig) return null;
 
     const type = scaleConfig.type || "ordinal";
-
-    let finalDomain;
-    if (data && field && this.domainCalculator) {
-      const userDomain = scaleConfig.domain;
-      finalDomain = this.domainCalculator.getDomain(data, field, userDomain, type);
-      if (!finalDomain?.length) return null;
-    } else if (Array.isArray(scaleConfig.domain) && scaleConfig.domain.length) {
-      finalDomain = scaleConfig.domain;
-    } else {
-      return null;
-    }
+    // Force-graph scales can be fed by nodes or links; accept any data container here.
+    const finalDomain = this._resolveScaleDomain(scaleConfig, data, field, type);
+    if (!finalDomain?.length) return null;
 
     const range = scaleConfig.range || null;
-    const isQuant =
-      type === "linear" || type === "sqrt" || type === "log" || type === "quantitative" || type === "sequential";
+    const isQuant = this._isQuantitativeScaleType(type);
 
     try {
       if (isQuant) {
-        const binningOptions = this._resolveBinningOptions(scaleConfig);
-        const numericValues = (Array.isArray(data) ? data : [])
-          .map((item) => this.domainCalculator.convertToNumber(item?.[field]))
-          .filter((value) => !isNaN(value));
+        const numericValues = this._extractNumericValues(data, field);
+        const breaks = this._computeQuantitativeBreaks(
+          scaleConfig,
+          finalDomain,
+          numericValues,
+          `${isColorScale ? "Color" : "Size"}[${field}]`
+        );
 
-        if (binningOptions.enabled && numericValues.length > 1 && this.binBreaksCalculator) {
-          const domainMin = Number(finalDomain[0]);
-          const domainMax = Number(finalDomain[finalDomain.length - 1]);
-          const effectiveMin = Number.isFinite(binningOptions.min) ? binningOptions.min : (Number.isFinite(domainMin) ? domainMin : null);
-          const effectiveMax = Number.isFinite(binningOptions.max) ? binningOptions.max : (Number.isFinite(domainMax) ? domainMax : null);
-          const breaks = this.binBreaksCalculator.computeBreaks(numericValues, {
-            method: binningOptions.method,
-            bins: binningOptions.bins,
-            breaks: binningOptions.breaks,
-            min: effectiveMin,
-            max: effectiveMax,
-            label: `${isColorScale ? "Color" : "Size"}[${field}]`,
-            quantitative: true
-          });
-
-          const binCount = breaks.bins;
-          if (binCount > 1 && isColorScale) {
-            const thresholdColors = this._buildThresholdColorRange(range, binCount, field);
+        if (breaks?.bins > 1) {
+          if (isColorScale) {
+            const thresholdColors = this._buildThresholdColorRange(range, breaks.bins, field);
             const thresholdScale = d3.scaleThreshold().domain(breaks.thresholds).range(thresholdColors);
             thresholdScale.__kgnovisBounds = { min: breaks.min, max: breaks.max };
             return thresholdScale;
           }
 
-          if (binCount > 1) {
-            const thresholdSizes = this._buildThresholdSizeRange(range, binCount, data, field, type);
-            const thresholdScale = d3.scaleThreshold().domain(breaks.thresholds).range(thresholdSizes);
-            thresholdScale.__kgnovisBounds = { min: breaks.min, max: breaks.max };
-            return thresholdScale;
-          }
+          // Size channel here is node/link size.
+          // Size binning is useful to bucket dense distributions into readable steps.
+          const thresholdSizes = this._buildThresholdSizeRange(range, breaks.bins, data, field, type);
+          const thresholdScale = d3.scaleThreshold().domain(breaks.thresholds).range(thresholdSizes);
+          thresholdScale.__kgnovisBounds = { min: breaks.min, max: breaks.max };
+          return thresholdScale;
         }
       }
 
@@ -331,6 +304,7 @@ export class ForceGraphEncodingManager extends EncodingManager {
         });
       }
 
+      // Size ranges are visualization-specific and normalized through sizeRangeCalculator.
       const finalRange = this.sizeRangeCalculator
         ? this.sizeRangeCalculator.createSizeRange({
             data,
@@ -347,39 +321,9 @@ export class ForceGraphEncodingManager extends EncodingManager {
 
       return d3.scaleOrdinal().domain(finalDomain).range(finalRange);
     } catch {
+      // Force graph is interaction-heavy; fail soft and let caller skip invalid scales.
       return null;
     }
-  }
-
-  _resolveBinningOptions(scaleConfig) {
-    const raw = scaleConfig?.binning;
-    if (raw === false) {
-      return { enabled: false, method: "jenks", bins: 1, breaks: null, min: null, max: null };
-    }
-
-    const method = raw?.method === "quartiles" ? "quartiles" : "jenks";
-    const bins = Number.isFinite(raw?.bins) ? Math.max(1, Math.floor(raw.bins)) : 5;
-    const breaks = Array.isArray(raw?.breaks) ? raw.breaks : null;
-    const min = Number.isFinite(raw?.min) ? Number(raw.min) : null;
-    const max = Number.isFinite(raw?.max) ? Number(raw.max) : null;
-    return { enabled: true, method, bins, breaks, min, max };
-  }
-
-  _buildThresholdColorRange(range, binCount, field) {
-    const dummyDomain = Array.from({ length: binCount }, (_, index) => index);
-    const paletteScale = this.colorScaleCalculator.createColorScale({
-      domain: dummyDomain,
-      range,
-      scaleType: "ordinal",
-      fallbackInterpolator: null,
-      label: `Color[${field}]`
-    });
-
-    const palette = paletteScale?.range?.() || [];
-    if (palette.length >= binCount) return palette.slice(0, binCount);
-
-    const fallback = this.colorScaleCalculator.getColorPalette("Category10", binCount, "ordinal");
-    return Array.from({ length: binCount }, (_, index) => palette[index % palette.length] || fallback[index % fallback.length] || "#999");
   }
 
   _buildThresholdSizeRange(range, binCount, data, field, scaleType) {
