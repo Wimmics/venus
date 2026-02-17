@@ -1,11 +1,11 @@
 {
   "name": "@wimmics/venus",
   "private": true,
-  "workspaces": ["packages/*", "apps/*"],
+  "workspaces": ["packages/*", "editor"],
   "scripts": {
     "build": "npm -w @wimmics/venus-webcomponents run build",
-    "dev:playground": "npm -w @wimmics/venus-playground run dev",
-    "dev:sandbox": "npm -w @wimmics/venus-sandbox run dev",
+    "dev": "npm -w @wimmics/venus-editor run dev",
+    "dev:editor": "npm -w @wimmics/venus-editor run dev",
 
     "proxy": "npm -w @wimmics/venus-sparql-proxy run start",
 

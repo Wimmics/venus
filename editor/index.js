@@ -1,7 +1,7 @@
 import "@wimmics/venus-webcomponents";
-import { SandboxApp } from "./src/js/sandbox-app.js";
+import { EditorApp } from "./src/js/editor-app.js";
 
 window.addEventListener("DOMContentLoaded", async () => {
-  const app = new SandboxApp();
+  const app = new EditorApp();
   await app.init();
 });

@@ -9,7 +9,7 @@ import { ResultsPanelController } from "./results-panel-controller.js";
 import { SnippetPanelController } from "./snippet-panel-controller.js";
 import { safeRun, updateStatus } from "./utils/safe-run.js";
 
-export class SandboxApp {
+export class EditorApp {
   constructor() {
     this.selectEl = document.getElementById("scenarioSelect");
     this.descriptionEl = document.getElementById("scenarioDescription");
