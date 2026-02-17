@@ -1,10 +1,11 @@
 {
   "name": "@wimmics/venus",
   "private": true,
-  "workspaces": ["packages/*", "editor"],
+  "workspaces": ["packages/*", "apps/*"],
   "scripts": {
     "build": "npm -w @wimmics/venus-webcomponents run build",
-    "dev": "npm -w @wimmics/venus-editor run dev",
+    "dev": "sh -c 'npm run dev:editor & pid=$!; trap \"kill $pid\" EXIT INT TERM; npm run dev:homepage'",
+    "dev:homepage": "npm -w @wimmics/venus-homepage run dev",
     "dev:editor": "npm -w @wimmics/venus-editor run dev",
 
     "proxy": "npm -w @wimmics/venus-sparql-proxy run start",

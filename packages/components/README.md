@@ -75,5 +75,5 @@ chart.launch();
   - `@wimmics/venus-sparql`
   - `@wimmics/venus-legends`
 - Used by:
-  - `editor`
+  - `apps/editor`
   - External browser apps integrating Venus components.
