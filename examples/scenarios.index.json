@@ -70,6 +70,16 @@
       "id": "barchart-stacked-languages",
       "configPath": "./encoding/barchart-stacked-languages.json",
       "component": "vis-barchart"
+    },
+    {
+      "id": "visgraph-redford-costars",
+      "configPath": "./encoding/vis-graph-redford-costars.json",
+      "component": "vis-graph"
+    },
+    {
+      "id": "visgraph-redford-costars-birthyear",
+      "configPath": "./encoding/vis-graph-redford-costars-birthyear.json",
+      "component": "vis-graph"
     }
   ]
 }

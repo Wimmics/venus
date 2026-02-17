@@ -19,7 +19,13 @@ Encoding engine that turns user encoding into validated domains and D3-ready sca
 ## Force-Graph Example
 ```js
 graph.encoding = {
-  interactions: { enabled: true, drag: true, zoom: true, nodeDetailsPanel: true },
+  interactions: {
+    enabled: true,
+    drag: true,
+    zoom: true,
+    nodeDetailsPanel: false,
+    tooltip: { fields: ["personLabel", "birthYear"] }
+  },
   nodes: {
     field: ["species", "family"],
     labels: { display: true },
@@ -53,6 +59,9 @@ graph.encoding = {
 - `drag`: enable/disable node drag and drop (default `true`)
 - `zoom`: enable/disable pan and zoom (default `true`)
 - `nodeDetailsPanel`: enable/disable internal node details panel (`vis-uri-meta`) lifecycle in `vis-graph` (default `false`)
+- `tooltip.fields`: optional array of query variable names to display in node tooltip.
+  - If omitted or empty, tooltip shows SPARQL/query-derived node fields (and excludes rendering/simulation internals).
+  - Special derived field `links` is also accepted (for example to show node degree/count of connected links).
 
 `nodes.field` accepts:
 - A string (for example `"species"`)

@@ -1,0 +1,37 @@
+{
+    "name": "Robert Redford Co-Stars",
+    "description": "Graph of co-stars of Robert Redford, with node size encoding the number of joint movies and color encoding the movie genre.",
+    "endpoint": "https://dbpedia.org/sparql",
+    "queryPath": "../queries/redford-costars.rq",
+    "encoding": {
+        "nodes": {
+            "field": "actorName",
+            "color": {
+                "field": "distributorName",
+                "value": "#cccccc",
+                "scale": {
+                    "type": "ordinal",
+                    "range": "Set3"
+                },
+                "legend": {
+                    "title": "Movie Distributor",
+                    "position": "top-left"
+                }
+            },
+            "size": {
+                "field": "links",
+                "scale": {
+                    "type": "linear",
+                    "range": [5, 25]
+                },
+                "legend": {
+                    "title": "Co-star Count",
+                    "position": "top-left"
+                }
+            }
+        },
+        "links": {
+            "field": "movieName"
+        }
+    }
+}

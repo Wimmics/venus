@@ -22,7 +22,10 @@ export class ForceGraphEncodingManager extends EncodingManager {
         enabled: true,
         drag: true,
         zoom: true,
-        nodeDetailsPanel: false
+        nodeDetailsPanel: false,
+        tooltip: {
+          fields: null
+        }
       },
       nodes: {
         field: ["source"],
@@ -216,9 +219,22 @@ export class ForceGraphEncodingManager extends EncodingManager {
 
     this._validateSingleScaleConfig(userEncoding);
     const normalizedEncoding = this._normalizeSingleScales(userEncoding);
+    this._validateTooltipConfig(normalizedEncoding);
 
     // Merge user encoding with defaults
-    return { ...this.getDefaultEncoding(), ...normalizedEncoding };
+    const defaults = this.getDefaultEncoding();
+    return {
+      ...defaults,
+      ...normalizedEncoding,
+      interactions: {
+        ...(defaults.interactions || {}),
+        ...(normalizedEncoding.interactions || {}),
+        tooltip: {
+          ...(defaults.interactions?.tooltip || {}),
+          ...(normalizedEncoding.interactions?.tooltip || {})
+        }
+      }
+    };
   }
 
   _normalizeSingleScales(encoding) {
@@ -244,6 +260,18 @@ export class ForceGraphEncodingManager extends EncodingManager {
     }
     if (Array.isArray(encoding?.links?.color)) {
       throw new Error('Invalid encoding: "links.color" must be an object, not an array.');
+    }
+  }
+
+  _validateTooltipConfig(encoding) {
+    const fields = encoding?.interactions?.tooltip?.fields;
+    if (fields == null) return;
+    if (!Array.isArray(fields)) {
+      throw new Error('Invalid encoding: "interactions.tooltip.fields" must be an array of query variable names.');
+    }
+    const allStrings = fields.every((fieldName) => typeof fieldName === "string" && fieldName.trim().length > 0);
+    if (!allStrings) {
+      throw new Error('Invalid encoding: "interactions.tooltip.fields" must contain non-empty strings only.');
     }
   }
 

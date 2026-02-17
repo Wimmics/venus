@@ -1,0 +1,25 @@
+PREFIX dbo:  <http://dbpedia.org/ontology/>
+PREFIX dbp:  <http://dbpedia.org/property/>
+PREFIX dbr:  <http://dbpedia.org/resource/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT DISTINCT
+  ?movie
+  ?movieName
+  ?actor
+  ?actorName
+  ?actorBirthYear
+WHERE {
+    # Include only movies where Robert Redford starred
+    ?movie dbo:starring dbr:Robert_Redford ;
+            dbo:starring ?actor ;
+            rdfs:label ?movieName .
+    FILTER(lang(?movieName) = "en")
+
+    # List all actors in those movies (including Robert)
+    ?actor rdfs:label ?actorName .
+    FILTER(lang(?actorName) = "en")
+
+    ?actor dbo:birthYear ?actorBirthYear . 
+}
+ORDER BY ?movieName ?actorName

@@ -286,8 +286,7 @@ export class VisGraph extends VisBase {
   }
 
   _showTooltip(node, x, y) {
-    const lines = [];
-    if (node.uri) lines.push(node.uri);
+    const lines = this._buildNodeTooltipLines(node);
     super._showTooltip(
       {
         title: node.label || node.id,
@@ -303,6 +302,79 @@ export class VisGraph extends VisBase {
         maxWidth: 320
       }
     );
+  }
+
+  _buildNodeTooltipLines(node) {
+    if (!node || typeof node !== "object") return [];
+
+    const configuredFields = this.visualEncoding?.interactions?.tooltip?.fields;
+    const hasConfiguredFields = Array.isArray(configuredFields) && configuredFields.length > 0;
+    const fields = hasConfiguredFields ? configuredFields : this._getDefaultTooltipFields(node);
+
+    const lines = [];
+    for (const fieldName of fields) {
+      if (fieldName === "label") continue;
+      if (!Object.prototype.hasOwnProperty.call(node, fieldName)) continue;
+      const value = node[fieldName];
+      if (value === undefined || value === null) continue;
+      lines.push(`${fieldName}: ${this._formatTooltipValue(value)}`);
+    }
+
+    return lines;
+  }
+
+  _getDefaultTooltipFields(node) {
+    const preferredOrder = ["id", "label", "uri", "type"];
+    const sizeField = this.visualEncoding?.nodes?.size?.field;
+    if (sizeField === "links") {
+      preferredOrder.push("links");
+    }
+    const ordered = [];
+    const seen = new Set();
+
+    for (const key of preferredOrder) {
+      if (Object.prototype.hasOwnProperty.call(node, key) && node[key] !== undefined && node[key] !== null) {
+        ordered.push(key);
+        seen.add(key);
+      }
+    }
+
+    const sparqlKeys = Object.keys(node.originalData || {});
+    for (const key of sparqlKeys) {
+      if (seen.has(key)) continue;
+      if (!Object.prototype.hasOwnProperty.call(node, key)) continue;
+      if (node[key] === undefined || node[key] === null) continue;
+      ordered.push(key);
+      seen.add(key);
+    }
+
+    // Fallback for non-SPARQL/manual nodes: include non-rendering fields only.
+    if (!ordered.length) {
+      const renderingKeys = new Set([
+        "x", "y", "vx", "vy", "fx", "fy", "px", "py", "index",
+        "sourceLinks", "targetLinks", "originalData"
+      ]);
+      for (const key of Object.keys(node)) {
+        if (renderingKeys.has(key) || seen.has(key)) continue;
+        const value = node[key];
+        if (value === undefined || value === null) continue;
+        ordered.push(key);
+        seen.add(key);
+      }
+    }
+
+    return ordered;
+  }
+
+  _formatTooltipValue(value) {
+    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+      return String(value);
+    }
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
+    }
   }
 
   _hideTooltip() {
