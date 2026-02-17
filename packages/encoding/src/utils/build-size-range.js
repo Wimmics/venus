@@ -1,4 +1,4 @@
-import { createLogger } from "@wimmics/kgnovis-core";
+import { createLogger } from "@wimmics/venus-core";
 
 export class SizeRangeCalculator {
   constructor() {

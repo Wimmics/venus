@@ -1,4 +1,4 @@
-# @wimmics/kgnovis-legends
+# @wimmics/venus-legends
 
 Legend web components and legend factory utilities.
 
@@ -9,6 +9,6 @@ Legend web components and legend factory utilities.
 
 ## Package Links
 - Depends on:
-  - No internal KGnoVis packages.
+  - No internal Venus packages.
 - Used by:
-  - `@wimmics/kgnovis-components` (`vis-graph` and `vis-barchart` legend lifecycle management).
+  - `@wimmics/venus-components` (`vis-graph` and `vis-barchart` legend lifecycle management).

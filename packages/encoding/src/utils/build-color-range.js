@@ -1,6 +1,6 @@
 import * as d3 from "d3";
 import * as d3Chromatic from "d3-scale-chromatic";
-import { createLogger } from "@wimmics/kgnovis-core";
+import { createLogger } from "@wimmics/venus-core";
 
 // Optional CDN import kept for reference:
 //import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";

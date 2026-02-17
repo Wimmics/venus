@@ -1,17 +1,16 @@
 {
-  "name": "@wimmics/kgnovis",
+  "name": "@wimmics/venus",
   "private": true,
   "workspaces": ["packages/*", "apps/*"],
   "scripts": {
-    "build": "npm -w @wimmics/kgnovis-webcomponents run build",
-    "dev:playground": "npm -w @wimmics/kgnovis-playground run dev",
-    "dev:sandbox": "npm -w @wimmics/kgnovis-sandbox run dev",
-    "dev": "npm -w @wimmics/kgnovis-playground run dev",
+    "build": "npm -w @wimmics/venus-webcomponents run build",
+    "dev:playground": "npm -w @wimmics/venus-playground run dev",
+    "dev:sandbox": "npm -w @wimmics/venus-sandbox run dev",
 
-    "proxy": "npm -w @wimmics/kgnovis-sparql-proxy run start",
+    "proxy": "npm -w @wimmics/venus-sparql-proxy run start",
 
-    "publish:components": "npm -w @wimmics/kgnovis-webcomponents publish --access public",
-    "publish:proxy": "npm -w @wimmics/kgnovis-sparql-proxy publish --access public",
+    "publish:components": "npm -w @wimmics/venus-webcomponents publish --access public",
+    "publish:proxy": "npm -w @wimmics/venus-sparql-proxy publish --access public",
 
     "reset": "rm -rf node_modules packages/*/node_modules && npm install"
   }

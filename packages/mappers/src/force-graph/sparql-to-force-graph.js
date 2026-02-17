@@ -1,6 +1,6 @@
 import { SparqlToVisMapper } from "../sparql-to-vis-mapper.js";
 import { extractId, extractLabel } from "../extract-bindings-info.js"
-import { VIS_TYPES } from "@wimmics/kgnovis-core";
+import { VIS_TYPES } from "@wimmics/venus-core";
 
 import { calculateFlexibleCooccurrence } from "./cooccurrence.js"
 import { addDirectionalLink, addSemanticLink } from "./link-builders.js";

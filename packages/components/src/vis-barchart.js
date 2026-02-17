@@ -1,7 +1,7 @@
-import { createRenderer } from "@wimmics/kgnovis-d3renderer";
-import { createEncodingManager } from "@wimmics/kgnovis-encoding";
-import { VIS_TYPES } from "@wimmics/kgnovis-core";
-import { buildBarChart } from "@wimmics/kgnovis-datasource";
+import { createRenderer } from "@wimmics/venus-d3renderer";
+import { createEncodingManager } from "@wimmics/venus-encoding";
+import { VIS_TYPES } from "@wimmics/venus-core";
+import { buildBarChart } from "@wimmics/venus-datasource";
 import { VisBase } from "./vis-base.js";
 
 export class VisBarChart extends VisBase {

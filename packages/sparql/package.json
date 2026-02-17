@@ -1,5 +1,5 @@
 {
-  "name": "@wimmics/kgnovis-sparql",
+  "name": "@wimmics/venus-sparql",
   "version": "0.0.0",
   "private": true,
   "type": "module",

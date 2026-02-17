@@ -1,16 +1,16 @@
-# KGnoVis Monorepo
+# Venus Monorepo
 
-KGnoVis is a modular toolkit to fetch SPARQL data, map it to visualization structures, encode visuals, and render interactive components in the browser.
+Venus is a modular toolkit to fetch SPARQL data, map it to visualization structures, encode visuals, and render interactive components in the browser.
 
 ## Architecture
 
 High-level flow:
 
-`apps/*` -> `@wimmics/kgnovis-webcomponents` -> `@wimmics/kgnovis-datasource` -> `@wimmics/kgnovis-sparql` + `@wimmics/kgnovis-mappers` -> vis data (`{nodes, links}` or `{rows}`) -> `@wimmics/kgnovis-encoding` -> `@wimmics/kgnovis-d3renderer` + `@wimmics/kgnovis-legends`
+`apps/*` -> `@wimmics/venus-webcomponents` -> `@wimmics/venus-datasource` -> `@wimmics/venus-sparql` + `@wimmics/venus-mappers` -> vis data (`{nodes, links}` or `{rows}`) -> `@wimmics/venus-encoding` -> `@wimmics/venus-d3renderer` + `@wimmics/venus-legends`
 
 Optional network helper:
 
-`@wimmics/kgnovis-sparql-proxy` can be used by clients when endpoint CORS prevents direct browser calls.
+`@wimmics/venus-sparql-proxy` can be used by clients when endpoint CORS prevents direct browser calls.
 
 ## Packages
 

@@ -58,7 +58,7 @@ export class ColorLegend extends HTMLElement {
   }
 
   _getNumericDomainBounds() {
-    const scaleBounds = this._d3Scale?.__kgnovisBounds;
+    const scaleBounds = this._d3Scale?.__venusBounds;
     if (scaleBounds && Number.isFinite(scaleBounds.min) && Number.isFinite(scaleBounds.max)) {
       return { min: Math.min(scaleBounds.min, scaleBounds.max), max: Math.max(scaleBounds.min, scaleBounds.max) };
     }

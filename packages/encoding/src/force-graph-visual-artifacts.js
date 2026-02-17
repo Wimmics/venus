@@ -1,4 +1,4 @@
-import { VIS_TYPES } from "@wimmics/kgnovis-core";
+import { VIS_TYPES } from "@wimmics/venus-core";
 
 function resolveSingle(config) {
   return Array.isArray(config) ? config[0] : config;

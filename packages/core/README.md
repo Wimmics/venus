@@ -1,6 +1,6 @@
-# @wimmics/kgnovis-core
+# @wimmics/venus-core
 
-Minimal shared utilities used across the KGnoVis monorepo.
+Minimal shared utilities used across the Venus monorepo.
 
 ## Responsibilities
 - Provide cross-package primitives with no visualization logic.
@@ -10,9 +10,9 @@ Minimal shared utilities used across the KGnoVis monorepo.
 
 ## Package Links
 - Used by:
-  - `@wimmics/kgnovis-components`
-  - `@wimmics/kgnovis-encoding`
-  - `@wimmics/kgnovis-sparql`
-  - `@wimmics/kgnovis-mappers` (indirectly through consumers)
+  - `@wimmics/venus-components`
+  - `@wimmics/venus-encoding`
+  - `@wimmics/venus-sparql`
+  - `@wimmics/venus-mappers` (indirectly through consumers)
 - Depends on:
-  - No internal KGnoVis packages.
+  - No internal Venus packages.

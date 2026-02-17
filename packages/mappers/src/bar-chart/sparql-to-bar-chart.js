@@ -1,6 +1,6 @@
 import { SparqlToVisMapper } from "../sparql-to-vis-mapper.js";
 import { extractLabel } from "../extract-bindings-info.js";
-import { VIS_TYPES } from "@wimmics/kgnovis-core";
+import { VIS_TYPES } from "@wimmics/venus-core";
 
 function bindingToValue(bindingValue, varName, binding, vars) {
   if (!bindingValue) return null;

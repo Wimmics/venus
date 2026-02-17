@@ -118,7 +118,7 @@ export class BarChartEncodingManager extends EncodingManager {
         if (breaks?.bins > 1) {
           const colors = this._buildThresholdColorRange(scaleConfig.range, breaks.bins, field);
           const thresholdScale = d3.scaleThreshold().domain(breaks.thresholds).range(colors);
-          thresholdScale.__kgnovisBounds = { min: breaks.min, max: breaks.max };
+          thresholdScale.__venusBounds = { min: breaks.min, max: breaks.max };
           return thresholdScale;
         }
       }

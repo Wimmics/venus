@@ -10,10 +10,10 @@
  * - VisGraph creates and owns a `vis-uri-meta` panel when `interactions.nodeDetailsPanel !== false`.
  * - This owned panel shares the lifecycle of the VisGraph instance.
  */
-import { createRenderer } from "@wimmics/kgnovis-d3renderer";
-import { createEncodingManager } from "@wimmics/kgnovis-encoding";
-import { VIS_TYPES } from "@wimmics/kgnovis-core";
-import { buildForceGraph } from "@wimmics/kgnovis-datasource";
+import { createRenderer } from "@wimmics/venus-d3renderer";
+import { createEncodingManager } from "@wimmics/venus-encoding";
+import { VIS_TYPES } from "@wimmics/venus-core";
+import { buildForceGraph } from "@wimmics/venus-datasource";
 import { VisBase } from "./vis-base.js";
 import "./vis-uri-metadata.js";
 

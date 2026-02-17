@@ -1,4 +1,4 @@
-# @wimmics/kgnovis-webcomponents
+# @wimmics/venus-webcomponents
 
 Browser-facing Web Components for KG visualization and node metadata.
 
@@ -38,7 +38,7 @@ Note:
 - `sparqlQuery`: SPARQL query string.
 - `sparqlEndpoint`: SPARQL endpoint URL. Defaults to `https://dbpedia.org/sparql` if not provided.
 - `sparqlResult`: pre-fetched SPARQL JSON result (bypasses endpoint+query fetch).
-- `encoding`: visualization encoding object (passed to `@wimmics/kgnovis-encoding`).
+- `encoding`: visualization encoding object (passed to `@wimmics/venus-encoding`).
 - `proxy`: proxy URL for SPARQL requests.
 
 Example:
@@ -67,13 +67,13 @@ chart.launch();
 
 ## Package Links
 - Depends on:
-  - `@wimmics/kgnovis-core`
-  - `@wimmics/kgnovis-datasource`
-  - `@wimmics/kgnovis-encoding`
-  - `@wimmics/kgnovis-mappers`
-  - `@wimmics/kgnovis-d3renderer`
-  - `@wimmics/kgnovis-sparql`
-  - `@wimmics/kgnovis-legends`
+  - `@wimmics/venus-core`
+  - `@wimmics/venus-datasource`
+  - `@wimmics/venus-encoding`
+  - `@wimmics/venus-mappers`
+  - `@wimmics/venus-d3renderer`
+  - `@wimmics/venus-sparql`
+  - `@wimmics/venus-legends`
 - Used by:
   - `apps/playground`
-  - External browser apps integrating KGnoVis components.
+  - External browser apps integrating Venus components.

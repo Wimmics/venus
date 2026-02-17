@@ -109,12 +109,12 @@ export class EditorPanelController {
 
   _buildSafeFileStem(value) {
     return (
-      String(value || "kgnovis")
+      String(value || "venus")
         .trim()
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-+|-+$/g, "")
-        .slice(0, 80) || "kgnovis"
+        .slice(0, 80) || "venus"
     );
   }
 

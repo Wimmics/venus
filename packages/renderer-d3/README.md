@@ -1,6 +1,6 @@
-# @wimmics/kgnovis-d3renderer
+# @wimmics/venus-d3renderer
 
-D3-based rendering runtime for KGnoVis graph visualizations.
+D3-based rendering runtime for Venus graph visualizations.
 
 ## Responsibilities
 - Render force-directed graphs to SVG (`ForceGraphRenderer`).
@@ -13,4 +13,4 @@ D3-based rendering runtime for KGnoVis graph visualizations.
   - D3 runtime
   - An encoding manager instance (injected by consumer)
 - Used by:
-  - `@wimmics/kgnovis-components` (`vis-graph` and `vis-barchart` use this renderer).
+  - `@wimmics/venus-components` (`vis-graph` and `vis-barchart` use this renderer).

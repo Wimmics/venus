@@ -1,4 +1,4 @@
-# @wimmics/kgnovis-sparql
+# @wimmics/venus-sparql
 
 SPARQL data access layer for query execution and metadata retrieval.
 
@@ -9,8 +9,8 @@ SPARQL data access layer for query execution and metadata retrieval.
 
 ## Package Links
 - Depends on:
-  - `@wimmics/kgnovis-core` (logging)
+  - `@wimmics/venus-core` (logging)
 - Used by:
-  - `@wimmics/kgnovis-datasource`
-  - `@wimmics/kgnovis-components` (`vis-graph` and `vis-barchart` through datasource)
+  - `@wimmics/venus-datasource`
+  - `@wimmics/venus-components` (`vis-graph` and `vis-barchart` through datasource)
   - Any app that wants direct SPARQL querying utilities.

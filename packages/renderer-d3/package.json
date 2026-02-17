@@ -1,5 +1,5 @@
 {
-  "name": "@wimmics/kgnovis-d3renderer",
+  "name": "@wimmics/venus-d3renderer",
   "version": "0.0.0",
   "private": true,
   "type": "module",

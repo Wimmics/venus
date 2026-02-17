@@ -1,4 +1,4 @@
-# @wimmics/kgnovis-mappers
+# @wimmics/venus-mappers
 
 Transforms raw SPARQL JSON results into visualization-ready structures.
 
@@ -11,7 +11,7 @@ Transforms raw SPARQL JSON results into visualization-ready structures.
 
 ## Package Links
 - Depends on:
-  - `@wimmics/kgnovis-core` (optional logging in mapper flows)
+  - `@wimmics/venus-core` (optional logging in mapper flows)
 - Used by:
-  - `@wimmics/kgnovis-datasource` (mapping stage)
-  - `@wimmics/kgnovis-components` (indirectly via datasource).
+  - `@wimmics/venus-datasource` (mapping stage)
+  - `@wimmics/venus-components` (indirectly via datasource).

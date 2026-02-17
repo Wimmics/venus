@@ -1,6 +1,6 @@
-import { createLogger } from "@wimmics/kgnovis-core";
-import { createVisualArtifacts } from "@wimmics/kgnovis-encoding";
-import { createLegends, positionLegends } from "@wimmics/kgnovis-legends";
+import { createLogger } from "@wimmics/venus-core";
+import { createVisualArtifacts } from "@wimmics/venus-encoding";
+import { createLegends, positionLegends } from "@wimmics/venus-legends";
 
 export class VisBase extends HTMLElement {
   static get observedAttributes() {

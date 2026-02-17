@@ -1,4 +1,4 @@
-# @wimmics/kgnovis-sparql-proxy
+# @wimmics/venus-sparql-proxy
 
 Small Node.js proxy to forward SPARQL requests and avoid browser CORS issues.
 
@@ -9,7 +9,7 @@ Small Node.js proxy to forward SPARQL requests and avoid browser CORS issues.
 
 ## Package Links
 - Depends on:
-  - No internal KGnoVis packages.
+  - No internal Venus packages.
 - Used by:
-  - `@wimmics/kgnovis-sparql` (as optional proxy URL target)
-  - `@wimmics/kgnovis-components` (`vis-graph` / `vis-barchart`) and apps via proxy configuration.
+  - `@wimmics/venus-sparql` (as optional proxy URL target)
+  - `@wimmics/venus-components` (`vis-graph` / `vis-barchart`) and apps via proxy configuration.

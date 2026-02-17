@@ -1,4 +1,4 @@
-# @wimmics/kgnovis-datasource
+# @wimmics/venus-datasource
 
 Orchestration layer that builds visualization data from query inputs.
 
@@ -11,7 +11,7 @@ Orchestration layer that builds visualization data from query inputs.
 
 ## Package Links
 - Depends on:
-  - `@wimmics/kgnovis-sparql` (fetching)
-  - `@wimmics/kgnovis-mappers` (raw -> graph mapping)
+  - `@wimmics/venus-sparql` (fetching)
+  - `@wimmics/venus-mappers` (raw -> graph mapping)
 - Used by:
-  - `@wimmics/kgnovis-components` (`vis-graph` and `vis-barchart` launch flows).
+  - `@wimmics/venus-components` (`vis-graph` and `vis-barchart` launch flows).

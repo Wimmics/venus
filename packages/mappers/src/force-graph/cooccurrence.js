@@ -1,4 +1,4 @@
-import { createLogger } from "@wimmics/kgnovis-core";
+import { createLogger } from "@wimmics/venus-core";
 
 const defaultLogger = createLogger("CooccurrenceGraph", { debug: false });
 

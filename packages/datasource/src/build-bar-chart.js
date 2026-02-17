@@ -1,5 +1,5 @@
-import { createSparqlMapper } from "@wimmics/kgnovis-mappers";
-import { VIS_TYPES } from "@wimmics/kgnovis-core";
+import { createSparqlMapper } from "@wimmics/venus-mappers";
+import { VIS_TYPES } from "@wimmics/venus-core";
 import { buildVis } from "./build-vis.js";
 
 export async function buildBarChart({

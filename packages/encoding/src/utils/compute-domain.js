@@ -2,7 +2,7 @@
  * Domain calculator used by visual encodings.
  * It derives and validates domains from data and optional user input.
  */
-import { createLogger } from "@wimmics/kgnovis-core";
+import { createLogger } from "@wimmics/venus-core";
 
 export class DomainCalculator {
   constructor() {

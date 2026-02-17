@@ -1,5 +1,5 @@
-import { fetchNodeDetails } from "@wimmics/kgnovis-sparql";
-import { createLogger } from "@wimmics/kgnovis-core";
+import { fetchNodeDetails } from "@wimmics/venus-sparql";
+import { createLogger } from "@wimmics/venus-core";
 
 export class VisURIMeta extends HTMLElement {
   static get observedAttributes() {

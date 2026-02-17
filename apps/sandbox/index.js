@@ -1,4 +1,4 @@
-import "@wimmics/kgnovis-webcomponents";
+import "@wimmics/venus-webcomponents";
 import { SandboxApp } from "./src/js/sandbox-app.js";
 
 window.addEventListener("DOMContentLoaded", async () => {

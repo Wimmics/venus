@@ -309,7 +309,7 @@ export class ForceGraphEncodingManager extends EncodingManager {
           if (isColorScale) {
             const thresholdColors = this._buildThresholdColorRange(range, breaks.bins, field);
             const thresholdScale = d3.scaleThreshold().domain(breaks.thresholds).range(thresholdColors);
-            thresholdScale.__kgnovisBounds = { min: breaks.min, max: breaks.max };
+            thresholdScale.__venusBounds = { min: breaks.min, max: breaks.max };
             return thresholdScale;
           }
 
@@ -317,7 +317,7 @@ export class ForceGraphEncodingManager extends EncodingManager {
           // Size binning is useful to bucket dense distributions into readable steps.
           const thresholdSizes = this._buildThresholdSizeRange(range, breaks.bins, data, field, type);
           const thresholdScale = d3.scaleThreshold().domain(breaks.thresholds).range(thresholdSizes);
-          thresholdScale.__kgnovisBounds = { min: breaks.min, max: breaks.max };
+          thresholdScale.__venusBounds = { min: breaks.min, max: breaks.max };
           return thresholdScale;
         }
       }

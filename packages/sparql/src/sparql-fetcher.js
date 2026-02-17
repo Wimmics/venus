@@ -9,7 +9,7 @@
  * - Returns consistent result objects for consumers
  */
 
-import { createLogger } from "@wimmics/kgnovis-core"; // adjust if your core package name differs
+import { createLogger } from "@wimmics/venus-core"; // adjust if your core package name differs
 
 export class SparqlDataFetcher {
   constructor({ debug = false, timeoutMs = 30000, logLevel = "info" } = {}) {

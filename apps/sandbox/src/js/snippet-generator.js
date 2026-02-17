@@ -7,7 +7,7 @@ export class SnippetGenerator {
     const prettyEncoding = JSON.stringify(encoding, null, 2);
     const lines = [
       '<script type="module">',
-      '  import "@wimmics/kgnovis-webcomponents";',
+      '  import "@wimmics/venus-webcomponents";',
       "",
       `  const ${varName} = document.querySelector("${tag}");`,
       `  ${varName}.sparqlEndpoint = "${endpoint}";`

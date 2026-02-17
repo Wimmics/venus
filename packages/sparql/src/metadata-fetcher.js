@@ -1,4 +1,4 @@
-import { createLogger } from "@wimmics/kgnovis-core"
+import { createLogger } from "@wimmics/venus-core"
 import { createMetadataSparqlQuery } from "./metadata-query-factory.js"
 import { SparqlDataFetcher } from "./sparql-fetcher.js"
 

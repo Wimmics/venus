@@ -1,4 +1,4 @@
-import { VIS_TYPES } from "@wimmics/kgnovis-core";
+import { VIS_TYPES } from "@wimmics/venus-core";
 
 function makeScaleId(visType, mark, channel, field) {
   return `${visType}:${mark}:${channel}:${field || "value"}`;

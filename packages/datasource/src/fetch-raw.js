@@ -1,5 +1,5 @@
 // fetch-raw.js
-import { SparqlDataFetcher } from "@wimmics/kgnovis-sparql";
+import { SparqlDataFetcher } from "@wimmics/venus-sparql";
 
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));

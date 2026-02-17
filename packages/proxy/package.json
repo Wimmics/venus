@@ -1,5 +1,5 @@
 {
-  "name": "@wimmics/kgnovis-sparql-proxy",
+  "name": "@wimmics/venus-sparql-proxy",
   "version": "0.1.0",
   "description": "Minimal SPARQL proxy server to avoid browser CORS issues",
   "license": "MIT",

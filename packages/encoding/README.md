@@ -1,4 +1,4 @@
-# @wimmics/kgnovis-encoding
+# @wimmics/venus-encoding
 
 Encoding engine that turns user encoding into validated domains and D3-ready scales.
 
@@ -275,9 +275,9 @@ Notes:
 - `src/bar-chart-visual-artifacts.js`
 
 ## Package Relationships
-- Depends on `@wimmics/kgnovis-core` for logging.
+- Depends on `@wimmics/venus-core` for logging.
 - Used by:
-- `@wimmics/kgnovis-components`
-- `@wimmics/kgnovis-d3renderer`
-- `@wimmics/kgnovis-datasource`
-- `@wimmics/kgnovis-mappers`
+- `@wimmics/venus-components`
+- `@wimmics/venus-d3renderer`
+- `@wimmics/venus-datasource`
+- `@wimmics/venus-mappers`
