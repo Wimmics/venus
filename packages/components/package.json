@@ -13,7 +13,7 @@
     "README.md",
     "LICENSE"
   ],
-  "sideEffects": false,
+  "sideEffects": true,
   "scripts": {
     "clean": "rm -rf dist",
     "build": "rollup -c",

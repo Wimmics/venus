@@ -18,6 +18,15 @@ const runSyncDocs = () =>
 
 export default defineConfig({
   base: process.env.VITE_BASE_PATH || "/",
+  build: {
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, "index.html"),
+        usage: path.resolve(__dirname, "usage/index.html"),
+        documentation: path.resolve(__dirname, "documentation/index.html")
+      }
+    }
+  },
   plugins: [
     {
       name: "venus-docs-hot-reload",
