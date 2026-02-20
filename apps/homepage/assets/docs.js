@@ -1,3 +1,14 @@
+const BASE_URL = import.meta.env.BASE_URL || "/";
+
+function withBase(inputPath) {
+  const raw = String(inputPath || "");
+  if (!raw || /^https?:\/\//i.test(raw) || raw.startsWith("#")) return raw;
+  if (raw.startsWith(BASE_URL)) return raw;
+  const cleanBase = BASE_URL.endsWith("/") ? BASE_URL : `${BASE_URL}/`;
+  const cleanPath = raw.replace(/^\/+/, "");
+  return `${cleanBase}${cleanPath}`;
+}
+
 function escapeHtml(value) {
   return value
     .replaceAll("&", "&amp;")
@@ -369,13 +380,13 @@ function scrollToAnchor(anchorId) {
 }
 
 async function loadManifest() {
-  const response = await fetch("/docs-manifest.json");
+  const response = await fetch(withBase("/docs-manifest.json"));
   if (!response.ok) throw new Error("Unable to load docs manifest.");
   return response.json();
 }
 
 async function loadDoc(path) {
-  const response = await fetch(`/docs/${path}`);
+  const response = await fetch(withBase(`/docs/${path}`));
   if (!response.ok) throw new Error(`Unable to load markdown file: ${path}`);
   return response.text();
 }

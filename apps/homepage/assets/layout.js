@@ -1,3 +1,27 @@
+const BASE_URL = import.meta.env.BASE_URL || "/";
+
+function withBase(inputPath) {
+  const raw = String(inputPath || "");
+  if (!raw || /^https?:\/\//i.test(raw) || raw.startsWith("#")) return raw;
+  if (raw.startsWith(BASE_URL)) return raw;
+  const cleanBase = BASE_URL.endsWith("/") ? BASE_URL : `${BASE_URL}/`;
+  const cleanPath = raw.replace(/^\/+/, "");
+  return `${cleanBase}${cleanPath}`;
+}
+
+function rewriteRootRelativeUrls(scope = document) {
+  scope.querySelectorAll('[href^="/"]').forEach((el) => {
+    const href = el.getAttribute("href");
+    if (!href || href.startsWith("//")) return;
+    el.setAttribute("href", withBase(href));
+  });
+  scope.querySelectorAll('[src^="/"]').forEach((el) => {
+    const src = el.getAttribute("src");
+    if (!src || src.startsWith("//")) return;
+    el.setAttribute("src", withBase(src));
+  });
+}
+
 async function includePartials() {
   const includeTargets = document.querySelectorAll("[data-include]");
 
@@ -6,9 +30,10 @@ async function includePartials() {
     if (!path) continue;
 
     try {
-      const response = await fetch(path);
+      const response = await fetch(withBase(path));
       if (!response.ok) throw new Error(`Failed to load ${path}`);
       target.innerHTML = await response.text();
+      rewriteRootRelativeUrls(target);
     } catch (error) {
       target.innerHTML = `<div class=\"w3-panel w3-pale-red w3-border\">Could not load section: ${path}</div>`;
       console.error(error);
@@ -107,6 +132,7 @@ function watchCodeBlocks() {
 }
 
 window.addEventListener("DOMContentLoaded", async () => {
+  rewriteRootRelativeUrls(document);
   await includePartials();
   markActivePage();
   setupMobileMenu();

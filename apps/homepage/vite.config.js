@@ -17,6 +17,7 @@ const runSyncDocs = () =>
   });
 
 export default defineConfig({
+  base: process.env.VITE_BASE_PATH || "/",
   plugins: [
     {
       name: "venus-docs-hot-reload",

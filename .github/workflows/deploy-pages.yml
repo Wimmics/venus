@@ -1,0 +1,77 @@
+name: Deploy Pages
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Resolve base paths
+        id: base
+        shell: bash
+        run: |
+          REPO_NAME="${GITHUB_REPOSITORY#*/}"
+          if [[ "$REPO_NAME" == *.github.io ]]; then
+            HOMEPAGE_BASE="/"
+          else
+            HOMEPAGE_BASE="/${REPO_NAME}/"
+          fi
+          EDITOR_BASE="${HOMEPAGE_BASE}editor/"
+          echo "homepage_base=$HOMEPAGE_BASE" >> "$GITHUB_OUTPUT"
+          echo "editor_base=$EDITOR_BASE" >> "$GITHUB_OUTPUT"
+
+      - name: Build homepage
+        env:
+          VITE_BASE_PATH: ${{ steps.base.outputs.homepage_base }}
+        run: npm -w @wimmics/venus-homepage run build
+
+      - name: Build editor
+        env:
+          VITE_BASE_PATH: ${{ steps.base.outputs.editor_base }}
+        run: npm -w @wimmics/venus-editor run build
+
+      - name: Prepare Pages artifact
+        run: |
+          mkdir -p out/editor
+          cp -R apps/homepage/dist/* out/
+          cp -R apps/editor/dist/* out/editor/
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
