@@ -36,6 +36,22 @@ export class DemoControl {
 
     const scenarios = await Promise.all(
       entries.map(async (entry) => {
+        if (entry.encodingPath) {
+          const encodingPath = resolvePath(this.indexPath, entry.encodingPath);
+          const encoding = await fetchJson(encodingPath);
+          const queryPath = resolvePath(this.indexPath, entry.queryPath || "");
+
+          return {
+            ...entry,
+            id: entry.id,
+            encodingPath,
+            queryPath,
+            encoding,
+            component: normalizeComponentTag(entry.component || "vis-graph")
+          };
+        }
+
+        // Backward-compatible path for legacy catalogs using configPath.
         const configPath = resolvePath(this.indexPath, entry.configPath);
         const config = await fetchJson(configPath);
         const queryPath = resolvePath(configPath, config.queryPath);

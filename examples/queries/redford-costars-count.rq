@@ -1,0 +1,17 @@
+PREFIX dbo:  <http://dbpedia.org/ontology/>
+PREFIX dbr:  <http://dbpedia.org/resource/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT
+  ?movie
+  ?movieName
+  (COUNT(DISTINCT ?actor) AS ?nbActors)
+WHERE {
+    ?movie dbo:starring dbr:Harrison_Ford ;
+           dbo:starring ?actor ;
+           rdfs:label ?movieName .
+
+    FILTER(lang(?movieName) = "en")
+}
+GROUP BY ?movie ?movieName
+ORDER BY DESC(?nbActors)

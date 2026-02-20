@@ -1,0 +1,16 @@
+{
+  "title": "Count of Robert Redford Co-Stars per Movie",
+  "x": {
+    "field": "movieName",
+    "axis": {
+      "labelAngle": -45,
+      "labelOffset": {
+        "x": -6,
+        "y": 5
+      }
+    }
+  },
+  "y": {
+    "field": "nbActors"
+  }
+}

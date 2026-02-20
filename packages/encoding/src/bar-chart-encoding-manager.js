@@ -6,6 +6,9 @@ export class BarChartEncodingManager extends EncodingManager {
     return {
       direction: "vertical",
       stack: false,
+      groups: {
+        field: null
+      },
       x: {
         field: "category",
         axis: { labelAngle: 0 }
@@ -17,7 +20,7 @@ export class BarChartEncodingManager extends EncodingManager {
       },
       color: {
         value: "#69b3a2",
-        legend: { display: false, title: "Color", position: "bottom" }
+        legend: { display: true, position: "bottom" }
       }
     };
   }
@@ -45,7 +48,9 @@ export class BarChartEncodingManager extends EncodingManager {
     const yField = mapping?.y?.field && vars.includes(mapping.y.field) ? mapping.y.field : vars[1] || vars[0];
     const colorField =
       mapping?.color?.field && vars.includes(mapping.color.field) ? mapping.color.field : null;
-    return { xField, yField, colorField };
+    const groupField =
+      mapping?.groups?.field && vars.includes(mapping.groups.field) ? mapping.groups.field : null;
+    return { xField, yField, colorField, groupField };
   }
 
   deriveEncoding(userEncoding, sparqlVars, sparqlData) {
@@ -57,6 +62,7 @@ export class BarChartEncodingManager extends EncodingManager {
     const merged = {
       ...this.getDefaultEncoding(),
       ...(userEncoding || {}),
+      groups: { ...this.getDefaultEncoding().groups, ...(userEncoding?.groups || {}) },
       x: { ...this.getDefaultEncoding().x, ...(userEncoding?.x || {}) },
       y: { ...this.getDefaultEncoding().y, ...(userEncoding?.y || {}) },
       color: { ...this.getDefaultEncoding().color, ...(userEncoding?.color || {}) }
@@ -75,6 +81,15 @@ export class BarChartEncodingManager extends EncodingManager {
       throw new Error('Invalid encoding: "stack" must be true, false, or "normalize".');
     }
 
+    const groupField = merged?.groups?.field;
+    if (
+      groupField !== undefined &&
+      groupField !== null &&
+      (typeof groupField !== "string" || !groupField.trim())
+    ) {
+      throw new Error('Invalid encoding: "groups.field" must be a non-empty string when provided.');
+    }
+
     return merged;
   }
 
@@ -90,12 +105,18 @@ export class BarChartEncodingManager extends EncodingManager {
 
     if (enc.x?.field && enc.x?.scale) {
       const scaleType = enc.x.scale.type || "ordinal";
-      enc.x.scale.domain = this.domainCalculator.getDomain(rows, enc.x.field, enc.x.scale.domain, scaleType);
+      const userDomain = enc.x.scale.domain;
+      if (Array.isArray(userDomain) && userDomain.length > 0) {
+        enc.x.scale.domain = this.domainCalculator.getDomain(rows, enc.x.field, userDomain, scaleType);
+      }
     }
 
     if (enc.y?.field && enc.y?.scale) {
       const scaleType = enc.y.scale.type || "linear";
-      enc.y.scale.domain = this.domainCalculator.getDomain(rows, enc.y.field, enc.y.scale.domain, scaleType);
+      const userDomain = enc.y.scale.domain;
+      if (Array.isArray(userDomain) && userDomain.length > 0) {
+        enc.y.scale.domain = this.domainCalculator.getDomain(rows, enc.y.field, userDomain, scaleType);
+      }
     }
 
     return enc;

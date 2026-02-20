@@ -44,12 +44,12 @@ export class ForceGraphEncodingManager extends EncodingManager {
             domain: ["uri", "literal"],
             range: ["#69b3a2", "#ff7f0e"]
           },
-          legend: { display: true, title: "Node Types" }
+          legend: { display: true }
         },
         size: {
           field: "links",
           scale: { type: "linear", domain: [0, 10], range: [8, 25] },
-          legend: { display: false, title: "Node Size" }
+          legend: { display: true }
         }
       },
       links: {

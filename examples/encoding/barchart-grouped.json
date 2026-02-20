@@ -1,0 +1,16 @@
+{
+  "title": "Harrison Ford's movies per year and studio according to DBpedia KG",
+  "x": {
+    "field": "year"
+  },
+  "y": {
+    "field": "nbMovies",
+    "scale": { "type": "count" }
+  },
+  "color": {
+      "field": "studioName",
+      "scale": { "type": "ordinal", "range": "Set3" },
+      "legend": { "title" : "Studio", "position": "top"}
+  },
+  "groups": {"field": "studioName"}
+}

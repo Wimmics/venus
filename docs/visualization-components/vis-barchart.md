@@ -45,4 +45,5 @@ Bar Charts are distinguished from Histograms, as they do not display continuous 
 | `scale` | Defines how quantitative values map to visual extents. | [`scale`](../encoding/scale.md) |  ✗ 
 | `legend` | Controls legend visibility, placement, and compact mode for color encodings. | [`legend`](../encoding/legend.md) |  ✗ 
 | `direction` | Switches chart orientation between vertical and horizontal bars. | [`direction`](../encoding/direction.md) |  ✗ 
-| `stack` | Chooses grouped, stacked, or normalized stacked bar behavior. | [`stack`](../encoding/stack.md) |  ✗ 
+| `groups` | Defines the field used to split each category into grouped/stacked series. | [`groups`](../encoding/cartesian/groups.md) |  ✗ 
+| `stack` | Chooses stacking mode (`false`, `true`, `"normalize"`). Grouping requires `groups.field`. | [`stack`](../encoding/cartesian/stack.md) |  ✗ 

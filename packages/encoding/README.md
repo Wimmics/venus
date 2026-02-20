@@ -14,7 +14,7 @@ Encoding engine that turns user encoding into validated domains and D3-ready sca
 - Optional top-level `title`: when provided, components render it above the chart area.
 - Optional top-level `background`: chart background color (`"#ffffff"`, `"white"`, etc.).
 - Force graph: `nodes` / `links` channels (`color`, `size`, `stroke`, `labels`, `interactions`).
-- Bar chart: `x`, `y`, `color`, `direction`.
+- Bar chart: `x`, `y`, `color`, `groups`, `direction`.
 
 ## Force-Graph Example
 ```js
@@ -91,6 +91,7 @@ In co-occurrence mode, nodes are connected when they share the same resolved val
 ## Bar-Chart Example
 ```js
 bar.encoding = {
+  groups: { field: "language" },
   stack: false,
   x: {
     field: "name",
@@ -123,9 +124,14 @@ bar.encoding = {
 - `"horizontal"`
 
 `stack`:
-- `false` (default): grouped bar chart
+- `false` (default): no stacking
 - `true`: stacked bar chart
 - `"normalize"`: normalized stacked bar chart (100%)
+
+`groups.field`:
+- optional grouping field used to split each category into multiple bars/segments
+- required if you want grouped bars with `stack: false`
+- stacking (`stack: true` / `"normalize"`) does not require `groups.field`
 
 `x.axis` options:
 - `labelAngle`: number

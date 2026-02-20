@@ -1,0 +1,35 @@
+PREFIX dbo:  <http://dbpedia.org/ontology/>
+PREFIX dbp:  <http://dbpedia.org/property/>
+PREFIX dbr:  <http://dbpedia.org/resource/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+
+SELECT
+  ?year
+  ?studioName
+  (COUNT(DISTINCT ?movie) AS ?nbMovies)
+WHERE {
+
+  ?movie dbo:starring dbr:Harrison_Ford .
+
+  { ?movie dbo:releaseDate ?date }
+  UNION
+  { ?movie dbp:released ?date }
+
+  BIND(xsd:integer(SUBSTR(STR(?date),1,4)) AS ?year)
+
+  OPTIONAL {
+    { ?movie dbp:company ?studio }
+    UNION
+    { ?movie dbp:studio ?studio }
+  }
+
+  OPTIONAL {
+    ?studio dbp:name ?studioName1 .
+    FILTER(lang(?studioName1) = "en")
+  }
+
+  BIND(COALESCE(?studioName1, "Unknown") AS ?studioName)
+}
+GROUP BY ?year ?studioName
+ORDER BY ?year ?studioName

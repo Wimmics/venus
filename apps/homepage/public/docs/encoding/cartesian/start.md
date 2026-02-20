@@ -34,4 +34,5 @@ Cartesian visualizations expose additional encoding properties dedicated to posi
 | [`x`](./x.md) |  | Defines the horizontal positional encoding. |
 | [`y`](./y.md) |  | Defines the vertical positional encoding. |
 | [`direction`](./direction.md) |  | Controls the orientation of marks (e.g., bar direction). |
+| [`groups`](./groups.md) |  | Defines the field used to split grouped or stacked bars. |
 | [`stack`](./stack.md) |  | Defines how marks are grouped or stacked. |

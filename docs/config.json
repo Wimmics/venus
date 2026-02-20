@@ -30,6 +30,7 @@
         {"path": "encoding/cartesian/y.md", "label": "Y Axis"},
         {"path": "encoding/cartesian/axis.md", "label": "Axes"},
         {"path": "encoding/cartesian/direction.md", "label": "Orientation" },
+        {"path": "encoding/cartesian/groups.md", "label": "Groups"},
         {"path": "encoding/cartesian/stack.md", "label": "Stack"}
       ]
     },

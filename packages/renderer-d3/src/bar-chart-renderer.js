@@ -66,8 +66,16 @@ export default class BarChartRenderer {
 
     const direction = mapping.direction === "horizontal" ? "horizontal" : "vertical";
     const stackMode = this._resolveStackMode(mapping?.stack);
+    const groupField = typeof mapping?.groups?.field === "string" ? mapping.groups.field.trim() : "";
     const colorEncoding = mapping?.color || {};
     const colorField = colorEncoding?.field;
+    const layoutMode = this._resolveLayoutMode(stackMode, groupField);
+    const splitField =
+      layoutMode === "grouped"
+        ? groupField
+        : (layoutMode === "stacked" || layoutMode === "normalize")
+          ? (colorField || groupField || "")
+          : "";
 
     const artifactChannels = Array.isArray(visualArtifacts?.channels) ? visualArtifacts.channels : [];
     const artifactScales = visualArtifacts?.scales instanceof Map ? visualArtifacts.scales : new Map();
@@ -125,11 +133,11 @@ export default class BarChartRenderer {
     const normalizedRows = this.data.map((datum) => {
       const x = String(datum?.[xField]);
       const yNum = Math.max(0, toNumeric(datum?.[yField]) || 0);
-      const sub = colorField ? String(datum?.[colorField] ?? "undefined") : "__single__";
+      const sub = splitField ? String(datum?.[splitField] ?? "undefined") : "__single__";
       return { x, y: yNum, sub, raw: datum };
     });
     const xCategories = Array.from(new Set(normalizedRows.map((row) => row.x)));
-    const subCategories = this._resolveSubCategories(normalizedRows, colorField, barColorScale);
+    const subCategories = this._resolveSubCategories(normalizedRows, splitField, colorField, barColorScale);
     const aggregated = this._aggregateByCategory(normalizedRows, xCategories, subCategories);
 
     const groupedBars = xCategories.flatMap((xCategory) =>
@@ -139,14 +147,21 @@ export default class BarChartRenderer {
         const base = bucket.sample ? { ...bucket.sample } : {};
         base[xField] = xCategory;
         base[yField] = value;
-        if (colorField) base[colorField] = subCategory;
+        if (splitField) base[splitField] = subCategory;
         return {
           x: xCategory,
           sub: subCategory,
           value,
-          datum: base
+          datum: base,
+          __observed: Boolean(bucket.sample)
         };
       })
+    );
+    const groupedBarsByCategory = new Map(
+      xCategories.map((xCategory) => [
+        xCategory,
+        groupedBars.filter((item) => item.x === xCategory && item.__observed)
+      ])
     );
 
     const stackedRows = xCategories.map((xCategory) => {
@@ -157,7 +172,7 @@ export default class BarChartRenderer {
         const base = bucket.sample ? { ...bucket.sample } : {};
         base[xField] = xCategory;
         base[yField] = row[subCategory];
-        if (colorField) base[colorField] = subCategory;
+        if (splitField) base[splitField] = subCategory;
         row.__meta[subCategory] = base;
       }
       return row;
@@ -179,7 +194,7 @@ export default class BarChartRenderer {
           const baseMax = Math.max(baseMin * 10, maxValue);
           return [baseMin, Math.max(baseMax, defaultMaxValue)];
         }
-        if (stackMode === "stacked") {
+        if (layoutMode === "stacked" || layoutMode === "normalize") {
           return [Math.min(0, minValue), Math.max(1, maxValue, defaultMaxValue)];
         }
         return [Math.min(0, minValue), Math.max(1, maxValue)];
@@ -189,8 +204,7 @@ export default class BarChartRenderer {
 
     if (direction === "vertical") {
       const xScale = d3.scaleBand().domain(xCategories).range([0, innerWidth]).padding(0.15);
-      const xInnerScale = d3.scaleBand().domain(subCategories).range([0, xScale.bandwidth()]).padding(0.08);
-      const yDomain = resolveValueDomain(stackMode === "grouped" ? groupedMax : stackedMax);
+      const yDomain = resolveValueDomain(layoutMode === "grouped" || layoutMode === "simple" ? groupedMax : stackedMax);
       const yScale = createValueScale(yDomain, [innerHeight, 0], yScaleConfig);
 
       plot
@@ -209,23 +223,67 @@ export default class BarChartRenderer {
         .selectAll("text")
         .attr("transform", `translate(${yLabelOffset.x},${yLabelOffset.y})`);
 
-      if (stackMode === "grouped") {
+      if (layoutMode === "grouped") {
+        const groupedBarsObserved = groupedBars.filter((item) => item.__observed);
         plot
           .append("g")
           .attr("class", "bars")
           .selectAll("rect")
-          .data(groupedBars)
+          .data(groupedBarsObserved)
           .enter()
           .append("rect")
-          .attr("x", (datum) => xScale(datum.x) + xInnerScale(datum.sub))
+          .attr("x", (datum) => {
+            const barsInCategory = groupedBarsByCategory.get(datum.x) || [];
+            const localScale = d3
+              .scaleBand()
+              .domain(barsInCategory.map((item) => item.sub))
+              .range([0, xScale.bandwidth()])
+              .padding(0.12);
+            return xScale(datum.x) + (localScale(datum.sub) || 0);
+          })
           .attr("y", (datum) => yScale(datum.value))
-          .attr("width", xInnerScale.bandwidth())
+          .attr("width", (datum) => {
+            const barsInCategory = groupedBarsByCategory.get(datum.x) || [];
+            const localScale = d3
+              .scaleBand()
+              .domain(barsInCategory.map((item) => item.sub))
+              .range([0, xScale.bandwidth()])
+              .padding(0.12);
+            return localScale.bandwidth();
+          })
           .attr("height", (datum) => Math.max(0, innerHeight - yScale(datum.value)))
           .attr("fill", (datum) => {
             if (!colorField) return colorForDatum(datum.datum);
             if (!barColorScale) return defaultBarColor;
-            return barColorScale(datum.sub) || defaultBarColor;
+            return barColorScale(datum.datum?.[colorField]) || defaultBarColor;
           })
+          .on("mouseover", (event, datum) => {
+            this.callbacks.onBarHover?.(datum.datum, event.offsetX, event.offsetY);
+          })
+          .on("mouseout", () => {
+            this.callbacks.onBarOut?.();
+          });
+      } else if (layoutMode === "simple") {
+        const simpleBars = xCategories.map((xCategory) => {
+          const bucket = aggregated.get(xCategory)?.get("__single__") || { value: 0, sample: null };
+          const value = bucket.value || 0;
+          const base = bucket.sample ? { ...bucket.sample } : {};
+          base[xField] = xCategory;
+          base[yField] = value;
+          return { x: xCategory, value, datum: base };
+        });
+        plot
+          .append("g")
+          .attr("class", "bars")
+          .selectAll("rect")
+          .data(simpleBars)
+          .enter()
+          .append("rect")
+          .attr("x", (datum) => xScale(datum.x))
+          .attr("y", (datum) => yScale(datum.value))
+          .attr("width", xScale.bandwidth())
+          .attr("height", (datum) => Math.max(0, innerHeight - yScale(datum.value)))
+          .attr("fill", (datum) => colorForDatum(datum.datum))
           .on("mouseover", (event, datum) => {
             this.callbacks.onBarHover?.(datum.datum, event.offsetX, event.offsetY);
           })
@@ -245,11 +303,6 @@ export default class BarChartRenderer {
           .data(stackSeries)
           .enter()
           .append("g")
-          .attr("fill", (series) => {
-            if (!colorField) return defaultBarColor;
-            if (!barColorScale) return defaultBarColor;
-            return barColorScale(series.key) || defaultBarColor;
-          })
           .selectAll("rect")
           .data((series) =>
             series.map((segment) => {
@@ -257,7 +310,7 @@ export default class BarChartRenderer {
               const value = Number(segment.data?.[series.key]) || 0;
               meta[xField] = segment.data?.__x;
               meta[yField] = value;
-              if (colorField) meta[colorField] = series.key;
+              if (splitField) meta[splitField] = series.key;
               return {
                 key: series.key,
                 segment,
@@ -271,6 +324,7 @@ export default class BarChartRenderer {
           .attr("y", (datum) => yScale(datum.segment[1]))
           .attr("height", (datum) => Math.max(0, yScale(datum.segment[0]) - yScale(datum.segment[1])))
           .attr("width", xScale.bandwidth())
+          .attr("fill", (datum) => colorForDatum(datum.datum))
           .on("mouseover", (event, datum) => {
             this.callbacks.onBarHover?.(datum.datum, event.offsetX, event.offsetY);
           })
@@ -283,8 +337,7 @@ export default class BarChartRenderer {
     }
 
     const yScale = d3.scaleBand().domain(xCategories).range([0, innerHeight]).padding(0.15);
-    const yInnerScale = d3.scaleBand().domain(subCategories).range([0, yScale.bandwidth()]).padding(0.08);
-    const xDomain = resolveValueDomain(stackMode === "grouped" ? groupedMax : stackedMax);
+    const xDomain = resolveValueDomain(layoutMode === "grouped" || layoutMode === "simple" ? groupedMax : stackedMax);
     const xScale = createValueScale(xDomain, [0, innerWidth], yScaleConfig);
 
     plot
@@ -300,23 +353,71 @@ export default class BarChartRenderer {
       .style("text-anchor", xLabelAngle ? "end" : "end")
       .attr("transform", xLabelAngle ? `translate(${xLabelOffset.x},${xLabelOffset.y}) rotate(${xLabelAngle})` : `translate(${xLabelOffset.x},${xLabelOffset.y})`);
 
-    if (stackMode === "grouped") {
+    if (layoutMode === "grouped") {
+      const groupedBarsObserved = groupedBars.filter((item) => item.__observed);
       plot
         .append("g")
         .attr("class", "bars")
         .selectAll("rect")
-        .data(groupedBars)
+        .data(groupedBarsObserved)
         .enter()
         .append("rect")
         .attr("x", 0)
-        .attr("y", (datum) => yScale(datum.x) + yInnerScale(datum.sub))
+        .attr("y", (datum) => {
+          const barsInCategory = groupedBarsByCategory.get(datum.x) || [];
+          const localScale = d3
+            .scaleBand()
+            .domain(barsInCategory.map((item) => item.sub))
+            .range([0, yScale.bandwidth()])
+            .padding(0.12);
+          return yScale(datum.x) + (localScale(datum.sub) || 0);
+        })
         .attr("width", (datum) => Math.max(0, xScale(datum.value)))
-        .attr("height", yInnerScale.bandwidth())
+        .attr("height", (datum) => {
+          const barsInCategory = groupedBarsByCategory.get(datum.x) || [];
+          const localScale = d3
+            .scaleBand()
+            .domain(barsInCategory.map((item) => item.sub))
+            .range([0, yScale.bandwidth()])
+            .padding(0.12);
+          return localScale.bandwidth();
+        })
         .attr("fill", (datum) => {
           if (!colorField) return colorForDatum(datum.datum);
           if (!barColorScale) return defaultBarColor;
-          return barColorScale(datum.sub) || defaultBarColor;
+          return barColorScale(datum.datum?.[colorField]) || defaultBarColor;
         })
+        .on("mouseover", (event, datum) => {
+          this.callbacks.onBarHover?.(datum.datum, event.offsetX, event.offsetY);
+        })
+        .on("mouseout", () => {
+          this.callbacks.onBarOut?.();
+        });
+      return;
+    }
+
+    if (layoutMode === "simple") {
+      const simpleBars = xCategories.map((xCategory) => {
+        const bucket = aggregated.get(xCategory)?.get("__single__") || { value: 0, sample: null };
+        const value = bucket.value || 0;
+        const base = bucket.sample ? { ...bucket.sample } : {};
+        base[xField] = xCategory;
+        base[yField] = value;
+        return { x: xCategory, value, datum: base };
+      });
+
+      plot
+        .append("g")
+        .attr("class", "bars")
+        .selectAll("rect")
+        .data(simpleBars)
+        .enter()
+        .append("rect")
+        .attr("x", 0)
+        .attr("y", (datum) => yScale(datum.x))
+        .attr("width", (datum) => Math.max(0, xScale(datum.value)))
+        .attr("height", yScale.bandwidth())
+        .attr("fill", (datum) => colorForDatum(datum.datum))
         .on("mouseover", (event, datum) => {
           this.callbacks.onBarHover?.(datum.datum, event.offsetX, event.offsetY);
         })
@@ -338,11 +439,6 @@ export default class BarChartRenderer {
       .data(stackSeries)
       .enter()
       .append("g")
-      .attr("fill", (series) => {
-        if (!colorField) return defaultBarColor;
-        if (!barColorScale) return defaultBarColor;
-        return barColorScale(series.key) || defaultBarColor;
-      })
       .selectAll("rect")
       .data((series) =>
         series.map((segment) => {
@@ -350,7 +446,7 @@ export default class BarChartRenderer {
           const value = Number(segment.data?.[series.key]) || 0;
           meta[xField] = segment.data?.__x;
           meta[yField] = value;
-          if (colorField) meta[colorField] = series.key;
+          if (splitField) meta[splitField] = series.key;
           return {
             key: series.key,
             segment,
@@ -364,6 +460,7 @@ export default class BarChartRenderer {
       .attr("y", (datum) => yScale(datum.segment.data.__x))
       .attr("width", (datum) => Math.max(0, xScale(datum.segment[1]) - xScale(datum.segment[0])))
       .attr("height", yScale.bandwidth())
+      .attr("fill", (datum) => colorForDatum(datum.datum))
       .on("mouseover", (event, datum) => {
         this.callbacks.onBarHover?.(datum.datum, event.offsetX, event.offsetY);
       })
@@ -484,13 +581,20 @@ export default class BarChartRenderer {
   _resolveStackMode(stack) {
     if (stack === true) return "stacked";
     if (typeof stack === "string" && stack.toLowerCase().trim() === "normalize") return "normalize";
-    return "grouped";
+    return "none";
   }
 
-  _resolveSubCategories(rows, colorField, barColorScale) {
-    if (!colorField) return ["__single__"];
+  _resolveLayoutMode(stackMode, groupField) {
+    if (stackMode === "stacked" || stackMode === "normalize") return stackMode;
+    if (groupField) return "grouped";
+    return "simple";
+  }
+
+  _resolveSubCategories(rows, splitField, colorField, barColorScale) {
+    if (!splitField) return ["__single__"];
     const observed = Array.from(new Set(rows.map((row) => row.sub)));
-    const scaleDomain = typeof barColorScale?.domain === "function" ? barColorScale.domain() : [];
+    const canUseColorOrder = splitField === colorField;
+    const scaleDomain = canUseColorOrder && typeof barColorScale?.domain === "function" ? barColorScale.domain() : [];
     if (!Array.isArray(scaleDomain) || !scaleDomain.length) return observed;
     const ordered = [];
     for (const value of scaleDomain.map((item) => String(item))) {

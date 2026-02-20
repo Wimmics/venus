@@ -1,85 +1,59 @@
 {
-  "defaultScenarioId": "species-palette-size-jenks",
+  "defaultScenarioId": "visgraph-cooccurrence-color-size",
   "scenarios": [
     {
-      "id": "species-palette-size-jenks",
-      "configPath": "./encoding/species-palette-size-jenks.json",
+      "id": "visgraph-minimal-cooccurrence",
+      "name": "Force-directed Graph: Harrison Ford Co-Stars (Minimal Example)",
+      "encodingPath": "./encoding/vis-graph-minimal-cooccurrence.json",
+      "queryPath": "./queries/redford-costars.rq",
+      "endpoint": "https://dbpedia.org/sparql",
+      "component": "vis-graph"
+    },
+
+    {
+      "id": "visgraph-directed-color-size",
+      "name": "Force-directed Graph: Movie Distributors and Co-stars of Harrison Ford (Color and Size Channels)",
+      "encodingPath": "./encoding/vis-graph-directed-color-size.json",
+      "queryPath": "./queries/redford-costars.rq",
+      "endpoint": "https://dbpedia.org/sparql",
       "component": "vis-graph"
     },
     {
-      "id": "family-color-links-size",
-      "configPath": "./encoding/family-color-links-size.json",
+      "id": "visgraph-cooccurrence-color-size",
+      "name": "Harrison Ford Co-Stars and their Birth Year",
+      "encodingPath": "./encoding/vis-graph-cooccurrence-color-size.json",
+      "queryPath": "./queries/redford-costars-birthyear.rq",
+      "endpoint": "https://dbpedia.org/sparql",
       "component": "vis-graph"
     },
+
+
+
     {
-      "id": "articlecount-color-and-size-quartiles",
-      "configPath": "./encoding/articlecount-color-and-size-quartiles.json",
-      "component": "vis-graph"
-    },
-    {
-      "id": "articlecount-color-size-no-labels",
-      "configPath": "./encoding/articlecount-color-size-no-labels.json",
-      "component": "vis-graph"
-    },
-    {
-      "id": "articlecount-stroke-custom",
-      "configPath": "./encoding/articlecount-stroke-custom.json",
-      "component": "vis-graph"
-    },
-    {
-      "id": "conservation-color-constant-size",
-      "configPath": "./encoding/conservation-color-constant-size.json",
-      "component": "vis-graph"
-    },
-    {
-      "id": "articlecount-manual-breaks",
-      "configPath": "./encoding/articlecount-manual-breaks.json",
-      "component": "vis-graph"
-    },
-    {
-      "id": "articlecount-explicit-domain",
-      "configPath": "./encoding/articlecount-explicit-domain.json",
-      "component": "vis-graph"
-    },
-    {
-      "id": "link-color-speciescount",
-      "configPath": "./encoding/link-color-speciescount.json",
-      "component": "vis-graph"
-    },
-    {
-      "id": "link-by-conservation",
-      "configPath": "./encoding/links-by-conservation.json",
-      "component": "vis-graph"
-    },
-    {
-      "id": "link-by-conservation-multifield",
-      "configPath": "./encoding/links-by-conservation-multifield.json",
-      "component": "vis-graph"
-    },
-    {
-      "id": "interactions-disabled",
-      "configPath": "./encoding/interactions-disabled.json",
-      "component": "vis-graph"
-    },
-    {
-      "id": "barchart-population-language",
-      "configPath": "./encoding/barchart-population-language.json",
+      "id": "barchart-simple",
+      "name": "Simple Bar Chart: Harrison Ford Co-Stars per Movie",
+      "encodingPath": "./encoding/barchart-simple.json",
+      "queryPath": "./queries/redford-costars-count.rq",
+      "endpoint": "https://dbpedia.org/sparql",
       "component": "vis-barchart"
     },
     {
-      "id": "barchart-stacked-languages",
-      "configPath": "./encoding/barchart-stacked-languages.json",
+      "id": "barchart-stacked",
+      "name": "Stacked Bar Chart: Harrison Ford Movies",
+      "encodingPath": "./encoding/barchart-stacked.json",
+      "queryPath": "./queries/redford-movies-genre-count.rq",
+      "endpoint": "https://dbpedia.org/sparql",
       "component": "vis-barchart"
     },
     {
-      "id": "visgraph-redford-costars",
-      "configPath": "./encoding/vis-graph-redford-costars.json",
-      "component": "vis-graph"
-    },
-    {
-      "id": "visgraph-redford-costars-birthyear",
-      "configPath": "./encoding/vis-graph-redford-costars-birthyear.json",
-      "component": "vis-graph"
+      "id": "barchart-grouped",
+      "name": "Grouped Bar Chart: Harrison Ford Movies",
+      "encodingPath": "./encoding/barchart-grouped.json",
+      "queryPath": "./queries/redford-movies-genre-count.rq",
+      "endpoint": "https://dbpedia.org/sparql",
+      "component": "vis-barchart"
     }
+
+
   ]
 }

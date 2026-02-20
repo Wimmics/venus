@@ -93,6 +93,7 @@ export class VisBarChart extends VisBase {
   _onBarHover(datum, x, y) {
     const xField = this.visualEncoding?.x?.field;
     const yField = this.visualEncoding?.y?.field;
+    const groupField = this.visualEncoding?.groups?.field;
     const colorField = this.visualEncoding?.color?.field;
     const title = xField ? datum?.[xField] : "Bar";
     const yValue = yField ? datum?.[yField] : undefined;
@@ -100,6 +101,9 @@ export class VisBarChart extends VisBase {
     if (yField) {
       const numeric = Number(yValue);
       lines.push(`${yField}: ${Number.isFinite(numeric) ? numeric.toLocaleString() : String(yValue)}`);
+    }
+    if (groupField && datum?.[groupField] !== undefined) {
+      lines.push(`${groupField}: ${String(datum[groupField])}`);
     }
     if (colorField && datum?.[colorField] !== undefined) {
       lines.push(`${colorField}: ${String(datum[colorField])}`);

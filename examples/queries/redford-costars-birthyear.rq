@@ -10,13 +10,11 @@ SELECT DISTINCT
   ?actorName
   ?actorBirthYear
 WHERE {
-    # Include only movies where Robert Redford starred
-    ?movie dbo:starring dbr:Robert_Redford ;
+    ?movie dbo:starring dbr:Harrison_Ford ;
             dbo:starring ?actor ;
             rdfs:label ?movieName .
     FILTER(lang(?movieName) = "en")
 
-    # List all actors in those movies (including Robert)
     ?actor rdfs:label ?actorName .
     FILTER(lang(?actorName) = "en")
 
