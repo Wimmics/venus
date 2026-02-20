@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Venus Documentation</title>
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/5/w3.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css"
+    />
+    <link rel="stylesheet" href="/assets/styles.css" />
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+    <script type="module" src="/assets/layout.js"></script>
+    <script type="module" src="/assets/docs.js"></script>
+  </head>
+  <body data-page="documentation">
+    <div data-include="/templates/header.html"></div>
+
+    <section id="documentation" class="w3-row-padding w3-white w3-padding-32 w3-container top-gap">
+      <div class="w3-content docs-page-intro">
+        <h1>Documentation</h1>
+        <p class="w3-large">
+          Explore Venus concepts, configuration options, and examples using the navigation panel.
+        </p>
+      </div>
+    </section>
+
+    <section id="documentation" class="w3-row-padding w3-light-grey w3-padding-64 w3-container">
+
+      <div class="w3-content docs-layout">
+        <aside class="docs-sidebar w3-card w3-white">
+          <h3 class="docs-sidebar-title">Documentation</h3>
+          <nav id="docsToc" class="docs-tree" aria-label="Documentation table of contents"></nav>
+        </aside>
+
+        <article class="docs-content w3-card w3-white" id="docsContent">
+          <h1>Loading documentation...</h1>
+        </article>
+      </div>
+    </section>
+
+    <div data-include="/templates/footer.html"></div>
+  </body>
+</html>

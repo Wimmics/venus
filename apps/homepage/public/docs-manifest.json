@@ -1,0 +1,159 @@
+{
+  "generatedAt": "2026-02-20T09:18:53.391Z",
+  "root": {
+    "type": "folder",
+    "name": "docs",
+    "title": "Docs",
+    "path": "",
+    "entry": null,
+    "children": [
+      {
+        "type": "folder",
+        "name": "visualization-components",
+        "title": "Visualization components",
+        "path": "visualization-components",
+        "entry": "visualization-components/start.md",
+        "children": [
+          {
+            "type": "file",
+            "name": "vis-graph.md",
+            "title": "Force-directed graph",
+            "path": "visualization-components/vis-graph.md"
+          },
+          {
+            "type": "file",
+            "name": "vis-barchart.md",
+            "title": "Bar chart",
+            "path": "visualization-components/vis-barchart.md"
+          }
+        ]
+      },
+      {
+        "type": "folder",
+        "name": "data",
+        "title": "Data",
+        "path": "data",
+        "entry": "data/start.md",
+        "children": [
+          {
+            "type": "file",
+            "name": "sparql.md",
+            "title": "SPARQL Queries",
+            "path": "data/sparql.md"
+          },
+          {
+            "type": "file",
+            "name": "proxy.md",
+            "title": "SPARQL Proxy",
+            "path": "data/proxy.md"
+          }
+        ]
+      },
+      {
+        "type": "folder",
+        "name": "encoding",
+        "title": "Encoding",
+        "path": "encoding",
+        "entry": "encoding/start.md",
+        "children": [
+          {
+            "type": "file",
+            "name": "title.md",
+            "title": "Chart Title",
+            "path": "encoding/title.md"
+          },
+          {
+            "type": "file",
+            "name": "field.md",
+            "title": "Data Fields",
+            "path": "encoding/field.md"
+          },
+          {
+            "type": "folder",
+            "name": "graph",
+            "title": "Network",
+            "path": "encoding/graph",
+            "entry": "encoding/graph/start.md",
+            "children": [
+              {
+                "type": "file",
+                "name": "links.md",
+                "title": "Links",
+                "path": "encoding/graph/links.md"
+              },
+              {
+                "type": "file",
+                "name": "nodes.md",
+                "title": "Nodes",
+                "path": "encoding/graph/nodes.md"
+              }
+            ]
+          },
+          {
+            "type": "folder",
+            "name": "cartesian",
+            "title": "Cartesian",
+            "path": "encoding/cartesian",
+            "entry": "encoding/cartesian/start.md",
+            "children": [
+              {
+                "type": "file",
+                "name": "x.md",
+                "title": "X Axis",
+                "path": "encoding/cartesian/x.md"
+              },
+              {
+                "type": "file",
+                "name": "y.md",
+                "title": "Y Axis",
+                "path": "encoding/cartesian/y.md"
+              },
+              {
+                "type": "file",
+                "name": "axis.md",
+                "title": "Axes",
+                "path": "encoding/cartesian/axis.md"
+              },
+              {
+                "type": "file",
+                "name": "direction.md",
+                "title": "Orientation",
+                "path": "encoding/cartesian/direction.md"
+              },
+              {
+                "type": "file",
+                "name": "stack.md",
+                "title": "Stack",
+                "path": "encoding/cartesian/stack.md"
+              }
+            ]
+          },
+          {
+            "type": "file",
+            "name": "color.md",
+            "title": "Color Channel",
+            "path": "encoding/color.md"
+          },
+          {
+            "type": "file",
+            "name": "scale.md",
+            "title": "Scale Types",
+            "path": "encoding/scale.md"
+          },
+          {
+            "type": "file",
+            "name": "legend.md",
+            "title": "Legends",
+            "path": "encoding/legend.md"
+          },
+          {
+            "type": "file",
+            "name": "interactions.md",
+            "title": "User Interactions",
+            "path": "encoding/interactions.md"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -3,9 +3,8 @@ import { resolvePath } from "./utils/path-utils.js";
 import { normalizeComponentTag } from "./utils/component-tag.js";
 
 export class DemoControl {
-  constructor({ selectEl, descriptionEl, storageKey, indexPath }) {
+  constructor({ selectEl, storageKey, indexPath }) {
     this.selectEl = selectEl;
-    this.descriptionEl = descriptionEl;
     this.storageKey = storageKey;
     this.indexPath = indexPath;
     this.catalog = null;
@@ -95,7 +94,6 @@ export class DemoControl {
 
     this.activeScenario = scenario;
     this.activeQueryText = await fetchText(scenario.queryPath);
-    this.descriptionEl.textContent = scenario.description || "";
     sessionStorage.setItem(this.storageKey, scenario.id);
 
     return scenario;

@@ -19,7 +19,7 @@
     "build": "rollup -c",
     "prepublishOnly": "npm run clean && npm run build"
   },
-  "peerDependencies": {
+  "dependencies": {
     "d3": "^7.0.0"
   },
   "devDependencies": {

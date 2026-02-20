@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Venus Usage</title>
+	<link rel="stylesheet" href="https://www.w3schools.com/w3css/5/w3.css" />
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato" />
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat" />
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
+	<link
+	rel="stylesheet"
+	href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css"
+	/>
+	<link rel="stylesheet" href="/assets/styles.css" />
+	<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+	<script type="module" src="/assets/layout.js"></script>
+</head>
+<body data-page="usage">
+	<div data-include="/templates/header.html"></div>
+	
+	<section id="usage" class="w3-row-padding w3-white w3-padding-64 w3-container top-gap">
+		<div class="w3-content">
+			<h1>Using Venus in a Web Page</h1>
+			<p class="w3-large">
+				VENUS is distributed as an npm package and can be directly embedded into web pages, as shown hereafter.
+			</p>
+		</div>
+	</section>
+	
+	<section id="usage" class="w3-row-padding w3-light-grey w3-padding-64 w3-container">
+		<div class="w3-content">
+			<h2>Get Venus and Dependencies</h2>
+			<h3>CDN</h3>
+			<p>
+				For quick experiments, you can import Venus Web Components directly from a CDN inside a module script.
+			</p>
+			<pre class="venus-code-block"><code>&lt;script type="module"&gt;
+	import "https://cdn.jsdelivr.net/npm/@wimmics/venus-webcomponents@0.1.0/dist/index.js";
+&lt;/script&gt;</code></pre>
+				
+				<h3>NPM</h3>
+				<p>
+					For production or app builds (Vite, Webpack, etc.), install from npm and import from your app entry file.
+				</p>
+				<pre class="venus-code-block"><code>npm install @wimmics/venus-webcomponents</code></pre>
+				<pre class="venus-code-block"><code>import "@wimmics/venus-webcomponents";</code></pre>
+			</div>
+		</section>
+		
+		<section id="usage" class="w3-row-padding w3-light-grey w3-padding-64 w3-container top-gap">
+			<div class="w3-content">
+				<h2>Start Using Venus</h2>
+				<p>Create a target element in your HTML:</p>
+				<pre class="venus-code-block"><code>&lt;vis-graph id="vis" width="100%" height="520"&gt;&lt;/vis-graph&gt;</code></pre>
+				
+				<p>Then configure and launch it from JavaScript:</p>
+				<pre class="venus-code-block"><code>const graph = document.querySelector("#vis");
+					
+graph.sparqlEndpoint = "https://dbpedia.org/sparql";
+
+graph.sparqlQuery = `
+SELECT ?source ?target WHERE {
+	?source dbo:starring ?target .
+} LIMIT 30
+`;
+
+graph.encoding = {
+	title: "Actors Co-starring Graph",
+	interactions: { nodeDetailsPanel: true }
+};
+
+graph.launch();</code></pre>
+				</div>
+			</section>
+			<section id="usage" class="w3-row-padding w3-light-grey w3-padding-64 w3-container top-gap">
+				<div class="w3-content">
+					<h2>Complete HTML Example</h2>
+					<pre class="venus-code-block"><code>&lt;!doctype html&gt;
+&lt;html&gt;
+&lt;head&gt;
+	&lt;meta charset="utf-8" /&gt;
+	&lt;meta name="viewport" content="width=device-width,initial-scale=1" /&gt;
+	&lt;title&gt;Embedding Venus&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+	&lt;vis-graph id="vis" width="100%" height="520"&gt;&lt;/vis-graph&gt;
+
+	&lt;script type="module"&gt;
+		import "@wimmics/venus-webcomponents";
+
+		const graph = document.querySelector("#vis");
+		
+		graph.sparqlEndpoint = "https://dbpedia.org/sparql";
+		
+		graph.sparqlQuery = `
+		SELECT ?source ?target WHERE {
+			?source dbo:starring ?target .
+		} LIMIT 30
+		`;
+
+		graph.encoding = {
+			title: "Actors Co-starring Graph",
+			interactions: { nodeDetailsPanel: true }
+		};
+
+		graph.launch();
+	&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+					</div>
+				</section>
+				
+				<div data-include="/templates/footer.html"></div>
+			</body>
+			</html>
+			

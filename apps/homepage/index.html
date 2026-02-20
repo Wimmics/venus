@@ -1,197 +1,63 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
+    <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Venus</title>
-    <style>
-      :root {
-        --bg: #f6f7fb;
-        --surface: #ffffff;
-        --ink: #1b2430;
-        --muted: #5b6473;
-        --line: #d9deea;
-        --brand: #0d6efd;
-      }
-
-      * {
-        box-sizing: border-box;
-      }
-
-      body {
-        margin: 0;
-        font-family: "Segoe UI", Roboto, Arial, sans-serif;
-        color: var(--ink);
-        background: radial-gradient(1200px 700px at 10% -10%, #dbe7ff, transparent), var(--bg);
-      }
-
-      .wrap {
-        max-width: 1080px;
-        margin: 0 auto;
-        padding: 1rem;
-      }
-
-      .topbar {
-        position: sticky;
-        top: 0;
-        z-index: 20;
-        backdrop-filter: blur(8px);
-        background: rgba(246, 247, 251, 0.9);
-        border-bottom: 1px solid var(--line);
-      }
-
-      .topbar .inner {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 1rem;
-        padding: 0.75rem 0;
-      }
-
-      .brand {
-        font-weight: 700;
-        letter-spacing: 0.02em;
-      }
-
-      nav {
-        display: flex;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-      }
-
-      nav a {
-        color: var(--ink);
-        text-decoration: none;
-        border: 1px solid var(--line);
-        background: var(--surface);
-        border-radius: 999px;
-        padding: 0.4rem 0.75rem;
-        font-size: 0.9rem;
-      }
-
-      nav a:hover {
-        border-color: var(--brand);
-        color: var(--brand);
-      }
-
-      .hero {
-        background: var(--surface);
-        border: 1px solid var(--line);
-        border-radius: 16px;
-        padding: 1.25rem;
-        margin-top: 1rem;
-      }
-
-      .hero h1 {
-        margin: 0;
-        font-size: 1.8rem;
-      }
-
-      .hero p {
-        color: var(--muted);
-        margin: 0.75rem 0 0;
-      }
-
-      .cta {
-        display: inline-block;
-        margin-top: 1rem;
-        text-decoration: none;
-        color: #fff;
-        background: var(--brand);
-        border-radius: 10px;
-        padding: 0.55rem 0.9rem;
-        font-weight: 600;
-      }
-
-      .section {
-        background: var(--surface);
-        border: 1px solid var(--line);
-        border-radius: 16px;
-        padding: 1.25rem;
-        margin-top: 0.85rem;
-      }
-
-      .section h2 {
-        margin: 0 0 0.5rem;
-        font-size: 1.2rem;
-      }
-
-      .section p,
-      .section li {
-        color: var(--muted);
-      }
-
-      pre {
-        margin: 0;
-        overflow: auto;
-        padding: 0.9rem;
-        border-radius: 10px;
-        background: #0f172a;
-        color: #d7e2ff;
-      }
-
-      code {
-        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      }
-
-      @media (max-width: 700px) {
-        .topbar .inner {
-          flex-direction: column;
-          align-items: flex-start;
-        }
-      }
-    </style>
+    <title>Venus Homepage</title>
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/5/w3.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <link rel="stylesheet" href="/assets/styles.css" />
+    <script type="module" src="/assets/layout.js"></script>
   </head>
-  <body>
-    <header class="topbar">
-      <div class="wrap inner">
-        <div class="brand">Venus</div>
-        <nav aria-label="Main navigation">
-          <a href="#presentation">Presentation</a>
-          <a href="#documentation">Documentation</a>
-          <a href="#usage">Usage</a>
-          <a href="/editor/">Open Editor</a>
-        </nav>
-      </div>
+  <body data-page="home">
+    <div data-include="/templates/header.html"></div>
+
+    <header id="presentation" class="w3-container w3-red w3-center" style="padding: 128px 16px">
+      <h1 class="w3-margin w3-jumbo">VENUS</h1>
+      <p class="w3-xlarge venus-subtitle">
+        <i>Visual Encoding for kNowledge graphs Understanding and exploration Systems</i><br><br>
+        JavaScript library designed to support the development of interactive visualizations directly from SPARQL queries.
+      </p>
+      <a class="w3-button w3-black w3-padding-large w3-large w3-margin-top" href="/editor/">Open Editor</a>
     </header>
 
-    <main class="wrap">
-      <section id="presentation" class="hero">
-        <h1>Venus Visualization Toolkit</h1>
-        <p>
-          Venus helps you query SPARQL endpoints, map result sets, and render interactive charts and graphs using
-          web components.
-        </p>
-        <a class="cta" href="/editor/">Access the Editor</a>
-      </section>
+    <section class="w3-row-padding w3-padding-64 w3-container">
+      <div class="w3-content">
+        <div class="w3-third w3-center">
+          <i class="fa fa-code venus-hero-icon w3-padding-64 w3-text-red"></i>
+        </div>
+        <div class="w3-twothird">
+          <h1>Build Interactive Visualizations</h1>
+          <h5 class="w3-padding-16">VENUS is a visual specification workbench for knowledge graphs. It allows you to transform SPARQL query results into interactive visualizations through a declarative configuration interface. Instead of hard-coding mappings or manually reshaping data, you iteratively define structural encodings, preview the result in real time, and export a reusable specification ready for integration into your own application.</h5>
 
-      <section id="documentation" class="section">
-        <h2>Documentation</h2>
-        <p>Main references in this repository:</p>
-        <ul>
-          <li><code>README.md</code></li>
-          <li><code>packages/components/README.md</code></li>
-          <li><code>packages/datasource/README.md</code></li>
-          <li><code>packages/encoding/README.md</code></li>
-          <li><code>packages/sparql/README.md</code></li>
+          <h5 class="w3-padding-16">Experiment with configurations, inspect how semantic variables map to visual structures, and refine your design before committing it to code. VENUS shortens the path from knowledge graph to visualization by making structural mapping explicit, testable, and reproducible.</h5>
+
+          <h5 class="w3-padding-16">If you work with RDF, SPARQL, or semantic data pipelines, VENUS provides a controlled environment to prototype, validate, and deploy visualization specifications with precision.</h5>
+
+          <h5 class="w3-padding-32">
+          Validate and refine your encoding in the <a href="/editor">Online Editor</a> before integrating it into your codebase.
+          </h5>
+
+        </div>
+      </div>
+    </section>
+
+    <section class="w3-row-padding w3-light-grey w3-padding-64 w3-container">
+      <div class="w3-content">
+        <h1>Contact</h1>
+        <ul class="list-group">
+            <li class="list-group-item"><a href="https://amenin.gitlab.io/">Aline Menin</a>, Associate Professor at Université Côte d'Azur (E-mail: <a href="mailto:aline.menin@inria.fr"> aline.menin@inria.fr</a>)</li>
+            <li class="list-group-item"><a href="https://webusers.i3s.unice.fr/~faron/">Catherine Faron</a>, Full Professor at Université Cote d'Azur (E-mail: <a href="mailto:catherine.faron@inria.fr">catherine.faron@inria.fr</a>)</li>               
+            <li class="list-group-item"><a href="https://franckmichel.cnrs.fr/">Franck Michel</a>, Research Engineer at CRNS, Université Cote d'Azur (E-mail: <a href="mailto:catherine.faron@inria.fr">franck.michel@inria.fr</a>)</li>               
         </ul>
-      </section>
 
-      <section id="usage" class="section">
-        <h2>Usage</h2>
-        <p>Minimal example to import and use a Venus component in a web page:</p>
-        <pre><code>&lt;script type="module"&gt;
-  import "@wimmics/venus-webcomponents";
+        <p>*This work is developed by the Wimmics team at the Centre Inria, University Côte d'Azur. It results from collaborative efforts involving several researchers and students.</p>
+            
+      </div>
+    </section>
 
-  const graph = document.querySelector("vis-graph");
-  graph.sparqlEndpoint = "https://dbpedia.org/sparql";
-  graph.sparqlQuery = "SELECT ?source ?target WHERE { ?source dbo:starring ?target } LIMIT 30";
-  graph.encoding = { title: "Example Graph" };
-  graph.launch();
-&lt;/script&gt;
-
-&lt;vis-graph width="100%" height="520"&gt;&lt;/vis-graph&gt;</code></pre>
-      </section>
-    </main>
+    <div data-include="/templates/footer.html"></div>
   </body>
 </html>

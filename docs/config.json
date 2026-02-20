@@ -1,0 +1,44 @@
+{
+  "root": {
+    "folders": ["visualization-components", "data", "encoding"]
+  },
+  "folders": {
+    "visualization-components": {
+      "files": [
+        { "path": "visualization-components/start.md", "label": "Overview" },
+        { "path": "visualization-components/vis-graph.md", "label": "Force-directed graph" },
+        { "path": "visualization-components/vis-barchart.md", "label": "Bar chart" }
+      ]
+    },
+    "encoding": {
+      "items": [
+        { "path": "encoding/start.md", "label": "Overview" },
+        { "path": "encoding/title.md", "label": "Chart Title" },
+        { "path": "encoding/field.md", "label": "Data Fields" },
+        { "path": "encoding/graph", "label": "Network" },
+        { "path": "encoding/cartesian", "label": "Cartesian" },
+        { "path": "encoding/color.md", "label": "Color Channel" },
+        { "path": "encoding/scale.md", "label": "Scale Types" },
+        { "path": "encoding/legend.md", "label": "Legends" },
+        { "path": "encoding/interactions.md", "label": "User Interactions" }
+      ]
+    },
+    "encoding/cartesian": {
+      "files": [
+        {"path": "encoding/cartesian/start.md", "label": "Overview"},
+        {"path": "encoding/cartesian/x.md", "label": "X Axis"},
+        {"path": "encoding/cartesian/y.md", "label": "Y Axis"},
+        {"path": "encoding/cartesian/axis.md", "label": "Axes"},
+        {"path": "encoding/cartesian/direction.md", "label": "Orientation" },
+        {"path": "encoding/cartesian/stack.md", "label": "Stack"}
+      ]
+    },
+    "data": {
+      "files": [
+        { "path": "data/start.md", "label": "Overview" },
+        { "path": "data/sparql.md", "label": "SPARQL Queries" },
+        { "path": "data/proxy.md", "label": "SPARQL Proxy" }
+      ]
+    }
+  }
+}

@@ -1,5 +1,7 @@
 .editor-root {
-  height: 100vh;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
   padding: 0.5rem;
   display: flex;
   flex-direction: column;
@@ -66,12 +68,12 @@
 }
 
 .workspace-splitter:focus-visible {
-  outline: 2px solid #8b73ad;
+  outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
 
 .workspace-splitter.is-dragging {
-  background: linear-gradient(180deg, #8b73ad, #8b73ad);
+  background: linear-gradient(180deg, var(--accent), var(--accent));
 }
 
 .workspace-row .card-body {
@@ -144,8 +146,8 @@
 
 .panel-tabs .nav-link.active,
 .panel-tabs .show > .nav-link {
-  color: #ffffff;
-  background: #8b73ad;
+  color: var(--accent-contrast);
+  background: var(--accent);
 }
 
 .panel-tabs.panel-tabs-single .nav-link {

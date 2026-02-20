@@ -1,4 +1,26 @@
 @media (max-width: 1100px) {
+  .editor-navbar-inner {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .editor-navbar-actions {
+    width: 100%;
+  }
+
+  .editor-examples-dropdown {
+    width: 100%;
+  }
+
+  .editor-examples-button {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .editor-examples-menu {
+    min-width: 100%;
+  }
+
   .workspace-row {
     display: flex;
     flex-direction: column;

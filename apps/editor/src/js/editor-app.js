@@ -12,7 +12,12 @@ import { safeRun, updateStatus } from "./utils/safe-run.js";
 export class EditorApp {
   constructor() {
     this.selectEl = document.getElementById("scenarioSelect");
-    this.descriptionEl = document.getElementById("scenarioDescription");
+    this.examplesDropdownEl = document.getElementById("examplesDropdown");
+    this.examplesDropdownButtonEl = document.getElementById("examplesDropdownButton");
+    this.examplesDropdownMenuEl = document.getElementById("examplesDropdownMenu");
+    this.exportDropdownEl = document.getElementById("exportDropdown");
+    this.exportDropdownButtonEl = document.getElementById("exportDropdownButton");
+    this.exportDropdownMenuEl = document.getElementById("exportDropdownMenu");
 
     this.endpointInputEl = document.getElementById("endpointInput");
     this.resultsAsSourceToggleEl = document.getElementById("resultsAsSourceToggle");
@@ -22,7 +27,6 @@ export class EditorApp {
 
     this.demoControl = new DemoControl({
       selectEl: this.selectEl,
-      descriptionEl: this.descriptionEl,
       storageKey: STORAGE_KEY,
       indexPath: SCENARIO_INDEX_PATH
     });
@@ -49,6 +53,7 @@ export class EditorApp {
     this.autoRenderDelayMs = 350;
     this.autoRenderTimer = null;
     this.lastRenderedSparqlData = null;
+    this.isScenarioLoading = false;
 
     this.sparqlPanelController = new SparqlPanelController({
       demoControl: this.demoControl,
@@ -98,6 +103,8 @@ export class EditorApp {
     await this.snippetPanelController.init("// Generated integration snippet will appear here");
 
     await this.demoControl.init();
+    this.setupExamplesDropdown();
+    this.setupExportDropdown();
     if (!this.demoControl.hasScenarios()) {
       this.setStatus("No scenarios found in examples/encoding/scenarios.index.json", true);
       return;
@@ -110,6 +117,7 @@ export class EditorApp {
   bindEvents() {
     this.selectEl.addEventListener("change", async () => {
       await this.loadScenarioAndRefresh();
+      this.syncExamplesDropdownState();
     });
 
     this.endpointInputEl.addEventListener("input", () => {
@@ -136,6 +144,12 @@ export class EditorApp {
   }
 
   async loadScenarioAndRefresh() {
+    if (this.autoRenderTimer) {
+      clearTimeout(this.autoRenderTimer);
+      this.autoRenderTimer = null;
+    }
+
+    this.isScenarioLoading = true;
     await this.safeRun(
       async () => {
         this.setStatus(`Loading demo: ${this.selectEl.value}...`);
@@ -155,10 +169,125 @@ export class EditorApp {
 
         await this.updateGeneratedCode();
         await this.render();
+        this.syncExamplesDropdownState();
 
         this.setStatus(`Loaded demo: ${loadedScenario.name || loadedScenario.id}`);
       },
       "Failed to load demo"
+    );
+    this.isScenarioLoading = false;
+  }
+
+  setupExamplesDropdown() {
+    if (
+      !this.selectEl ||
+      !this.examplesDropdownEl ||
+      !this.examplesDropdownButtonEl ||
+      !this.examplesDropdownMenuEl
+    ) {
+      return;
+    }
+
+    this.rebuildExamplesDropdownMenu();
+    this.syncExamplesDropdownState();
+
+    if (this.examplesDropdownEl.dataset.bound === "1") return;
+    this.examplesDropdownEl.dataset.bound = "1";
+
+    this.examplesDropdownButtonEl.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const willOpen = this.examplesDropdownMenuEl.hidden;
+      this.examplesDropdownMenuEl.hidden = !willOpen;
+      this.examplesDropdownButtonEl.setAttribute("aria-expanded", String(willOpen));
+    });
+
+    document.addEventListener("click", (event) => {
+      if (!this.examplesDropdownEl.contains(event.target)) {
+        this.closeExamplesDropdown();
+      }
+    });
+  }
+
+  setupExportDropdown() {
+    if (!this.exportDropdownEl || !this.exportDropdownButtonEl || !this.exportDropdownMenuEl) return;
+    if (this.exportDropdownEl.dataset.bound === "1") return;
+    this.exportDropdownEl.dataset.bound = "1";
+
+    this.exportDropdownButtonEl.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const willOpen = this.exportDropdownMenuEl.hidden;
+      this.exportDropdownMenuEl.hidden = !willOpen;
+      this.exportDropdownButtonEl.setAttribute("aria-expanded", String(willOpen));
+    });
+
+    this.exportDropdownMenuEl.querySelectorAll(".editor-export-option").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const format = button.dataset.format;
+        this.closeExportDropdown();
+        await this.exportVisualization(format);
+      });
+    });
+
+    document.addEventListener("click", (event) => {
+      if (!this.exportDropdownEl.contains(event.target)) {
+        this.closeExportDropdown();
+      }
+    });
+  }
+
+  closeExportDropdown() {
+    if (!this.exportDropdownMenuEl || !this.exportDropdownButtonEl) return;
+    this.exportDropdownMenuEl.hidden = true;
+    this.exportDropdownButtonEl.setAttribute("aria-expanded", "false");
+  }
+
+  rebuildExamplesDropdownMenu() {
+    if (!this.examplesDropdownMenuEl || !this.selectEl) return;
+    this.examplesDropdownMenuEl.innerHTML = "";
+
+    const options = Array.from(this.selectEl.options);
+    for (const option of options) {
+      const item = document.createElement("button");
+      item.type = "button";
+      item.className = "editor-examples-option";
+      item.setAttribute("role", "menuitem");
+      item.dataset.value = option.value;
+      item.textContent = option.textContent || option.value;
+      item.addEventListener("click", () => {
+        if (this.selectEl.value !== option.value) {
+          this.selectEl.value = option.value;
+          this.selectEl.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+        this.closeExamplesDropdown();
+      });
+      this.examplesDropdownMenuEl.appendChild(item);
+    }
+  }
+
+  closeExamplesDropdown() {
+    if (!this.examplesDropdownMenuEl || !this.examplesDropdownButtonEl) return;
+    this.examplesDropdownMenuEl.hidden = true;
+    this.examplesDropdownButtonEl.setAttribute("aria-expanded", "false");
+  }
+
+  syncExamplesDropdownState() {
+    if (!this.selectEl || !this.examplesDropdownMenuEl) return;
+
+    this.examplesDropdownMenuEl.querySelectorAll(".editor-examples-option").forEach((item) => {
+      item.classList.toggle("is-active", item.dataset.value === this.selectEl.value);
+    });
+  }
+
+  async exportVisualization(format) {
+    await this.safeRun(
+      async () => {
+        const { scenario } = this.demoControl.getActiveContext();
+        const stem = this._buildFileStem(scenario?.name || scenario?.id || "venus-visualization");
+        this.setStatus(`Exporting ${String(format || "").toUpperCase()}...`);
+        await this.visualizationView.exportAs(format, stem);
+        this.setStatus(`Exported ${String(format || "").toUpperCase()} successfully`);
+      },
+      "Failed to export visualization"
     );
   }
 
@@ -282,6 +411,7 @@ export class EditorApp {
   }
 
   scheduleAutoRender() {
+    if (this.isScenarioLoading) return;
     if (this.autoRenderTimer) {
       clearTimeout(this.autoRenderTimer);
     }
@@ -301,6 +431,14 @@ export class EditorApp {
 
   setStatus(message, isError = false) {
     updateStatus(message, { isError });
+  }
+
+  _buildFileStem(value) {
+    return String(value || "venus-visualization")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "venus-visualization";
   }
 
   async safeRun(action, fallbackMessage) {
