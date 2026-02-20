@@ -62,6 +62,8 @@ jobs:
           mkdir -p out/editor
           cp -R apps/homepage/dist/* out/
           cp -R apps/editor/dist/* out/editor/
+          mkdir -p out/editor/examples
+          cp -R examples/* out/editor/examples/
           mkdir -p out/templates
           cp -R apps/homepage/templates/* out/templates/
           mkdir -p out/assets/logos
