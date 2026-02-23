@@ -1,5 +1,5 @@
 {
-  "title": "Count of Robert Redford Co-Stars per Movie",
+  "title": "Count of Harrison Ford Co-Stars per Movie",
   "x": {
     "field": "movieName",
     "axis": {

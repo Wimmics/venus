@@ -1,6 +1,6 @@
 {
-  "name": "@wimmics/venus-webcomponents",
-  "version": "0.1.0",
+  "name": "@wimmics/venus-elements",
+  "version": "1.0.0",
   "description": "Web Components for SPARQL/D3 visualizations",
   "type": "module",
   "exports": {
@@ -40,5 +40,12 @@
   },
   "publishConfig": {
     "access": "public"
-  }
+  },
+  "keywords": [
+    "knowledge-graph",
+    "visualization",
+    "web-components",
+    "sparql",
+    "semantic-web"
+  ]
 }

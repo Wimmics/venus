@@ -1,79 +1,38 @@
-# @wimmics/venus-webcomponents
+# @wimmics/venus-elements
 
-Browser-facing Web Components for KG visualization and node metadata.
+VENUS is a JavaScript library for creating interactive visualizations and dashboards from SPARQL queries.
 
-## Responsibilities
-- Provide `<vis-graph>` for graph loading, rendering, encoding, and interaction.
-- Provide `<vis-barchart>` for bar-chart loading, rendering, encoding, and legends.
-- Include an internal `<vis-uri-meta>` module used by `<vis-graph>` when node details panel is enabled.
-- Coordinate datasource, mapper, encoding manager, renderer, and legends.
+The `@wimmics/venus-elements` package provides the web components required to define visualization techniques. Each component accepts either a SPARQL query or a SPARQL JSON result set, together with a declarative JSON encoding. The component retrieves the data using the provided query, transforms the results into the appropriate visualization data structure, and renders the output in the browser.
 
-## Common Attributes (`<vis-graph>`, `<vis-barchart>`)
-- `width`: component width. Accepts numeric values (`"800"` -> `800px`) or CSS dimensions (`"100%"`, `"70vw"`).
-- `height`: component height. Accepts numeric values (`"600"` -> `600px`) or CSS dimensions (`"100%"`, `"60vh"`).
-- `resize`: enables/disables responsive re-rendering on container/window size changes.
-  - Default: enabled.
-  - Disable with `resize="false"` (also `0`, `no`, `off`).
+## Usage
 
-Example:
-
-```html
-<vis-graph
-  width="100%"
-  height="420"
-  resize="true"
-></vis-graph>
-
-<vis-barchart
-  width="900"
-  height="500"
-  resize="false"
-></vis-barchart>
-```
-
-Note:
-- When using percentage sizes like `height="100%"`, parent containers must have explicit height for the component to have measurable space.
-
-## Common Properties (`<vis-graph>`, `<vis-barchart>`)
-- `sparqlQuery`: SPARQL query string.
-- `sparqlEndpoint`: SPARQL endpoint URL. Defaults to `https://dbpedia.org/sparql` if not provided.
-- `sparqlResult`: pre-fetched SPARQL JSON result (bypasses endpoint+query fetch).
-- `encoding`: visualization encoding object (passed to `@wimmics/venus-encoding`).
-- `proxy`: proxy URL for SPARQL requests.
-
-Example:
+Select the desired visualization technique and add the corresponding web component as a target element in your HTML:
 
 ```js
-const chart = document.querySelector("vis-barchart");
-chart.sparqlEndpoint = "https://dbpedia.org/sparql";
-chart.sparqlQuery = "SELECT ?x ?y WHERE { ... } LIMIT 50";
-chart.proxy = "http://localhost:3030/proxy";
-chart.encoding = { title: "My Chart" };
-chart.launch();
+<vis-graph vis-graph id="vis" width="100%" height="520"></vis-graph>
 ```
 
-## Graph-only Behavior (`<vis-graph>`)
-- Node details panel is managed internally by `<vis-graph>` as a `<vis-uri-meta>` instance.
-- Enable/disable it with encoding option `interactions.nodeDetailsPanel` (`false` by default).
-- The panel lifecycle is owned by `<vis-graph>` and ends when the graph component is destroyed.
+Then configure and launch it from JavaScript:
+```js
+const graph = document.querySelector("#vis");
+          
+graph.sparqlEndpoint = "https://dbpedia.org/sparql";
 
-## Public Exports
-- `VisGraph`
-- `VisBarChart`
-- `VisBase`
+graph.sparqlQuery = "SELECT ?source ?target WHERE { ?source dbo:starring ?target . } LIMIT 30";
 
-## Internal Module
-- `vis-uri-meta` (`VisURIMeta`) is internal to this package and is not part of the public export surface.
+graph.encoding = {
+  title: "Actors Co-starring Graph",
+  interactions: { nodeDetailsPanel: true }
+};
 
-## Package Links
-- Depends on:
-  - `@wimmics/venus-core`
-  - `@wimmics/venus-datasource`
-  - `@wimmics/venus-encoding`
-  - `@wimmics/venus-mappers`
-  - `@wimmics/venus-d3renderer`
-  - `@wimmics/venus-sparql`
-  - `@wimmics/venus-legends`
-- Used by:
-  - `apps/editor`
-  - External browser apps integrating Venus components.
+graph.launch();
+```
+
+## Documentation
+For a full documentation, see [https://wimmics.github.io/venus/](https://wimmics.github.io/venus/)
+
+## Editor
+A web-based editor is available to explore the components, test configurations, and directly export VENUS specifications for integration into your application. 
+
+The editor is available at [https://wimmics.github.io/venus/editor](https://wimmics.github.io/venus/editor)
+

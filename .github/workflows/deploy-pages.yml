@@ -30,8 +30,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build webcomponents package
-        run: npm -w @wimmics/venus-webcomponents run build
+      - name: Build venus-elements package
+        run: npm -w @wimmics/venus-elements run build
 
       - name: Resolve base paths
         id: base
@@ -60,14 +60,14 @@ jobs:
       - name: Prepare Pages artifact
         run: |
           mkdir -p out/editor
-          cp -R apps/homepage/dist/* out/
-          cp -R apps/editor/dist/* out/editor/
+          cp -R website/homepage/dist/* out/
+          cp -R website/editor/dist/* out/editor/
           mkdir -p out/editor/examples
           cp -R examples/* out/editor/examples/
           mkdir -p out/templates
-          cp -R apps/homepage/templates/* out/templates/
+          cp -R website/homepage/templates/* out/templates/
           mkdir -p out/assets/logos
-          cp -R apps/homepage/assets/logos/* out/assets/logos/
+          cp -R website/homepage/assets/logos/* out/assets/logos/
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

@@ -43,8 +43,8 @@ coverage/
 # Playground / Dev Apps
 #########################################################
 
-apps/*/dist
-apps/*/node_modules
+website/*/dist
+website/*/node_modules
 
 #########################################################
 # Proxy Server Runtime
@@ -81,4 +81,5 @@ jest-cache/
 .DS_Store
 Thumbs.db
 
-
+example-apps/react
+example-apps/angular

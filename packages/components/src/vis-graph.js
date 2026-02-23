@@ -408,4 +408,6 @@ export class VisGraph extends VisBase {
   }
 }
 
-customElements.define("vis-graph", VisGraph);
+if (!customElements.get("vis-graph")) {
+  customElements.define("vis-graph", VisGraph);
+}

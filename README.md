@@ -6,7 +6,7 @@ Venus is a modular toolkit to fetch SPARQL data, map it to visualization structu
 
 High-level flow:
 
-`apps/editor` -> `@wimmics/venus-webcomponents` -> `@wimmics/venus-datasource` -> `@wimmics/venus-sparql` + `@wimmics/venus-mappers` -> vis data (`{nodes, links}` or `{rows}`) -> `@wimmics/venus-encoding` -> `@wimmics/venus-d3renderer` + `@wimmics/venus-legends`
+`website/editor` -> `@wimmics/venus-elements` -> `@wimmics/venus-datasource` -> `@wimmics/venus-sparql` + `@wimmics/venus-mappers` -> vis data (`{nodes, links}` or `{rows}`) -> `@wimmics/venus-encoding` -> `@wimmics/venus-d3renderer` + `@wimmics/venus-legends`
 
 Optional network helper:
 

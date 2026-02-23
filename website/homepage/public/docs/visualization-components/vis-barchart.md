@@ -14,7 +14,7 @@ Bar Charts are distinguished from Histograms, as they do not display continuous 
 <vis-barchart id="bar" width="100%" height="500"></vis-barchart>
 
 <script type="module">
-  import "@wimmics/venus-webcomponents";
+  import "@wimmics/venus-elements";
 
   const bar = document.querySelector("#bar");
 

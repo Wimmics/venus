@@ -22,7 +22,7 @@ For a minimal force-directed graph, the encoding must at least define `nodes` an
 <vis-graph id="graph" width="100%" height="520"></vis-graph>
 
 <script type="module">
-  import "@wimmics/venus-webcomponents";
+  import "@wimmics/venus-elements";
 
   const graph = document.querySelector("#graph");
 

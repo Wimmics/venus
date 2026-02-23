@@ -1,16 +1,16 @@
 {
   "name": "@wimmics/venus",
   "private": true,
-  "workspaces": ["packages/*", "apps/*"],
+  "workspaces": ["packages/*", "website/*"],
   "scripts": {
-    "build": "npm -w @wimmics/venus-webcomponents run build",
+    "build": "npm -w @wimmics/venus-elements run build",
     "dev": "sh -c 'npm run dev:editor & pid=$!; trap \"kill $pid\" EXIT INT TERM; npm run dev:homepage'",
     "dev:homepage": "npm -w @wimmics/venus-homepage run dev",
     "dev:editor": "npm -w @wimmics/venus-editor run dev",
 
     "proxy": "npm -w @wimmics/venus-sparql-proxy run start",
 
-    "publish:components": "npm -w @wimmics/venus-webcomponents publish --access public",
+    "publish:components": "npm -w @wimmics/venus-elements publish --access public",
     "publish:proxy": "npm -w @wimmics/venus-sparql-proxy publish --access public",
 
     "reset": "rm -rf node_modules packages/*/node_modules && npm install"

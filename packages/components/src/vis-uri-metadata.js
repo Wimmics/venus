@@ -263,4 +263,6 @@ export class VisURIMeta extends HTMLElement {
   }
 }
 
-customElements.define("vis-uri-meta", VisURIMeta);
+if (!customElements.get("vis-uri-meta")) {
+  customElements.define("vis-uri-meta", VisURIMeta);
+}

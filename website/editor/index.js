@@ -1,4 +1,4 @@
-import "@wimmics/venus-webcomponents";
+import "@wimmics/venus-elements";
 import { EditorApp } from "./src/js/editor-app.js";
 
 window.addEventListener("DOMContentLoaded", async () => {
