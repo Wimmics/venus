@@ -52,3 +52,6 @@ VENUS is developed with web components that can be integrated into any web appli
 - Build VENUS packages: `npm run build`
 - Run homepage: `npm run dev`
 - Run editor: `npm run dev:editor`
+
+## License
+See [LICENSE](LICENSE/md)
