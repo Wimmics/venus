@@ -54,4 +54,4 @@ VENUS is developed with web components that can be integrated into any web appli
 - Run editor: `npm run dev:editor`
 
 ## License
-See [LICENSE](LICENSE/md)
+See [LICENSE](LICENSE.md)
