@@ -1,33 +1,54 @@
-# Venus Monorepo
+# VENUS: Visual Ecosystem for kNowledge graph Understanding Systems
 
-Venus is a modular toolkit to fetch SPARQL data, map it to visualization structures, encode visuals, and render interactive components in the browser.
+This repository is dedicated to VENUS, a JavaScript library for creating interactive visualizations and dashboards from SPARQL queries.
 
-## Architecture
+## Overview
 
-High-level flow:
+This repository contains the source code for:
 
-`website/editor` -> `@wimmics/venus-elements` -> `@wimmics/venus-datasource` -> `@wimmics/venus-sparql` + `@wimmics/venus-mappers` -> vis data (`{nodes, links}` or `{rows}`) -> `@wimmics/venus-encoding` -> `@wimmics/venus-d3renderer` + `@wimmics/venus-legends`
+- The VENUS JavaScript library
+- A website with documentation and usage information
+- A web editor to explore available VENUS visualizations and encodings
+- A set of encoding and query examples
+- A set of example apps showing how to use the library
+- A minimal SPARQL proxy to use the library with non-CORS endpoints
 
-Optional network helper:
+## VENUS JavaScript library
 
-`@wimmics/venus-sparql-proxy` can be used by clients when endpoint CORS prevents direct browser calls.
+The library is defined in the [`packages`](./packages/) folder and includes the following packages.
 
-## Packages
+NPM published package:
+- `packages/components`: defines the [`@wimmics/venus-elements`](https://www.npmjs.com/package/@wimmics/venus-elements) package, which provides custom elements (`vis-graph`, `vis-barchart`) and the integration layer.
 
-- `packages/components`: browser custom elements (`vis-graph`, `vis-barchart`, `vis-uri-meta`) and integration layer.
+Internal packages:
 - `packages/core`: shared low-level utilities (`createLogger`, `VIS_TYPES`).
 - `packages/datasource`: fetch + retry + map orchestration for visualization data (`buildForceGraph`, `buildBarChart`).
-- `packages/encoding`: domain and scale computation, visualization-specific encoding managers and visual-artifact compilers.
+- `packages/encoding`: domain and scale computation, visualization-specific encoding managers, and visual-artifact compilers.
 - `packages/legends`: color/size legend web components and factory helpers used by graph and bar chart.
 - `packages/mappers`: SPARQL JSON -> visualization data mapping layer (force graph and bar chart).
-- `packages/proxy`: standalone SPARQL proxy server for CORS workarounds.
 - `packages/renderer-d3`: D3 renderer runtime (force graph and bar chart).
 - `packages/sparql`: SPARQL fetchers and metadata query helpers.
 
-Each package has its own minimal README with responsibilities and links.
+SPARQL proxy package:
+- `packages/proxy`: defines the [`@wimmics/venus-sparql-proxy`](https://www.npmjs.com/package/@wimmics/venus-sparql-proxy), a standalone SPARQL proxy server for CORS workarounds.
+
+## VENUS Editor
+
+The VENUS Editor helps you discover available visualization components and test encodings before integrating them into a web application. Browse the provided [examples](./examples/) to explore VENUS capabilities.
+
+Try it [here](https://wimmics.github.io/venus/editor).
+
+## Website
+
+A website presenting the tool and its documentation is available [here](https://wimmics.github.io/venus/).
+
+## Example Apps
+
+VENUS is developed with web components that can be integrated into any web application. The [example-apps](./example-apps/) directory provides ready-to-use minimal Vanilla JS code to support easy integration and quick testing.
 
 ## Getting started
 
 - Install dependencies: `npm install`
+- Build VENUS packages: `npm run build`
 - Run homepage: `npm run dev`
 - Run editor: `npm run dev:editor`
