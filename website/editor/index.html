@@ -57,8 +57,8 @@
       <section class="workspace-row" id="workspaceRow">
         <div class="workspace-pane workspace-pane-config d-flex" id="configPane">
           <article class="card shadow-sm flex-fill d-flex">
-            <div class="card-header panel-header d-flex align-items-center justify-content-between gap-2 p-2">
-              <ul class="nav nav-pills panel-tabs panel-tabs-fill flex-grow-1 m-0" id="configTabs" role="tablist">
+            <div class="card-header p-2">
+              <ul class="nav nav-pills panel-tabs panel-tabs-fill m-0" id="configTabs" role="tablist">
                 <li class="nav-item flex-fill" role="presentation">
                   <button
                     class="nav-link active w-100"
@@ -88,17 +88,6 @@
                   </button>
                 </li>
               </ul>
-              <div class="panel-header-options d-flex align-items-center gap-2">
-                <button
-                  class="btn btn-sm btn-outline-secondary"
-                  id="toggleDataCompress"
-                  type="button"
-                  title="Compress or expand Results panel"
-                  aria-label="Compress Results panel"
-                >
-                  <i class="bi bi-arrows-collapse-vertical" aria-hidden="true"></i>
-                </button>
-              </div>
             </div>
             <div class="card-body tab-content tab-content-fill flex-fill pt-2" id="configTabsContent">
               <div
@@ -149,17 +138,6 @@
               </div>
             </div>
           </article>
-          <div class="pane-collapsed-bar" id="dataPaneCollapsedBar" aria-hidden="true">
-            <button
-              class="btn btn-sm btn-outline-secondary"
-              id="toggleDataExpand"
-              type="button"
-              title="Expand Results panel"
-              aria-label="Expand Results panel"
-            >
-              <i class="bi bi-arrows-expand-vertical" aria-hidden="true"></i>
-            </button>
-          </div>
         </div>
 
         <div

@@ -9,8 +9,6 @@ export class SplitViewResizer {
 
     this.visible = { config: true, data: true, result: true };
     this.weights = { config: 31, data: 29, result: 40 };
-    this.compressed = { config: false, data: false, result: false };
-    this.savedWeights = { config: 31, data: 29, result: 40 };
 
     this.activeDrag = null;
     this.rafHandle = null;
@@ -56,42 +54,12 @@ export class SplitViewResizer {
     const currentlyVisible = this.getVisiblePaneKeys();
     if (this.visible[key] && currentlyVisible.length <= 1) return false;
     this.visible[key] = !this.visible[key];
-    if (!this.visible[key]) {
-      this.compressed[key] = false;
-    }
     this.applyLayout();
     return true;
-  }
-
-  toggleCompressPane(key) {
-    if (!ORDER.includes(key) || !this.visible[key]) return false;
-    const next = !this.compressed[key];
-    this.setPaneCompressed(key, next);
-    return true;
-  }
-
-  setPaneCompressed(key, compressed) {
-    if (!ORDER.includes(key) || !this.visible[key]) return;
-
-    if (compressed) {
-      this.savedWeights[key] = this.weights[key];
-      this.weights[key] = 1.4;
-      this.compressed[key] = true;
-    } else {
-      this.weights[key] = Math.max(8, this.savedWeights[key] || 20);
-      this.compressed[key] = false;
-    }
-
-    this.applyLayout();
-  }
-
-  isPaneCompressed(key) {
-    return Boolean(this.compressed[key]);
   }
 
   applyLayout() {
     if (this.isCompactLayout()) {
-      this.containerEl?.classList.remove("data-compressed");
       for (const key of ORDER) {
         const pane = this.panes[key];
         if (!pane) continue;
@@ -115,7 +83,6 @@ export class SplitViewResizer {
         pane.style.display = "none";
         pane.style.flex = "0 0 0%";
         pane.style.flexBasis = "0%";
-        pane.classList.remove("is-compressed");
         continue;
       }
 
@@ -126,11 +93,7 @@ export class SplitViewResizer {
       pane.style.display = "flex";
       pane.style.flex = `0 0 ${basis.toFixed(2)}px`;
       pane.style.flexBasis = `${basis.toFixed(2)}px`;
-      pane.classList.toggle("is-compressed", Boolean(this.compressed[key]));
     }
-
-    const hasCompressedPane = ORDER.some((key) => Boolean(this.compressed[key]));
-    this.containerEl?.classList.toggle("data-compressed", hasCompressedPane);
     this.refreshSplitterVisibility();
   }
 
@@ -269,39 +232,6 @@ export class SplitViewResizer {
 
     const delta = clientX - drag.startX;
     const combined = drag.startLeftWidth + drag.startRightWidth;
-    const leftCompressed = this.compressed[drag.leftKey];
-    const rightCompressed = this.compressed[drag.rightKey];
-
-    if (leftCompressed && rightCompressed) return;
-
-    if (leftCompressed || rightCompressed) {
-      const fixedKey = leftCompressed ? drag.leftKey : drag.rightKey;
-      const variableKey = leftCompressed ? drag.rightKey : drag.leftKey;
-      const variableIsLeft = variableKey === drag.leftKey;
-      const direction = variableIsLeft ? 1 : -1;
-      const otherKey = this.getVisiblePaneKeys().find(
-        (key) => key !== drag.leftKey && key !== drag.rightKey
-      );
-
-      const startVariable = drag.startWidths[variableKey] || this.weights[variableKey];
-      const startOther = otherKey ? drag.startWidths[otherKey] || this.weights[otherKey] : 0;
-      const totalVariableAndOther = startVariable + startOther;
-
-      const minVariable = this.getPaneMinWidth(variableKey);
-      const minOther = otherKey ? this.getPaneMinWidth(otherKey) : 0;
-      const maxVariable = Math.max(minVariable, totalVariableAndOther - minOther);
-      const requestedVariable = startVariable + delta * direction;
-      const nextVariable = Math.max(minVariable, Math.min(maxVariable, requestedVariable));
-
-      this.weights[fixedKey] = drag.startWidths[fixedKey] || this.weights[fixedKey];
-      this.weights[variableKey] = nextVariable;
-      if (otherKey) {
-        this.weights[otherKey] = Math.max(minOther, totalVariableAndOther - nextVariable);
-      }
-
-      this.applyLayout();
-      return;
-    }
 
     const minLeft = this.getPaneMinWidth(drag.leftKey);
     const minRight = this.getPaneMinWidth(drag.rightKey);

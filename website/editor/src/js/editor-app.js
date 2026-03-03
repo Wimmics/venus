@@ -21,8 +21,6 @@ export class EditorApp {
 
     this.endpointInputEl = document.getElementById("endpointInput");
     this.resultsAsSourceToggleEl = document.getElementById("resultsAsSourceToggle");
-    this.toggleDataCompressButton = document.getElementById("toggleDataCompress");
-    this.toggleDataExpandButton = document.getElementById("toggleDataExpand");
     this.visualizationTabButton = document.getElementById("visualization-tab");
 
     this.demoControl = new DemoControl({
@@ -111,7 +109,6 @@ export class EditorApp {
     }
 
     await this.loadScenarioAndRefresh();
-    this.updateDataCompressButton();
   }
 
   bindEvents() {
@@ -133,13 +130,6 @@ export class EditorApp {
 
     this.visualizationTabButton.addEventListener("shown.bs.tab", () => {
       this.refreshVisualizationTab();
-    });
-
-    this.toggleDataCompressButton.addEventListener("click", () => {
-      this.toggleDataCompression();
-    });
-    this.toggleDataExpandButton.addEventListener("click", () => {
-      this.toggleDataCompression();
     });
   }
 
@@ -386,28 +376,6 @@ export class EditorApp {
   async applyResultsEditorMode() {
     const useResultsAsSource = this.getDataSourceMode() === "provided";
     await this.resultsPanelController.setReadOnly(!useResultsAsSource);
-  }
-
-  toggleDataCompression() {
-    const changed = this.splitViewResizer.toggleCompressPane("config");
-    if (!changed) return;
-    this.updateDataCompressButton();
-  }
-
-  updateDataCompressButton() {
-    const compressed = this.splitViewResizer.isPaneCompressed("config");
-    this.toggleDataCompressButton.classList.toggle("active", compressed);
-    this.toggleDataCompressButton.title = compressed
-      ? "Expand Results panel"
-      : "Compress Results panel";
-    this.toggleDataCompressButton.setAttribute(
-      "aria-label",
-      compressed ? "Expand Results panel" : "Compress Results panel"
-    );
-    this.toggleDataCompressButton.innerHTML = compressed
-      ? '<i class="bi bi-arrows-expand-vertical" aria-hidden="true"></i>'
-      : '<i class="bi bi-arrows-collapse-vertical" aria-hidden="true"></i>';
-    this.toggleDataExpandButton.innerHTML = '<i class="bi bi-arrows-expand-vertical" aria-hidden="true"></i>';
   }
 
   scheduleAutoRender() {
