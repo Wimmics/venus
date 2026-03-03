@@ -389,13 +389,13 @@ export class EditorApp {
   }
 
   toggleDataCompression() {
-    const changed = this.splitViewResizer.toggleCompressPane("data");
+    const changed = this.splitViewResizer.toggleCompressPane("config");
     if (!changed) return;
     this.updateDataCompressButton();
   }
 
   updateDataCompressButton() {
-    const compressed = this.splitViewResizer.isPaneCompressed("data");
+    const compressed = this.splitViewResizer.isPaneCompressed("config");
     this.toggleDataCompressButton.classList.toggle("active", compressed);
     this.toggleDataCompressButton.title = compressed
       ? "Expand Results panel"

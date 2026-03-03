@@ -129,7 +129,8 @@ export class SplitViewResizer {
       pane.classList.toggle("is-compressed", Boolean(this.compressed[key]));
     }
 
-    this.containerEl?.classList.toggle("data-compressed", Boolean(this.compressed.data));
+    const hasCompressedPane = ORDER.some((key) => Boolean(this.compressed[key]));
+    this.containerEl?.classList.toggle("data-compressed", hasCompressedPane);
     this.refreshSplitterVisibility();
   }
 

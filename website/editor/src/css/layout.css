@@ -216,7 +216,7 @@
   min-height: 0;
 }
 
-.workspace-pane-data .pane-collapsed-bar {
+.workspace-pane .pane-collapsed-bar {
   display: none;
   align-items: center;
   justify-content: center;
@@ -227,10 +227,10 @@
   background: #ffffff;
 }
 
-.workspace-pane-data.is-compressed > article {
+.workspace-pane.is-compressed > article {
   display: none !important;
 }
 
-.workspace-pane-data.is-compressed .pane-collapsed-bar {
+.workspace-pane.is-compressed .pane-collapsed-bar {
   display: flex;
 }
