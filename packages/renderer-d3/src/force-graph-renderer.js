@@ -1,16 +1,9 @@
 import * as d3 from "d3";
+import BaseRenderer from "./base-renderer.js";
 
-export default class ForceGraphRenderer {
+export default class ForceGraphRenderer extends BaseRenderer {
   constructor(opts = {}) {
-    this.container = opts.container || null; // DOM element containing an <svg>
-    this.encodingManager = opts.encodingManager || null;
-    this.width = opts.width || 800;
-    this.height = opts.height || 600;
-    this.logger = opts.logger || console;
-
-    this.callbacks = opts.callbacks || {};
-
-    this.svg = null;
+    super(opts);
     this.simulation = null;
     this.nodeGroup = null;
     this.linkSel = null;
@@ -19,23 +12,25 @@ export default class ForceGraphRenderer {
 
     this.nodes = [];
     this.links = [];
-    this.encoding = null;
   }
 
-  render(graph = { nodes: [], links: [] }, encoding = null, visualArtifacts = null) {
-    this.nodes = graph.nodes || [];
-    this.links = graph.links || [];
-    this.encoding = encoding || this.encoding;
+  _defaultPayload() {
+    return { nodes: this.nodes, links: this.links };
+  }
 
-    if (!this.container) throw new Error("ForceGraphRenderer requires a container element");
-   
-    this.svg = d3.select(this.container.querySelector("svg"));
-    const width = this.width;
-    const height = this.height;
+  _ingestRenderPayload(payload = { nodes: [], links: [] }) {
+    this.nodes = payload?.nodes || [];
+    this.links = payload?.links || [];
+  }
 
-    this.svg.selectAll("*").remove();
+  _validateState() {
+    if (!this.nodes?.length) return "No data to visualize";
+    return null;
+  }
 
-    // Arrow head
+  _renderVis() {
+    const { width, height, mapping, visualArtifacts } = this._state || {};
+
     const defs = this.svg.append("defs");
     defs
       .append("marker")
@@ -50,23 +45,15 @@ export default class ForceGraphRenderer {
       .attr("d", "M0,-5L10,0L0,5")
       .attr("fill", "#999");
 
-    if (!this.nodes?.length) {
-      this.svg
-        .append("text")
-        .attr("x", width / 2)
-        .attr("y", height / 2)
-        .attr("text-anchor", "middle")
-        .style("font-size", "14px")
-        .text("No data to visualize");
-      return;
-    }
-
-    // Validate nodes/links
     this.nodes = this.nodes.filter((n) => n && n.id != null);
     this.links = (this.links || []).filter((l) => l && l.source != null && l.target != null);
 
-    const mapping = this.encoding || {};
-    const interactionConfig = mapping.interactions || {};
+    if (!this.nodes.length) {
+      this._renderCenteredMessage(width, height, "No data to visualize");
+      return false;
+    }
+
+    const interactionConfig = mapping?.interactions || {};
     const interactionsEnabled = interactionConfig.enabled !== false;
     const dragEnabled = interactionsEnabled && interactionConfig.drag !== false;
     const zoomEnabled = interactionsEnabled && interactionConfig.zoom !== false;
@@ -79,7 +66,6 @@ export default class ForceGraphRenderer {
     const nodeSizeChannel = findChannel("nodes", "size");
     const linkColorChannel = findChannel("links", "color");
 
-    // Node color scale (compiled artifacts)
     const nodeColorConfig = nodeColorChannel?.encoding || {};
     const nodeColorScale = nodeColorChannel?.scaleId
       ? artifactScales.get(nodeColorChannel.scaleId) || null
@@ -108,7 +94,6 @@ export default class ForceGraphRenderer {
       return defaultColor;
     };
 
-    // Node size scale (compiled artifacts)
     const nodeSizeConfig = nodeSizeChannel?.encoding || {};
     const nodeSizeScale = nodeSizeChannel?.scaleId
       ? artifactScales.get(nodeSizeChannel.scaleId) || null
@@ -146,7 +131,6 @@ export default class ForceGraphRenderer {
       return defaultRadius;
     };
 
-    // Link color scale (compiled artifacts)
     const linkColorConfig = linkColorChannel?.encoding || {};
     const linkColorScale = linkColorChannel?.scaleId
       ? artifactScales.get(linkColorChannel.scaleId) || null
@@ -454,24 +438,24 @@ export default class ForceGraphRenderer {
       d.fx = null;
       d.fy = null;
     }
+
+    return true;
   }
 
-  updateData(graph = { nodes: [], links: [] }) {
-    // stop previous simulation and re-render fully for simplicity
+  updateData(payload = null, encoding = null, visualArtifacts = null) {
     this.destroy();
-    this.render(graph, this.encoding);
+    this.render(payload || this._defaultPayload(), encoding || this.encoding, visualArtifacts);
   }
 
-  updateEncoding(encoding) {
+  updateEncoding(encoding, payload = null, visualArtifacts = null) {
     this.encoding = encoding;
     if (this.encodingManager) this.encodingManager.clearScaleCache();
-    // re-render to apply new scales/styles
-    this.updateData({ nodes: this.nodes, links: this.links });
+    this.updateData(payload || this._defaultPayload(), encoding, visualArtifacts);
   }
 
   resize(width, height) {
-    this.width = width;
-    this.height = height;
+    this.width = width || this.width;
+    this.height = height || this.height;
     if (this.simulation) {
       this.simulation.force("center", d3.forceCenter(this.width / 2, this.height / 2));
       this.simulation.alpha(0.3).restart();
@@ -484,19 +468,19 @@ export default class ForceGraphRenderer {
         this.simulation.stop();
         this.simulation = null;
       }
-    } catch (e) {
-      /* ignore */
+    } catch {
+      // ignore
     }
 
     if (this.svg) {
       this.svg.on(".zoom", null);
-      this.svg.selectAll("*").remove();
-      this.svg = null;
     }
 
     this.nodeGroup = null;
     this.linkSel = null;
     this.viewportGroup = null;
     this.zoomBehavior = null;
+
+    super.destroy();
   }
 }

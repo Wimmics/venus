@@ -82,7 +82,7 @@ button {
   position: absolute;
   top: calc(100% + 0.3rem);
   left: 0;
-  min-width: 260px;
+  min-width: 500px;
   max-height: 320px;
   overflow: auto;
   z-index: 30;

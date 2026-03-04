@@ -2,19 +2,19 @@ import { createRenderer } from "@wimmics/venus-d3renderer";
 import { createEncodingManager } from "@wimmics/venus-encoding";
 import { VIS_TYPES } from "@wimmics/venus-core";
 import { buildBarChart } from "@wimmics/venus-datasource";
-import { VisBase } from "./vis-base.js";
+import { VenusBase } from "./vis-base.js";
 
-export class VisBarChart extends VisBase {
+export class VenusBarChart extends VenusBase {
   constructor() {
     super({
-      componentName: "VisBarChart",
-      visType: VIS_TYPES.BAR_CHART,
+      componentName: "VenusBarChart",
+      visType: VIS_TYPES.VENUS_BARCHART,
       defaultWidth: 800,
       defaultHeight: 500
     });
 
     this.rows = [];
-    this.encodingManager = createEncodingManager(VIS_TYPES.BAR_CHART);
+    this.encodingManager = createEncodingManager(VIS_TYPES.VENUS_BARCHART);
     this.visualEncoding = this.encodingManager.getDefaultEncoding();
 
     this._initDOMStructure();
@@ -76,7 +76,7 @@ export class VisBarChart extends VisBase {
 
     const container = this._getContainerElement();
     if (container && !this.renderer) {
-      this.renderer = createRenderer(VIS_TYPES.BAR_CHART, {
+      this.renderer = createRenderer(VIS_TYPES.VENUS_BARCHART, {
         container,
         encodingManager: this.encodingManager,
         width: this.width,
@@ -126,6 +126,6 @@ export class VisBarChart extends VisBase {
   }
 }
 
-if (!customElements.get("venus-barchart")) {
-  customElements.define("venus-barchart", VisBarChart);
+if (!customElements.get(VIS_TYPES.VENUS_BARCHART)) {
+  customElements.define(VIS_TYPES.VENUS_BARCHART, VenusBarChart);
 }

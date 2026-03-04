@@ -1,4 +1,4 @@
-export { VisGraph } from './src/vis-graph.js';
-export { VisBarChart } from "./src/vis-barchart.js";
-export { VisLineChart } from "./src/vis-linechart.js";
-export { VisBase } from "./src/vis-base.js";
+export { VenusGraph } from './src/vis-graph.js';
+export { VenusBarChart } from "./src/vis-barchart.js";
+export { VenusLineChart } from "./src/vis-linechart.js";
+export { VenusBase } from "./src/vis-base.js";

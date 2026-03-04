@@ -23,7 +23,7 @@ export async function buildForceGraph({
   
   logger = null
 } = {}) {
-  const mapper = createSparqlMapper(VIS_TYPES.FORCE_GRAPH);
+  const mapper = createSparqlMapper(VIS_TYPES.VENUS_GRAPH);
 
   return buildVis({
     endpoint,

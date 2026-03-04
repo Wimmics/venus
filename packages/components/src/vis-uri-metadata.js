@@ -1,7 +1,7 @@
 import { fetchNodeDetails } from "@wimmics/venus-sparql";
-import { createLogger } from "@wimmics/venus-core";
+import { createLogger, VIS_TYPES } from "@wimmics/venus-core";
 
-export class VisURIMeta extends HTMLElement {
+export class VenusUriMeta extends HTMLElement {
   static get observedAttributes() {
     return ["open"];
   }
@@ -10,7 +10,7 @@ export class VisURIMeta extends HTMLElement {
     super();
     this.attachShadow({ mode: "open" });
 
-    this._logger = createLogger("VisURIMeta", { debug: true });
+    this._logger = createLogger("VenusUriMeta", { debug: true });
     this._node = null;
     this._endpoint = "https://dbpedia.org/sparql";
     this._proxy = null;
@@ -21,7 +21,7 @@ export class VisURIMeta extends HTMLElement {
   }
 
   set logger(l) {
-    this._logger = l || createLogger("VisURIMeta", { debug: false });
+    this._logger = l || createLogger("VenusUriMeta", { debug: false });
   }
   get logger() {
     return this._logger;
@@ -263,6 +263,6 @@ export class VisURIMeta extends HTMLElement {
   }
 }
 
-if (!customElements.get("venus-uri-meta")) {
-  customElements.define("venus-uri-meta", VisURIMeta);
+if (!customElements.get(VIS_TYPES.VENUS_URI_META)) {
+  customElements.define(VIS_TYPES.VENUS_URI_META, VenusUriMeta);
 }

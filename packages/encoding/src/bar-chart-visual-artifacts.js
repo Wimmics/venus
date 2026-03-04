@@ -35,7 +35,7 @@ export function createBarChartVisualArtifacts({
   encodingManager,
   encoding,
   rows = [],
-  visType = VIS_TYPES.BAR_CHART
+  visType = VIS_TYPES.VENUS_BARCHART
 } = {}) {
   const artifacts = {
     scales: new Map(),

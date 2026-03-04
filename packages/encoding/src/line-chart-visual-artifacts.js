@@ -35,7 +35,7 @@ export function createLineChartVisualArtifacts({
   encodingManager,
   encoding,
   rows = [],
-  visType = VIS_TYPES.LINE_CHART
+  visType = VIS_TYPES.VENUS_LINECHART
 } = {}) {
   const artifacts = {
     scales: new Map(),

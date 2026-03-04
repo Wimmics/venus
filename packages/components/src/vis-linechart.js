@@ -2,19 +2,19 @@ import { createRenderer } from "@wimmics/venus-d3renderer";
 import { createEncodingManager } from "@wimmics/venus-encoding";
 import { VIS_TYPES } from "@wimmics/venus-core";
 import { buildLineChart } from "@wimmics/venus-datasource";
-import { VisBase } from "./vis-base.js";
+import { VenusBase } from "./vis-base.js";
 
-export class VisLineChart extends VisBase {
+export class VenusLineChart extends VenusBase {
   constructor() {
     super({
-      componentName: "VisLineChart",
-      visType: VIS_TYPES.LINE_CHART,
+      componentName: "VenusLineChart",
+      visType: VIS_TYPES.VENUS_LINECHART,
       defaultWidth: 800,
       defaultHeight: 500
     });
 
     this.rows = [];
-    this.encodingManager = createEncodingManager(VIS_TYPES.LINE_CHART);
+    this.encodingManager = createEncodingManager(VIS_TYPES.VENUS_LINECHART);
     this.visualEncoding = this.encodingManager.getDefaultEncoding();
 
     this._initDOMStructure();
@@ -76,7 +76,7 @@ export class VisLineChart extends VisBase {
 
     const container = this._getContainerElement();
     if (container && !this.renderer) {
-      this.renderer = createRenderer(VIS_TYPES.LINE_CHART, {
+      this.renderer = createRenderer(VIS_TYPES.VENUS_LINECHART, {
         container,
         encodingManager: this.encodingManager,
         width: this.width,
@@ -123,6 +123,6 @@ export class VisLineChart extends VisBase {
   }
 }
 
-if (!customElements.get("venus-linechart")) {
-  customElements.define("venus-linechart", VisLineChart);
+if (!customElements.get(VIS_TYPES.VENUS_LINECHART)) {
+  customElements.define(VIS_TYPES.VENUS_LINECHART, VenusLineChart);
 }

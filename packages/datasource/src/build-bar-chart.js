@@ -14,7 +14,7 @@ export async function buildBarChart({
   encodingManager = null,
   logger = null
 } = {}) {
-  const mapper = createSparqlMapper(VIS_TYPES.BAR_CHART);
+  const mapper = createSparqlMapper(VIS_TYPES.VENUS_BARCHART);
 
   return buildVis({
     endpoint,

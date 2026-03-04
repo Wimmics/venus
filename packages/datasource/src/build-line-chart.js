@@ -14,7 +14,7 @@ export async function buildLineChart({
   encodingManager = null,
   logger = null
 } = {}) {
-  const mapper = createSparqlMapper(VIS_TYPES.LINE_CHART);
+  const mapper = createSparqlMapper(VIS_TYPES.VENUS_LINECHART);
 
   return buildVis({
     endpoint,

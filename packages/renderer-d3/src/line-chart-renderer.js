@@ -1,77 +1,28 @@
 import * as d3 from "d3";
-import {
-  computeAxisAwareMargins,
-  measurePlotOverflow,
-  shouldRefitLayout,
-  growMargins
-} from "./layout-fit.js";
+import CartesianChartRenderer from "./cartesian-chart-renderer.js";
 
-export default class LineChartRenderer {
-  constructor(opts = {}) {
-    this.container = opts.container || null;
-    this.encodingManager = opts.encodingManager || null;
-    this.width = opts.width || 800;
-    this.height = opts.height || 500;
-    this.logger = opts.logger || console;
-    this.callbacks = opts.callbacks || {};
-    this.svg = null;
-    this.data = [];
-    this.encoding = null;
-    this._fitPass = 0;
-    this._marginOverride = null;
+export default class LineChartRenderer extends CartesianChartRenderer {
+  _getMarginBase() {
+    return { top: 24, right: 36, bottom: 64, left: 64 };
   }
 
-  render(chart = { rows: [] }, encoding = null, visualArtifacts = null) {
-    this.data = Array.isArray(chart?.rows) ? chart.rows : [];
-    this.encoding = encoding || this.encoding;
-
-    if (!this.container) throw new Error("LineChartRenderer requires a container element");
-
-    this.svg = d3.select(this.container.querySelector("svg"));
-    this.svg.selectAll("*").remove();
-
-    const mapping = this.encoding || {};
-    const width = this.width;
-    const height = this.height;
-    const xAxisConfig = mapping?.x?.axis || {};
-    const yAxisConfig = mapping?.y?.axis || {};
-    const xLabelAngle = Number.isFinite(Number(xAxisConfig.labelAngle)) ? Number(xAxisConfig.labelAngle) : 0;
-    const xLabelOffset = this._normalizeOffset(xAxisConfig.labelOffset);
-    const yLabelOffset = this._normalizeOffset(yAxisConfig.labelOffset);
-    const margin = this._marginOverride || this._computeMargins({
+  _renderVis() {
+    const {
+      mapping,
+      xAxisConfig,
+      yAxisConfig,
       xLabelAngle,
       xLabelOffset,
-      yLabelOffset
-    });
-    const innerWidth = Math.max(1, width - margin.left - margin.right);
-    const innerHeight = Math.max(1, height - margin.top - margin.bottom);
-
-    if (!this.data.length) {
-      this.svg
-        .append("text")
-        .attr("x", width / 2)
-        .attr("y", height / 2)
-        .attr("text-anchor", "middle")
-        .style("font-size", "14px")
-        .text("No data to visualize");
-      this._resetFitState();
-      return;
-    }
-
-    const xField = mapping?.x?.field;
-    const yField = mapping?.y?.field;
-    if (!xField || !yField) {
-      this.svg
-        .append("text")
-        .attr("x", width / 2)
-        .attr("y", height / 2)
-        .attr("text-anchor", "middle")
-        .style("font-size", "14px")
-        .text('Invalid encoding: "x.field" and "y.field" are required');
-      this._resetFitState();
-      return;
-    }
-
+      yLabelOffset,
+      innerWidth,
+      innerHeight,
+      xField,
+      yField,
+      plot,
+      visualArtifacts,
+      width,
+      height
+    } = this._state || {};
     const linesConfig = mapping?.lines || {};
     const lineColorConfig = linesConfig?.color || {};
     const lineSizeConfig = linesConfig?.size || {};
@@ -119,15 +70,9 @@ export default class LineChartRenderer {
       .filter((item) => item.xRaw !== undefined && item.xRaw !== null && Number.isFinite(item.y));
 
     if (!rows.length) {
-      this.svg
-        .append("text")
-        .attr("x", width / 2)
-        .attr("y", height / 2)
-        .attr("text-anchor", "middle")
-        .style("font-size", "14px")
-        .text("No plottable rows found for the selected x/y fields");
+      this._renderCenteredMessage(width, height, "No plottable rows found for the selected x/y fields");
       this._resetFitState();
-      return;
+      return false;
     }
 
     const xScaleType = String(xScaleConfig.type || "ordinal").toLowerCase();
@@ -174,16 +119,22 @@ export default class LineChartRenderer {
       yScale = d3.scalePow().exponent(exponent).domain(yDomain).range([innerHeight, 0]).nice();
     }
 
-    const plot = this.svg
-      .append("g")
-      .attr("class", "plot-area")
-      .attr("transform", `translate(${margin.left},${margin.top})`);
+    const xTickFormatter = useContinuousX
+      ? this._buildTickFormatter(
+          xAxisConfig.tickFormat || (xScaleType === "count" ? "integer" : "raw"),
+          { fallback: "number" }
+        )
+      : this._buildTickFormatter(xAxisConfig.tickFormat, { fallback: "string" });
+    const yTickFormatter = this._buildTickFormatter(
+      yAxisConfig.tickFormat || (yScaleType === "count" ? "integer" : "raw"),
+      { fallback: "number" }
+    );
 
     plot
       .append("g")
       .attr("class", "x-axis")
       .attr("transform", `translate(0,${innerHeight})`)
-      .call(d3.axisBottom(xScale))
+      .call(this._buildValueAxis("bottom", xScale, xTickFormatter, xAxisConfig, xScaleType))
       .selectAll("text")
       .style("text-anchor", xLabelAngle ? "end" : "middle")
       .attr(
@@ -196,7 +147,9 @@ export default class LineChartRenderer {
     plot
       .append("g")
       .attr("class", "y-axis")
-      .call(d3.axisLeft(yScale));
+      .call(this._buildValueAxis("left", yScale, yTickFormatter, yAxisConfig, yScaleType))
+      .selectAll("text")
+      .attr("transform", `translate(${yLabelOffset.x},${yLabelOffset.y})`);
 
     const groups = d3.group(rows, (item) => (
       colorField ? String(item.row?.[colorField] ?? "undefined") : "__single__"
@@ -304,87 +257,6 @@ export default class LineChartRenderer {
       }
     }
 
-    return this._finalizeLayout({
-      chart,
-      encoding,
-      visualArtifacts,
-      width,
-      height,
-      margin
-    });
-  }
-
-  updateData(chart, encoding = null, visualArtifacts = null) {
-    this.render(chart, encoding, visualArtifacts);
-  }
-
-  updateEncoding(encoding, chart = null, visualArtifacts = null) {
-    this.render(chart || { rows: this.data }, encoding, visualArtifacts);
-  }
-
-  resize(width, height, chart = null, encoding = null, visualArtifacts = null) {
-    this.width = width || this.width;
-    this.height = height || this.height;
-    this.render(chart || { rows: this.data }, encoding || this.encoding, visualArtifacts);
-  }
-
-  destroy() {
-    if (this.svg) this.svg.selectAll("*").remove();
-    this._resetFitState();
-  }
-
-  _computeMargins({ xLabelAngle = 0, xLabelOffset = { x: 0, y: 0 }, yLabelOffset = { x: 0, y: 0 } }) {
-    return computeAxisAwareMargins({
-      xLabelAngle,
-      xLabelOffset,
-      yLabelOffset,
-      base: { top: 24, right: 36, bottom: 64, left: 64 }
-    });
-  }
-
-  _normalizeOffset(offsetValue) {
-    if (Array.isArray(offsetValue)) {
-      const x = Number(offsetValue[0]);
-      const y = Number(offsetValue[1]);
-      return {
-        x: Number.isFinite(x) ? x : 0,
-        y: Number.isFinite(y) ? y : 0
-      };
-    }
-
-    if (offsetValue && typeof offsetValue === "object") {
-      const x = Number(offsetValue.x);
-      const y = Number(offsetValue.y);
-      return {
-        x: Number.isFinite(x) ? x : 0,
-        y: Number.isFinite(y) ? y : 0
-      };
-    }
-
-    const scalar = Number(offsetValue);
-    return {
-      x: Number.isFinite(scalar) ? scalar : 0,
-      y: Number.isFinite(scalar) ? scalar : 0
-    };
-  }
-
-  _finalizeLayout({ chart, encoding, visualArtifacts, width, height, margin }) {
-    const svgNode = this.svg?.node?.();
-    const overflow = measurePlotOverflow(svgNode, ".plot-area", width, height);
-    const shouldRefit = shouldRefitLayout(overflow);
-
-    if (!shouldRefit || this._fitPass >= 1) {
-      this._resetFitState();
-      return;
-    }
-
-    this._fitPass += 1;
-    this._marginOverride = growMargins(margin, overflow, 6);
-    this.render(chart, encoding, visualArtifacts);
-  }
-
-  _resetFitState() {
-    this._fitPass = 0;
-    this._marginOverride = null;
+    return true;
   }
 }

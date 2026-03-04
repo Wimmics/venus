@@ -9,9 +9,9 @@ import { createLineChartVisualArtifacts } from "./line-chart-visual-artifacts.js
 import { VIS_TYPES } from "@wimmics/venus-core";
 
 // Register known encoding managers
-registerEncodingManager(VIS_TYPES.FORCE_GRAPH, ForceGraphEncodingManager);
-registerVisualArtifactCompiler(VIS_TYPES.FORCE_GRAPH, createForceGraphVisualArtifacts);
-registerEncodingManager(VIS_TYPES.BAR_CHART, BarChartEncodingManager);
-registerVisualArtifactCompiler(VIS_TYPES.BAR_CHART, createBarChartVisualArtifacts);
-registerEncodingManager(VIS_TYPES.LINE_CHART, LineChartEncodingManager);
-registerVisualArtifactCompiler(VIS_TYPES.LINE_CHART, createLineChartVisualArtifacts);
+registerEncodingManager(VIS_TYPES.VENUS_GRAPH, ForceGraphEncodingManager);
+registerVisualArtifactCompiler(VIS_TYPES.VENUS_GRAPH, createForceGraphVisualArtifacts);
+registerEncodingManager(VIS_TYPES.VENUS_BARCHART, BarChartEncodingManager);
+registerVisualArtifactCompiler(VIS_TYPES.VENUS_BARCHART, createBarChartVisualArtifacts);
+registerEncodingManager(VIS_TYPES.VENUS_LINECHART, LineChartEncodingManager);
+registerVisualArtifactCompiler(VIS_TYPES.VENUS_LINECHART, createLineChartVisualArtifacts);

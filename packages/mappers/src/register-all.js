@@ -4,6 +4,6 @@ import { SparqlToBarChartMapper } from "./bar-chart/sparql-to-bar-chart.js";
 import { SparqlToLineChartMapper } from "./line-chart/sparql-to-line-chart.js";
 import { VIS_TYPES } from "@wimmics/venus-core";
 
-registerSparqlMapper(VIS_TYPES.FORCE_GRAPH, SparqlToForceGraphMapper);
-registerSparqlMapper(VIS_TYPES.BAR_CHART, SparqlToBarChartMapper);
-registerSparqlMapper(VIS_TYPES.LINE_CHART, SparqlToLineChartMapper);
+registerSparqlMapper(VIS_TYPES.VENUS_GRAPH, SparqlToForceGraphMapper);
+registerSparqlMapper(VIS_TYPES.VENUS_BARCHART, SparqlToBarChartMapper);
+registerSparqlMapper(VIS_TYPES.VENUS_LINECHART, SparqlToLineChartMapper);

@@ -39,7 +39,7 @@ export function createForceGraphVisualArtifacts({
   encoding,
   nodes = [],
   links = [],
-  visType = VIS_TYPES.FORCE_GRAPH
+  visType = VIS_TYPES.VENUS_GRAPH
 } = {}) {
   const artifacts = {
     scales: new Map(),

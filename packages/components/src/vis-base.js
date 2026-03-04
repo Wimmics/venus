@@ -2,7 +2,7 @@ import { createLogger } from "@wimmics/venus-core";
 import { createVisualArtifacts } from "@wimmics/venus-encoding";
 import { createLegends, positionLegends } from "@wimmics/venus-legends";
 
-export class VisBase extends HTMLElement {
+export class VenusBase extends HTMLElement {
   static get observedAttributes() {
     return ["width", "height", "resize"];
   }
@@ -12,7 +12,7 @@ export class VisBase extends HTMLElement {
     this.attachShadow({ mode: "open" });
 
     this.visType = visType;
-    this.logger = createLogger(componentName || "VisBase", { debug: false });
+    this.logger = createLogger(componentName || "VenusBase", { debug: false });
     this.width = defaultWidth;
     this.height = defaultHeight;
 

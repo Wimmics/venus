@@ -7,21 +7,21 @@
  * - Emit node selection / details requests
  *
  * Composition:
- * - VisGraph creates and owns a `venus-uri-meta` panel when `interactions.nodeDetailsPanel !== false`.
- * - This owned panel shares the lifecycle of the VisGraph instance.
+ * - VenusGraph creates and owns a `venus-uri-meta` panel when `interactions.nodeDetailsPanel !== false`.
+ * - This owned panel shares the lifecycle of the VenusGraph instance.
  */
 import { createRenderer } from "@wimmics/venus-d3renderer";
 import { createEncodingManager } from "@wimmics/venus-encoding";
 import { VIS_TYPES } from "@wimmics/venus-core";
 import { buildForceGraph } from "@wimmics/venus-datasource";
-import { VisBase } from "./vis-base.js";
+import { VenusBase } from "./vis-base.js";
 import "./vis-uri-metadata.js";
 
-export class VisGraph extends VisBase {
+export class VenusGraph extends VenusBase {
   constructor() {
     super({
-      componentName: "VisGraph",
-      visType: VIS_TYPES.FORCE_GRAPH,
+      componentName: "VenusGraph",
+      visType: VIS_TYPES.VENUS_GRAPH,
       defaultWidth: 800,
       defaultHeight: 600
     });
@@ -33,7 +33,7 @@ export class VisGraph extends VisBase {
     this._nodeDetailsPanel = null;
     this._ownsNodeDetailsPanel = false;
 
-    this.encodingManager = createEncodingManager(VIS_TYPES.FORCE_GRAPH);
+    this.encodingManager = createEncodingManager(VIS_TYPES.VENUS_GRAPH);
     this.visualEncoding = this.encodingManager.getDefaultEncoding();
 
     this._initDOMStructure();
@@ -41,7 +41,7 @@ export class VisGraph extends VisBase {
 
   /**
    * Optional backward-compatible external override.
-   * When set, VisGraph stops owning an internal `venus-uri-meta` panel.
+   * When set, VenusGraph stops owning an internal `venus-uri-meta` panel.
    */
   set nodeDetailsPanel(el) {
     if (this._ownsNodeDetailsPanel && this._nodeDetailsPanel && this._nodeDetailsPanel !== el) {
@@ -184,7 +184,7 @@ export class VisGraph extends VisBase {
 
     const container = this._getContainerElement();
     if (container && !this.renderer) {
-      this.renderer = createRenderer(VIS_TYPES.FORCE_GRAPH, {
+      this.renderer = createRenderer(VIS_TYPES.VENUS_GRAPH, {
         container,
         encodingManager: this.encodingManager,
         width: this.width,
@@ -408,6 +408,6 @@ export class VisGraph extends VisBase {
   }
 }
 
-if (!customElements.get("venus-graph")) {
-  customElements.define("venus-graph", VisGraph);
+if (!customElements.get(VIS_TYPES.VENUS_GRAPH)) {
+  customElements.define(VIS_TYPES.VENUS_GRAPH, VenusGraph);
 }

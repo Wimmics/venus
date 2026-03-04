@@ -52,7 +52,7 @@ export class VisualizationView {
     if (typeof component.launch !== "function") {
       const ctorName = component?.constructor?.name || "UnknownElement";
       throw new Error(
-        `Component "${tag}" is not launchable (instance: ${ctorName}). Expected a VisBase descendant.`
+        `Component "${tag}" is not launchable (instance: ${ctorName}). Expected a VenusBase descendant.`
       );
     }
 

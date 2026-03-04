@@ -12,7 +12,7 @@ function bindingToValue(bindingValue, varName, binding, vars) {
 
 export class SparqlToLineChartMapper extends SparqlToVisMapper {
   constructor(options = {}) {
-    super({ ...options, visType: VIS_TYPES.LINE_CHART });
+    super({ ...options, visType: VIS_TYPES.VENUS_LINECHART });
   }
 
   map(results, ctx) {

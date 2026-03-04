@@ -14,7 +14,7 @@ import {
 export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 	
 	constructor(options = {}) {
-		super({ ...options, visType: VIS_TYPES.FORCE_GRAPH });
+		super({ ...options, visType: VIS_TYPES.VENUS_GRAPH });
 	}
 	
 	map(results, ctx) {
