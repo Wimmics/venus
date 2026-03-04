@@ -15,6 +15,8 @@ Encoding engine that turns user encoding into validated domains and D3-ready sca
 - Optional top-level `background`: chart background color (`"#ffffff"`, `"white"`, etc.).
 - Force graph: `nodes` / `links` channels (`color`, `size`, `stroke`, `labels`, `interactions`).
 - Bar chart: `x`, `y`, `color`, `groups`, `direction`.
+- Color legends are `display: true` by default when color is data-driven (`color.field`).
+- If `color.field` is provided without `color.scale`, a default palette is used: `{ type: "ordinal", range: "Accent" }`.
 
 ## Force-Graph Example
 ```js
@@ -86,7 +88,7 @@ In co-occurrence mode, nodes are connected when they share the same resolved val
 
 `links.color` options:
 - `value`: constant link color fallback (default `"#999"`)
-- `field` + `scale`: data-driven link coloring. If both are present, a color legend can be generated.
+- `field` (+ optional `scale`): data-driven link coloring. When `scale` is omitted, default palette is `Accent`, and legend is displayed by default.
 
 ## Bar-Chart Example
 ```js
@@ -134,10 +136,16 @@ bar.encoding = {
 - stacking (`stack: true` / `"normalize"`) does not require `groups.field`
 
 `x.axis` options:
+- `title`: optional object
+  - `value`: title text (if `title` exists, this value is used instead of fallback)
+  - `display`: boolean, default `true`; set `false` to hide the axis title entirely
 - `labelAngle`: number
 - `labelOffset`: `{ x: number, y: number }`
 
 `y.axis` options:
+- `title`: optional object
+  - `value`: title text (if `title` exists, this value is used instead of fallback)
+  - `display`: boolean, default `true`; set `false` to hide the axis title entirely
 - `labelOffset`: `{ x: number, y: number }`
 - `tickStep`: positive number (for example `1` for count data)
 - `tickFormat`: preset string, one of:

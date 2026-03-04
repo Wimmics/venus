@@ -90,6 +90,33 @@ export default class BarChartRenderer extends CartesianChartRenderer {
       return Number.isFinite(fixed) && fixed >= 0 ? fixed : 0;
     };
 
+    const setupBarHoverFocus = () => {
+      const bars = plot.selectAll(".bars rect");
+      if (!bars.size()) return;
+
+      bars
+        .attr("data-base-stroke-width", function cacheBaseStrokeWidth() {
+          const current = Number(d3.select(this).attr("stroke-width"));
+          return Number.isFinite(current) && current >= 0 ? current : 0;
+        })
+        .on("mouseover", (event, datum) => {
+          this._focusMark({ mark: "bar", activeElement: event.currentTarget });
+
+          const rawDatum = datum?.datum || datum?.raw || datum;
+          this.callbacks.onHover?.({
+            mark: "bar",
+            datum: rawDatum,
+            x: event.offsetX,
+            y: event.offsetY,
+            event
+          });
+        })
+        .on("mouseout", () => {
+          this._resetFocusMark({ mark: "bar" });
+          this.callbacks.onOut?.({ mark: "bar" });
+        });
+    };
+
     const requestedTickFormat = this._normalizeTickFormatName(yAxisConfig.tickFormat);
     if (
       (requestedTickFormat === "percent" || requestedTickFormat === "percentage") &&
@@ -195,6 +222,14 @@ export default class BarChartRenderer extends CartesianChartRenderer {
         .selectAll("text")
         .attr("transform", `translate(${yLabelOffset.x},${yLabelOffset.y})`);
 
+      this._renderAxisTitles({
+        plot,
+        innerWidth,
+        innerHeight,
+        bottomTitle: this._resolveAxisTitle(mapping?.x?.axis, xField),
+        leftTitle: this._resolveAxisTitle(mapping?.y?.axis, yField)
+      });
+
       if (layoutMode === "grouped") {
         const groupedBarsObserved = groupedBars.filter((item) => item.__observed);
         plot
@@ -232,10 +267,16 @@ export default class BarChartRenderer extends CartesianChartRenderer {
           .attr("stroke", "#ffffff")
           .attr("stroke-width", (datum) => strokeWidthForDatum(datum.datum))
           .on("mouseover", (event, datum) => {
-            this.callbacks.onBarHover?.(datum.datum, event.offsetX, event.offsetY);
+            this.callbacks.onHover?.({
+              mark: "bar",
+              datum: datum.datum,
+              x: event.offsetX,
+              y: event.offsetY,
+              event
+            });
           })
           .on("mouseout", () => {
-            this.callbacks.onBarOut?.();
+            this.callbacks.onOut?.({ mark: "bar" });
           });
       } else if (layoutMode === "simple") {
         const simpleBars = xCategories.map((xCategory) => {
@@ -261,10 +302,16 @@ export default class BarChartRenderer extends CartesianChartRenderer {
           .attr("stroke", "#ffffff")
           .attr("stroke-width", (datum) => strokeWidthForDatum(datum.datum))
           .on("mouseover", (event, datum) => {
-            this.callbacks.onBarHover?.(datum.datum, event.offsetX, event.offsetY);
+            this.callbacks.onHover?.({
+              mark: "bar",
+              datum: datum.datum,
+              x: event.offsetX,
+              y: event.offsetY,
+              event
+            });
           })
           .on("mouseout", () => {
-            this.callbacks.onBarOut?.();
+            this.callbacks.onOut?.({ mark: "bar" });
           });
       } else {
         const stackGenerator = d3.stack().keys(subCategories);
@@ -304,13 +351,20 @@ export default class BarChartRenderer extends CartesianChartRenderer {
           .attr("stroke", "#ffffff")
           .attr("stroke-width", (datum) => strokeWidthForDatum(datum.datum))
           .on("mouseover", (event, datum) => {
-            this.callbacks.onBarHover?.(datum.datum, event.offsetX, event.offsetY);
+            this.callbacks.onHover?.({
+              mark: "bar",
+              datum: datum.datum,
+              x: event.offsetX,
+              y: event.offsetY,
+              event
+            });
           })
           .on("mouseout", () => {
-            this.callbacks.onBarOut?.();
+            this.callbacks.onOut?.({ mark: "bar" });
           });
       }
 
+      setupBarHoverFocus();
       return true;
     }
 
@@ -330,6 +384,14 @@ export default class BarChartRenderer extends CartesianChartRenderer {
       .selectAll("text")
       .style("text-anchor", xLabelAngle ? "end" : "end")
       .attr("transform", xLabelAngle ? `translate(${xLabelOffset.x},${xLabelOffset.y}) rotate(${xLabelAngle})` : `translate(${xLabelOffset.x},${xLabelOffset.y})`);
+
+    this._renderAxisTitles({
+      plot,
+      innerWidth,
+      innerHeight,
+      bottomTitle: this._resolveAxisTitle(mapping?.y?.axis, yField),
+      leftTitle: this._resolveAxisTitle(mapping?.x?.axis, xField)
+    });
 
     if (layoutMode === "grouped") {
       const groupedBarsObserved = groupedBars.filter((item) => item.__observed);
@@ -368,11 +430,18 @@ export default class BarChartRenderer extends CartesianChartRenderer {
         .attr("stroke", "#ffffff")
         .attr("stroke-width", (datum) => strokeWidthForDatum(datum.datum))
         .on("mouseover", (event, datum) => {
-          this.callbacks.onBarHover?.(datum.datum, event.offsetX, event.offsetY);
+          this.callbacks.onHover?.({
+            mark: "bar",
+            datum: datum.datum,
+            x: event.offsetX,
+            y: event.offsetY,
+            event
+          });
         })
         .on("mouseout", () => {
-          this.callbacks.onBarOut?.();
+          this.callbacks.onOut?.({ mark: "bar" });
         });
+      setupBarHoverFocus();
       return true;
     }
 
@@ -401,11 +470,18 @@ export default class BarChartRenderer extends CartesianChartRenderer {
         .attr("stroke", "#ffffff")
         .attr("stroke-width", (datum) => strokeWidthForDatum(datum.datum))
         .on("mouseover", (event, datum) => {
-          this.callbacks.onBarHover?.(datum.datum, event.offsetX, event.offsetY);
+          this.callbacks.onHover?.({
+            mark: "bar",
+            datum: datum.datum,
+            x: event.offsetX,
+            y: event.offsetY,
+            event
+          });
         })
         .on("mouseout", () => {
-          this.callbacks.onBarOut?.();
+          this.callbacks.onOut?.({ mark: "bar" });
         });
+      setupBarHoverFocus();
       return true;
     }
 
@@ -446,12 +522,19 @@ export default class BarChartRenderer extends CartesianChartRenderer {
       .attr("stroke", "#ffffff")
       .attr("stroke-width", (datum) => strokeWidthForDatum(datum.datum))
       .on("mouseover", (event, datum) => {
-        this.callbacks.onBarHover?.(datum.datum, event.offsetX, event.offsetY);
+        this.callbacks.onHover?.({
+          mark: "bar",
+          datum: datum.datum,
+          x: event.offsetX,
+          y: event.offsetY,
+          event
+        });
       })
       .on("mouseout", () => {
-        this.callbacks.onBarOut?.();
+        this.callbacks.onOut?.({ mark: "bar" });
       });
 
+    setupBarHoverFocus();
     return true;
   }
 
@@ -509,5 +592,38 @@ export default class BarChartRenderer extends CartesianChartRenderer {
       subMap.set(row.sub, bucket);
     }
     return aggregated;
+  }
+
+  _focusMark({ mark, activeElement } = {}) {
+    if (mark !== "bar" || !activeElement) return;
+    const plot = this._state?.plot;
+    if (!plot) return;
+    plot
+      .selectAll(".bars rect")
+      .attr("opacity", function applyBarOpacity() {
+        return this === activeElement ? 1 : 0.2;
+      })
+      .attr("stroke", function applyBarStroke() {
+        return this === activeElement ? "#222222" : "#ffffff";
+      })
+      .attr("stroke-width", function applyBarStrokeWidth() {
+        const base = Number(this.getAttribute("data-base-stroke-width"));
+        const safeBase = Number.isFinite(base) && base >= 0 ? base : 0;
+        return this === activeElement ? Math.max(1.5, safeBase + 1) : safeBase;
+      });
+  }
+
+  _resetFocusMark({ mark } = {}) {
+    if (mark && mark !== "bar") return;
+    const plot = this._state?.plot;
+    if (!plot) return;
+    plot
+      .selectAll(".bars rect")
+      .attr("opacity", 1)
+      .attr("stroke", "#ffffff")
+      .attr("stroke-width", function resetBarStrokeWidth() {
+        const base = Number(this.getAttribute("data-base-stroke-width"));
+        return Number.isFinite(base) && base >= 0 ? base : 0;
+      });
   }
 }

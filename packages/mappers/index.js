@@ -13,3 +13,4 @@ export { SparqlToVisMapper } from "./src/sparql-to-vis-mapper.js"
 export { SparqlToForceGraphMapper } from './src/force-graph/sparql-to-force-graph.js'
 export { SparqlToBarChartMapper } from "./src/bar-chart/sparql-to-bar-chart.js";
 export { SparqlToLineChartMapper } from "./src/line-chart/sparql-to-line-chart.js";
+export { SparqlToScatterPlotMapper } from "./src/scatter-plot/sparql-to-scatter-plot.js";

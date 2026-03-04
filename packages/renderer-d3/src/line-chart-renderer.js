@@ -151,6 +151,14 @@ export default class LineChartRenderer extends CartesianChartRenderer {
       .selectAll("text")
       .attr("transform", `translate(${yLabelOffset.x},${yLabelOffset.y})`);
 
+    this._renderAxisTitles({
+      plot,
+      innerWidth,
+      innerHeight,
+      bottomTitle: this._resolveAxisTitle(mapping?.x?.axis, xField),
+      leftTitle: this._resolveAxisTitle(mapping?.y?.axis, yField)
+    });
+
     const groups = d3.group(rows, (item) => (
       colorField ? String(item.row?.[colorField] ?? "undefined") : "__single__"
     ));
@@ -227,12 +235,20 @@ export default class LineChartRenderer extends CartesianChartRenderer {
         .append("path")
         .datum(sorted)
         .attr("class", "line-path")
+        .attr("data-series-key", String(groupKey))
+        .attr("data-base-stroke-width", strokeWidth)
         .attr("fill", "none")
         .attr("stroke", stroke)
         .attr("stroke-width", strokeWidth)
         .attr("stroke-linejoin", "round")
         .attr("stroke-linecap", "round")
-        .attr("d", lineGenerator);
+        .attr("d", lineGenerator)
+        .on("mouseover", () => {
+          this._focusMark({ mark: "series", seriesKey: String(groupKey) });
+        })
+        .on("mouseout", () => {
+          this._resetFocusMark({ mark: "series" });
+        });
 
       if (pointsEnabled) {
         plot
@@ -242,6 +258,7 @@ export default class LineChartRenderer extends CartesianChartRenderer {
           .data(sorted)
           .enter()
           .append("circle")
+          .attr("data-series-key", String(groupKey))
           .attr("cx", (item) => useContinuousX ? xScale(Number(item.xRaw)) : xScale(String(item.xRaw)))
           .attr("cy", (item) => yScale(item.y))
           .attr("r", (item) => resolvePointRadius(item.row, strokeWidth))
@@ -249,14 +266,81 @@ export default class LineChartRenderer extends CartesianChartRenderer {
           .attr("stroke", "#ffffff")
           .attr("stroke-width", 1.25)
           .on("mouseover", (event, item) => {
-            this.callbacks.onPointHover?.(item.row, event.offsetX, event.offsetY);
+            this._focusMark({
+              mark: "point",
+              seriesKey: String(groupKey),
+              activeElement: event.currentTarget
+            });
+            this.callbacks.onHover?.({
+              mark: "point",
+              datum: item.row,
+              seriesKey: String(groupKey),
+              x: event.offsetX,
+              y: event.offsetY,
+              event
+            });
           })
           .on("mouseout", () => {
-            this.callbacks.onPointOut?.();
+            this._resetFocusMark({ mark: "point", seriesKey: String(groupKey) });
+            this.callbacks.onOut?.({ mark: "point", seriesKey: String(groupKey) });
           });
       }
     }
 
     return true;
+  }
+
+  _focusMark({ mark, seriesKey, activeElement = null } = {}) {
+    if (!seriesKey || (mark !== "series" && mark !== "point")) return;
+    const plot = this._state?.plot;
+    if (!plot) return;
+
+    plot
+      .selectAll(".line-path")
+      .attr("opacity", function applyLineOpacity() {
+        return this.getAttribute("data-series-key") === seriesKey ? 1 : 0.15;
+      })
+      .attr("stroke-width", function applyLineWidth() {
+        const base = Number(this.getAttribute("data-base-stroke-width"));
+        const safeBase = Number.isFinite(base) && base > 0 ? base : 2;
+        return this.getAttribute("data-series-key") === seriesKey
+          ? safeBase * 1.45
+          : Math.max(1, safeBase * 0.75);
+      });
+
+    plot
+      .selectAll(".line-points circle")
+      .attr("opacity", function applyPointOpacity() {
+        const sameSeries = this.getAttribute("data-series-key") === seriesKey;
+        if (!sameSeries) return 0.15;
+        if (!activeElement) return 1;
+        return this === activeElement ? 1 : 0.45;
+      })
+      .attr("stroke", function applyPointStroke() {
+        return this === activeElement ? "#222222" : "#ffffff";
+      })
+      .attr("stroke-width", function applyPointStrokeWidth() {
+        return this === activeElement ? 2.25 : 1.25;
+      });
+  }
+
+  _resetFocusMark({ mark } = {}) {
+    if (mark && mark !== "series" && mark !== "point") return;
+    const plot = this._state?.plot;
+    if (!plot) return;
+
+    plot
+      .selectAll(".line-path")
+      .attr("opacity", 1)
+      .attr("stroke-width", function resetLineWidth() {
+        const base = Number(this.getAttribute("data-base-stroke-width"));
+        return Number.isFinite(base) && base > 0 ? base : 2;
+      });
+
+    plot
+      .selectAll(".line-points circle")
+      .attr("opacity", 1)
+      .attr("stroke", "#ffffff")
+      .attr("stroke-width", 1.25);
   }
 }

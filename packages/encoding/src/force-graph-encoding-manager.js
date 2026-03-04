@@ -44,12 +44,12 @@ export class ForceGraphEncodingManager extends EncodingManager {
             domain: ["uri", "literal"],
             range: ["#69b3a2", "#ff7f0e"]
           },
-          legend: { display: true }
+          legend: { display: true,  position: "top-right" }
         },
         size: {
           field: "links",
           scale: { type: "linear", domain: [0, 10], range: [8, 25] },
-          legend: { display: true }
+          legend: { display: true, position: "top-right" }
         }
       },
       links: {
@@ -297,29 +297,15 @@ export class ForceGraphEncodingManager extends EncodingManager {
 
     try {
       if (isQuant) {
-        const numericValues = this._extractNumericValues(data, field);
-        const breaks = this._computeQuantitativeBreaks(
+        const thresholdScale = this._createQuantitativeThresholdScale({
           scaleConfig,
           finalDomain,
-          numericValues,
-          `${isColorScale ? "Color" : "Size"}[${field}]`
-        );
-
-        if (breaks?.bins > 1) {
-          if (isColorScale) {
-            const thresholdColors = this._buildThresholdColorRange(range, breaks.bins, field);
-            const thresholdScale = d3.scaleThreshold().domain(breaks.thresholds).range(thresholdColors);
-            thresholdScale.__venusBounds = { min: breaks.min, max: breaks.max };
-            return thresholdScale;
-          }
-
-          // Size channel here is node/link size.
-          // Size binning is useful to bucket dense distributions into readable steps.
-          const thresholdSizes = this._buildThresholdSizeRange(range, breaks.bins, data, field, type);
-          const thresholdScale = d3.scaleThreshold().domain(breaks.thresholds).range(thresholdSizes);
-          thresholdScale.__venusBounds = { min: breaks.min, max: breaks.max };
-          return thresholdScale;
-        }
+          data,
+          field,
+          scaleType: type,
+          isColorScale
+        });
+        if (thresholdScale) return thresholdScale;
       }
 
       if (isColorScale) {
@@ -355,34 +341,4 @@ export class ForceGraphEncodingManager extends EncodingManager {
     }
   }
 
-  _buildThresholdSizeRange(range, binCount, data, field, scaleType) {
-    const normalized = this.sizeRangeCalculator
-      ? this.sizeRangeCalculator.createSizeRange({
-          data,
-          field,
-          scaleType,
-          range,
-          label: `Size[${field}]`
-        })
-      : (range || [5, 20]);
-
-    if (!Array.isArray(normalized) || normalized.length === 0) {
-      return Array.from({ length: binCount }, () => 10);
-    }
-
-    if (normalized.length >= binCount) {
-      return normalized.slice(0, binCount);
-    }
-
-    const start = Number(normalized[0]);
-    const end = Number(normalized[normalized.length - 1]);
-    if (!Number.isFinite(start) || !Number.isFinite(end) || binCount <= 1) {
-      return Array.from({ length: binCount }, () => 10);
-    }
-
-    return Array.from({ length: binCount }, (_, index) => {
-      const ratio = binCount === 1 ? 0 : index / (binCount - 1);
-      return start + (end - start) * ratio;
-    });
-  }
 }

@@ -131,6 +131,18 @@ export default class BaseRenderer {
   }
 
   /**
+   * Focus/highlight one visual mark and optionally downplay non-focused marks.
+   * Children implement the mark-specific SVG logic.
+   */
+  _focusMark() {}
+
+  /**
+   * Reset any focus/downplay styling previously applied by `_focusMark`.
+   * Children implement the mark-specific SVG reset logic.
+   */
+  _resetFocusMark() {}
+
+  /**
    * Render a centered status/error message inside the SVG container.
    */
   _renderCenteredMessage(width, height, message) {

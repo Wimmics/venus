@@ -1,30 +1,27 @@
 import * as d3 from "d3";
 import { EncodingManager } from "./encoding-manager.js";
 
-export class BarChartEncodingManager extends EncodingManager {
+export class ScatterPlotEncodingManager extends EncodingManager {
   getDefaultEncoding() {
     return {
-      direction: "vertical",
-      stack: false,
-      groups: {
-        field: null
-      },
       x: {
-        field: "category",
-        axis: { labelAngle: 0 }
+        field: "x",
+        axis: { labelAngle: 0 },
+        scale: { type: "linear" }
       },
       y: {
-        field: "value",
+        field: "y",
         scale: { type: "linear" },
         axis: {}
       },
-      bars: {
+      points: {
+        display: true,
         color: {
-          value: "#69b3a2",
+          value: "#4e79a7",
           legend: { display: true, position: "bottom" }
         },
         size: {
-          value: 0,
+          value: 4,
           legend: { display: true, position: "bottom" }
         }
       }
@@ -35,28 +32,23 @@ export class BarChartEncodingManager extends EncodingManager {
     const enc = this.getDefaultEncoding();
     if (!Array.isArray(sparqlVars) || sparqlVars.length === 0) return enc;
     enc.x.field = sparqlVars[0];
-    if (sparqlVars.length > 1) {
-      enc.y.field = sparqlVars[1];
-    } else {
-      enc.y.field = sparqlVars[0];
-    }
-    if (sparqlVars.length > 2) {
-      enc.bars.color.field = sparqlVars[2];
-      enc.bars.color.scale = { type: "ordinal", range: "Set3" };
-      enc.bars.color.legend.display = true;
-      enc.bars.color.legend.title = sparqlVars[2];
-    }
-    return enc;
-  }
+    enc.y.field = sparqlVars[1] || sparqlVars[0];
 
-  resolveFieldMapping(mapping, vars) {
-    const xField = mapping?.x?.field && vars.includes(mapping.x.field) ? mapping.x.field : vars[0];
-    const yField = mapping?.y?.field && vars.includes(mapping.y.field) ? mapping.y.field : vars[1] || vars[0];
-    const colorCandidate = mapping?.bars?.color?.field;
-    const colorField = colorCandidate && vars.includes(colorCandidate) ? colorCandidate : null;
-    const groupField =
-      mapping?.groups?.field && vars.includes(mapping.groups.field) ? mapping.groups.field : null;
-    return { xField, yField, colorField, groupField };
+    if (sparqlVars.length > 2) {
+      enc.points.color.field = sparqlVars[2];
+      enc.points.color.scale = { type: "ordinal", range: "Set3" };
+      enc.points.color.legend.display = true;
+      enc.points.color.legend.title = sparqlVars[2];
+    }
+
+    if (sparqlVars.length > 3) {
+      enc.points.size.field = sparqlVars[3];
+      enc.points.size.scale = { type: "linear", range: [2, 10] };
+      enc.points.size.legend.display = true;
+      enc.points.size.legend.title = sparqlVars[3];
+    }
+
+    return enc;
   }
 
   deriveEncoding(userEncoding, sparqlVars, sparqlData) {
@@ -68,51 +60,39 @@ export class BarChartEncodingManager extends EncodingManager {
     const merged = {
       ...this.getDefaultEncoding(),
       ...(userEncoding || {}),
-      groups: { ...this.getDefaultEncoding().groups, ...(userEncoding?.groups || {}) },
       x: { ...this.getDefaultEncoding().x, ...(userEncoding?.x || {}) },
       y: { ...this.getDefaultEncoding().y, ...(userEncoding?.y || {}) },
-      bars: {
-        ...this.getDefaultEncoding().bars,
-        ...(userEncoding?.bars || {}),
+      points: {
+        ...this.getDefaultEncoding().points,
+        ...(userEncoding?.points || {}),
         color: {
-          ...this.getDefaultEncoding().bars.color,
-          ...(userEncoding?.bars?.color || {})
+          ...this.getDefaultEncoding().points.color,
+          ...(userEncoding?.points?.color || {})
         },
         size: {
-          ...this.getDefaultEncoding().bars.size,
-          ...(userEncoding?.bars?.size || {})
+          ...this.getDefaultEncoding().points.size,
+          ...(userEncoding?.points?.size || {})
         }
       }
     };
 
     if (!merged?.x?.field || !merged?.y?.field) {
-      throw new Error('Invalid encoding: "x.field" and "y.field" are required for bar-chart.');
+      throw new Error('Invalid encoding: "x.field" and "y.field" are required for scatter-plot.');
     }
 
     if (
-      merged.stack !== undefined &&
-      merged.stack !== true &&
-      merged.stack !== false &&
-      !(typeof merged.stack === "string" && merged.stack.toLowerCase().trim() === "normalize")
+      merged?.points?.display !== undefined &&
+      typeof merged.points.display !== "boolean"
     ) {
-      throw new Error('Invalid encoding: "stack" must be true, false, or "normalize".');
-    }
-
-    const groupField = merged?.groups?.field;
-    if (
-      groupField !== undefined &&
-      groupField !== null &&
-      (typeof groupField !== "string" || !groupField.trim())
-    ) {
-      throw new Error('Invalid encoding: "groups.field" must be a non-empty string when provided.');
+      throw new Error('Invalid encoding: "points.display" must be a boolean when provided.');
     }
 
     if (
-      merged?.bars?.size?.field !== undefined &&
-      merged?.bars?.size?.field !== null &&
-      (typeof merged.bars.size.field !== "string" || !merged.bars.size.field.trim())
+      merged?.points?.size?.field !== undefined &&
+      merged?.points?.size?.field !== null &&
+      (typeof merged.points.size.field !== "string" || !merged.points.size.field.trim())
     ) {
-      throw new Error('Invalid encoding: "bars.size.field" must be a non-empty string when provided.');
+      throw new Error('Invalid encoding: "points.size.field" must be a non-empty string when provided.');
     }
 
     return merged;
@@ -122,24 +102,30 @@ export class BarChartEncodingManager extends EncodingManager {
     if (!Array.isArray(rows) || rows.length === 0) return encoding;
     const enc = JSON.parse(JSON.stringify(encoding || {}));
 
-    const barColor = enc.bars?.color;
-    if (barColor?.field && barColor?.scale) {
-      const scaleType = barColor.scale.type || "ordinal";
-      const userDomain = barColor.scale.domain;
-      barColor.scale.domain = this.domainCalculator.getDomain(rows, barColor.field, userDomain, scaleType);
-      enc.bars.color = barColor;
+    if (enc.points?.color?.field && enc.points?.color?.scale) {
+      const scaleType = enc.points.color.scale.type || "ordinal";
+      const userDomain = enc.points.color.scale.domain;
+      enc.points.color.scale.domain = this.domainCalculator.getDomain(
+        rows,
+        enc.points.color.field,
+        userDomain,
+        scaleType
+      );
     }
 
-    const barSize = enc.bars?.size;
-    if (barSize?.field && barSize?.scale) {
-      const scaleType = barSize.scale.type || "linear";
-      const userDomain = barSize.scale.domain;
-      barSize.scale.domain = this.domainCalculator.getDomain(rows, barSize.field, userDomain, scaleType);
-      enc.bars.size = barSize;
+    if (enc.points?.size?.field && enc.points?.size?.scale) {
+      const scaleType = enc.points.size.scale.type || "linear";
+      const userDomain = enc.points.size.scale.domain;
+      enc.points.size.scale.domain = this.domainCalculator.getDomain(
+        rows,
+        enc.points.size.field,
+        userDomain,
+        scaleType
+      );
     }
 
     if (enc.x?.field && enc.x?.scale) {
-      const scaleType = enc.x.scale.type || "ordinal";
+      const scaleType = enc.x.scale.type || "linear";
       const userDomain = enc.x.scale.domain;
       if (Array.isArray(userDomain) && userDomain.length > 0) {
         enc.x.scale.domain = this.domainCalculator.getDomain(rows, enc.x.field, userDomain, scaleType);
@@ -160,10 +146,7 @@ export class BarChartEncodingManager extends EncodingManager {
   createD3Scale(scaleConfig, data, field, isColorScale) {
     if (!scaleConfig) return null;
     const type = scaleConfig.type || "ordinal";
-    // Bar charts accept extra quantitative aliases used in mappings (`count`, `pow`).
     const isQuant = this._isQuantitativeScaleType(type, ["pow", "count"]);
-
-    // For bars, domain should be driven by actual row arrays; otherwise use explicit user domain.
     const finalDomain = this._resolveScaleDomain(scaleConfig, data, field, type, { requireArrayData: true });
     if (!finalDomain?.length) return null;
 

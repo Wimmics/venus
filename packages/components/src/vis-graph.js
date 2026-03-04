@@ -191,13 +191,10 @@ export class VenusGraph extends VenusBase {
         height: this.height,
         logger: this.logger,
         callbacks: {
-          onNodeHover: (node, event, linkSel, nodeGroup) =>
-            this._onNodeMouseOver(node, event, linkSel, nodeGroup),
-          onNodeOut: (linkSel, nodeGroup) => this._onNodeMouseOut(linkSel, nodeGroup),
-          onLinkHover: (link, x, y) => this._showLinkTooltip(link, x, y),
-          onLinkOut: () => this._hideLinkTooltip(),
-          onNodeContextMenu: (node, x, y) => this._showContextMenu(node, x, y),
-          onNodeClick: (node) => this.requestNodeDetails(node)
+          onHover: (payload) => this._onHover(payload),
+          onOut: (payload) => this._onOut(payload),
+          onClick: (payload) => this._onClick(payload),
+          onContextMenu: (payload) => this._onContextMenu(payload)
         }
       });
     }
@@ -249,20 +246,36 @@ export class VenusGraph extends VenusBase {
     container.addEventListener("mouseleave", () => this._hideTooltip());
   }
 
-  _onNodeMouseOver(node, event, linkSel, nodeSel) {
-    const connectedLinks = this.links.filter((link) => link.source.id === node.id || link.target.id === node.id);
-    const connectedNodeIds = new Set(connectedLinks.flatMap((link) => [link.source.id, link.target.id]));
-
-    linkSel.classed("link-highlighted", (link) => link.source.id === node.id || link.target.id === node.id);
-    nodeSel.classed("node-highlighted", (graphNode) => connectedNodeIds.has(graphNode.id));
-
-    this._showTooltip(node, event.offsetX, event.offsetY);
+  _onHover(payload = {}) {
+    if (payload.mark === "node") {
+      this._showTooltip(payload.datum, payload.x, payload.y);
+      return;
+    }
+    if (payload.mark === "link") {
+      this._showLinkTooltip(payload.datum, payload.x, payload.y);
+    }
   }
 
-  _onNodeMouseOut(linkSel, nodeSel) {
-    linkSel.classed("link-highlighted", false);
-    nodeSel.classed("node-highlighted", false);
-    this._hideTooltip();
+  _onOut(payload = {}) {
+    if (payload.mark === "node") {
+      this._hideTooltip();
+      return;
+    }
+    if (payload.mark === "link") {
+      this._hideLinkTooltip();
+    }
+  }
+
+  _onClick(payload = {}) {
+    if (payload.mark === "node") {
+      this.requestNodeDetails(payload.datum);
+    }
+  }
+
+  _onContextMenu(payload = {}) {
+    if (payload.mark === "node") {
+      this._showContextMenu(payload.datum, payload.x, payload.y);
+    }
   }
 
   _showContextMenu(node, x, y) {
@@ -307,74 +320,23 @@ export class VenusGraph extends VenusBase {
   _buildNodeTooltipLines(node) {
     if (!node || typeof node !== "object") return [];
 
-    const configuredFields = this.visualEncoding?.interactions?.tooltip?.fields;
-    const hasConfiguredFields = Array.isArray(configuredFields) && configuredFields.length > 0;
-    const fields = hasConfiguredFields ? configuredFields : this._getDefaultTooltipFields(node);
-
-    const lines = [];
-    for (const fieldName of fields) {
-      if (fieldName === "label") continue;
-      if (!Object.prototype.hasOwnProperty.call(node, fieldName)) continue;
-      const value = node[fieldName];
-      if (value === undefined || value === null) continue;
-      lines.push(`${fieldName}: ${this._formatTooltipValue(value)}`);
-    }
-
-    return lines;
-  }
-
-  _getDefaultTooltipFields(node) {
     const preferredOrder = ["id", "label", "uri", "type"];
     const sizeField = this.visualEncoding?.nodes?.size?.field;
     if (sizeField === "links") {
       preferredOrder.push("links");
     }
-    const ordered = [];
-    const seen = new Set();
+    const fields = this._resolveTooltipFields(node, {
+      preferredOrder,
+      excludeKeys: ["source", "target"]
+    });
 
-    for (const key of preferredOrder) {
-      if (Object.prototype.hasOwnProperty.call(node, key) && node[key] !== undefined && node[key] !== null) {
-        ordered.push(key);
-        seen.add(key);
-      }
+    const lines = [];
+    for (const fieldName of fields) {
+      if (fieldName === "label") continue;
+      lines.push(`${fieldName}: ${this._formatTooltipValue(node[fieldName])}`);
     }
 
-    const sparqlKeys = Object.keys(node.originalData || {});
-    for (const key of sparqlKeys) {
-      if (seen.has(key)) continue;
-      if (!Object.prototype.hasOwnProperty.call(node, key)) continue;
-      if (node[key] === undefined || node[key] === null) continue;
-      ordered.push(key);
-      seen.add(key);
-    }
-
-    // Fallback for non-SPARQL/manual nodes: include non-rendering fields only.
-    if (!ordered.length) {
-      const renderingKeys = new Set([
-        "x", "y", "vx", "vy", "fx", "fy", "px", "py", "index",
-        "sourceLinks", "targetLinks", "originalData"
-      ]);
-      for (const key of Object.keys(node)) {
-        if (renderingKeys.has(key) || seen.has(key)) continue;
-        const value = node[key];
-        if (value === undefined || value === null) continue;
-        ordered.push(key);
-        seen.add(key);
-      }
-    }
-
-    return ordered;
-  }
-
-  _formatTooltipValue(value) {
-    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-      return String(value);
-    }
-    try {
-      return JSON.stringify(value);
-    } catch {
-      return String(value);
-    }
+    return lines;
   }
 
   _hideTooltip() {

@@ -51,13 +51,14 @@ export function createForceGraphVisualArtifacts({
 
   const nodeColor = resolveSingle(encoding.nodes?.color);
   if (nodeColor) {
-    const scaleId = nodeColor?.field && nodeColor?.scale
+    const nodeColorScaleConfig = nodeColor?.field ? (nodeColor.scale || { type: "ordinal", range: "Accent" }) : null;
+    const scaleId = nodeColor?.field && nodeColorScaleConfig
       ? makeScaleId(visType, "nodes", "color", nodeColor.field)
       : null;
     if (scaleId) {
       const scale = encodingManager.getOrCreateD3Scale(
         scaleId,
-        nodeColor.scale,
+        nodeColorScaleConfig,
         nodes,
         nodeColor.field,
         true,
@@ -75,20 +76,29 @@ export function createForceGraphVisualArtifacts({
       defaultValue: nodeColor.value || "#cccccc",
       encoding: nodeColor
     });
-    if (nodeColor.field && nodeColor.scale && scaleId) {
-      artifacts.legends.push(makeLegendDescriptor("nodes", "color", nodeColor, scaleId, "nodes"));
+    if (nodeColor.field && scaleId) {
+      artifacts.legends.push(
+        makeLegendDescriptor("nodes", "color", { ...nodeColor, scale: nodeColorScaleConfig }, scaleId, "nodes")
+      );
     }
   }
 
   const nodeSize = resolveSingle(encoding.nodes?.size);
   if (nodeSize) {
-    const scaleId = nodeSize?.field && nodeSize?.scale
+    const nodeSizeScaleConfig = nodeSize?.field
+      ? {
+          type: "linear",
+          range: [8, 25],
+          ...(nodeSize.scale || {})
+        }
+      : null;
+    const scaleId = nodeSize?.field && nodeSizeScaleConfig
       ? makeScaleId(visType, "nodes", "size", nodeSize.field)
       : null;
     if (scaleId) {
       const scale = encodingManager.getOrCreateD3Scale(
         scaleId,
-        nodeSize.scale,
+        nodeSizeScaleConfig,
         nodes,
         nodeSize.field,
         false,
@@ -109,20 +119,23 @@ export function createForceGraphVisualArtifacts({
           : 10,
       encoding: nodeSize
     });
-    if (nodeSize.field && nodeSize.scale && scaleId) {
-      artifacts.legends.push(makeLegendDescriptor("nodes", "size", nodeSize, scaleId, "nodes"));
+    if (nodeSize.field && scaleId) {
+      artifacts.legends.push(
+        makeLegendDescriptor("nodes", "size", { ...nodeSize, scale: nodeSizeScaleConfig }, scaleId, "nodes")
+      );
     }
   }
 
   const linkColor = resolveSingle(encoding.links?.color);
   if (linkColor) {
-    const scaleId = linkColor?.field && linkColor?.scale
+    const linkColorScaleConfig = linkColor?.field ? (linkColor.scale || { type: "ordinal", range: "Accent" }) : null;
+    const scaleId = linkColor?.field && linkColorScaleConfig
       ? makeScaleId(visType, "links", "color", linkColor.field)
       : null;
     if (scaleId) {
       const scale = encodingManager.getOrCreateD3Scale(
         scaleId,
-        linkColor.scale,
+        linkColorScaleConfig,
         links,
         linkColor.field,
         true,
@@ -140,8 +153,10 @@ export function createForceGraphVisualArtifacts({
       defaultValue: linkColor.value || "#999",
       encoding: linkColor
     });
-    if (linkColor.field && linkColor.scale && scaleId) {
-      artifacts.legends.push(makeLegendDescriptor("links", "color", linkColor, scaleId, "links"));
+    if (linkColor.field && scaleId) {
+      artifacts.legends.push(
+        makeLegendDescriptor("links", "color", { ...linkColor, scale: linkColorScaleConfig }, scaleId, "links")
+      );
     }
   }
 

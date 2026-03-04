@@ -1,0 +1,35 @@
+{
+  "title": "Birth Rate vs. Education Level vs. Population (2020)",
+  "x": {
+    "field": "educationIndex",
+    "axis": {
+      "title": {
+        "value": "Education Index",
+        "display": true
+      },
+      "labelAngle": -35
+    }
+  },
+  "y": {
+    "field": "birthRate",
+    "axis": {
+      "title": {
+        "value": "Birth Rate",
+        "display": true
+      }
+    },
+    "scale": {
+      "type": "linear"
+    }
+  },
+  "points": {
+    "display": true,
+    "color": {
+      "field": "continentLabel"
+    },
+    "size": {
+      "field": "population",
+      "scale": { "type": "log", "range": [2, 20] }
+    }
+  }
+}

@@ -94,7 +94,9 @@ export class ColorLegend extends HTMLElement {
     const isCompact = this._encoding?.legend?.compact !== false;
     if (!isCompact) this._minimized = false;
 
-    const domain = this._encoding.scale.domain || [];
+    const domain = this._encoding.scale.domain || (
+      this._d3Scale && typeof this._d3Scale.domain === "function" ? this._d3Scale.domain() : []
+    );
     const range = this._encoding.scale.range || [];
     const title = this._getLegendTitle();
     let items = "";

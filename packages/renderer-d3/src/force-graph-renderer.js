@@ -314,8 +314,14 @@ export default class ForceGraphRenderer extends BaseRenderer {
       .attr("class", (d) => d.type || "directional")
       .attr("stroke", getLinkColor)
       .attr("stroke-width", getLinkWidth())
-      .on("mouseover", (event, d) => this.callbacks.onLinkHover?.(d, event.offsetX, event.offsetY))
-      .on("mouseout", () => this.callbacks.onLinkOut?.());
+      .on("mouseover", (event, d) => this.callbacks.onHover?.({
+        mark: "link",
+        datum: d,
+        x: event.offsetX,
+        y: event.offsetY,
+        event
+      }))
+      .on("mouseout", () => this.callbacks.onOut?.({ mark: "link" }));
 
     this.nodeGroup = this.viewportGroup
       .append("g")
@@ -324,13 +330,37 @@ export default class ForceGraphRenderer extends BaseRenderer {
       .data(this.nodes)
       .enter()
       .append("g")
-      .on("mouseover", (event, d) => this.callbacks.onNodeHover?.(d, event, this.linkSel, this.nodeGroup))
-      .on("mouseout", () => this.callbacks.onNodeOut?.(this.linkSel, this.nodeGroup))
+      .on("mouseover", (event, d) => {
+        this._focusMark({ mark: "node", activeDatum: d });
+        this.callbacks.onHover?.({
+          mark: "node",
+          datum: d,
+          x: event.offsetX,
+          y: event.offsetY,
+          event
+        });
+      })
+      .on("mouseout", () => {
+        this._resetFocusMark({ mark: "node" });
+        this.callbacks.onOut?.({ mark: "node" });
+      })
       .on("contextmenu", (event, d) => {
         event.preventDefault();
-        this.callbacks.onNodeContextMenu?.(d, event.offsetX, event.offsetY);
+        this.callbacks.onContextMenu?.({
+          mark: "node",
+          datum: d,
+          x: event.offsetX,
+          y: event.offsetY,
+          event
+        });
       })
-      .on("click", (event, d) => this.callbacks.onNodeClick?.(d, event));
+      .on("click", (event, d) => this.callbacks.onClick?.({
+        mark: "node",
+        datum: d,
+        x: event.offsetX,
+        y: event.offsetY,
+        event
+      }));
 
     if (dragEnabled) {
       this.nodeGroup.call(
@@ -440,6 +470,24 @@ export default class ForceGraphRenderer extends BaseRenderer {
     }
 
     return true;
+  }
+
+  _focusMark({ mark, activeDatum } = {}) {
+    if (mark !== "node" || !activeDatum) return;
+    const connectedLinks = this.links.filter((link) => (
+      link.source.id === activeDatum.id || link.target.id === activeDatum.id
+    ));
+    const connectedNodeIds = new Set(connectedLinks.flatMap((link) => [link.source.id, link.target.id]));
+    this.linkSel?.classed("link-highlighted", (link) => (
+      link.source.id === activeDatum.id || link.target.id === activeDatum.id
+    ));
+    this.nodeGroup?.classed("node-highlighted", (graphNode) => connectedNodeIds.has(graphNode.id));
+  }
+
+  _resetFocusMark({ mark } = {}) {
+    if (mark && mark !== "node") return;
+    this.linkSel?.classed("link-highlighted", false);
+    this.nodeGroup?.classed("node-highlighted", false);
   }
 
   updateData(payload = null, encoding = null, visualArtifacts = null) {

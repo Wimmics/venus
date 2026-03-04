@@ -1,3 +1,5 @@
+import * as d3 from "d3";
+
 /**
  * Base EncodingManager class
  * 
@@ -225,6 +227,39 @@ export class EncodingManager {
       { length: binCount },
       (_, index) => palette[index % palette.length] || fallback[index % fallback.length] || "#999"
     );
+  }
+
+  _createQuantitativeThresholdScale({
+    scaleConfig,
+    finalDomain,
+    data,
+    field,
+    scaleType,
+    isColorScale
+  } = {}) {
+    const numericValues = this._extractNumericValues(data, field);
+    const label = `${isColorScale ? "Color" : "Size"}[${field}]`;
+    const breaks = this._computeQuantitativeBreaks(scaleConfig, finalDomain, numericValues, label);
+    if (!breaks?.bins || breaks.bins <= 1) return null;
+
+    if (isColorScale) {
+      const colors = this._buildThresholdColorRange(scaleConfig?.range, breaks.bins, field);
+      const thresholdScale = d3.scaleThreshold().domain(breaks.thresholds).range(colors);
+      thresholdScale.__venusBounds = { min: breaks.min, max: breaks.max };
+      return thresholdScale;
+    }
+
+    const sizes = this.sizeRangeCalculator?.createThresholdSizeRange({
+      data,
+      field,
+      scaleType,
+      range: scaleConfig?.range || null,
+      bins: breaks.bins,
+      label
+    }) || Array.from({ length: breaks.bins }, () => 10);
+    const thresholdScale = d3.scaleThreshold().domain(breaks.thresholds).range(sizes);
+    thresholdScale.__venusBounds = { min: breaks.min, max: breaks.max };
+    return thresholdScale;
   }
 
   /**

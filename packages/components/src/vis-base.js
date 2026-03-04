@@ -214,6 +214,9 @@ export class VenusBase extends HTMLElement {
     });
 
     relayoutLegends();
+    // Custom elements can finalize internal layout one frame later.
+    // Run a deferred pass so bottom legends are centered side by side at first paint.
+    requestAnimationFrame(() => relayoutLegends());
   }
 
   _destroyLegends() {
@@ -393,6 +396,84 @@ export class VenusBase extends HTMLElement {
     const tooltip = this.shadowRoot.querySelector(`.${className.split(" ").join(".")}`);
     if (tooltip) tooltip.remove();
   }
+
+  _resolveTooltipFields(datum, { preferredOrder = [], excludeKeys = [] } = {}) {
+    if (!datum || typeof datum !== "object") return [];
+
+    const configuredFields = this.visualEncoding?.interactions?.tooltip?.fields;
+    const hasConfiguredFields = Array.isArray(configuredFields) && configuredFields.length > 0;
+    if (hasConfiguredFields) {
+      return configuredFields.filter((fieldName) => (
+        typeof fieldName === "string" &&
+        fieldName.trim() &&
+        Object.prototype.hasOwnProperty.call(datum, fieldName) &&
+        datum[fieldName] !== undefined &&
+        datum[fieldName] !== null
+      ));
+    }
+
+    const renderingKeys = new Set([
+      "x", "y", "vx", "vy", "fx", "fy", "px", "py", "index",
+      "sourceLinks", "targetLinks", "originalData", "__meta", "__x"
+    ]);
+    for (const key of excludeKeys) {
+      if (typeof key === "string" && key.trim()) renderingKeys.add(key);
+    }
+
+    const ordered = [];
+    const seen = new Set();
+
+    for (const key of preferredOrder) {
+      if (typeof key !== "string" || !key.trim()) continue;
+      if (!Object.prototype.hasOwnProperty.call(datum, key)) continue;
+      if (datum[key] === undefined || datum[key] === null) continue;
+      ordered.push(key);
+      seen.add(key);
+    }
+
+    const sourceKeys = Object.keys(datum.originalData || {});
+    for (const key of sourceKeys) {
+      if (seen.has(key)) continue;
+      if (!Object.prototype.hasOwnProperty.call(datum, key)) continue;
+      if (datum[key] === undefined || datum[key] === null) continue;
+      ordered.push(key);
+      seen.add(key);
+    }
+
+    for (const key of Object.keys(datum)) {
+      if (renderingKeys.has(key) || seen.has(key)) continue;
+      const value = datum[key];
+      if (value === undefined || value === null) continue;
+      ordered.push(key);
+      seen.add(key);
+    }
+
+    return ordered;
+  }
+
+  _formatTooltipValue(value) {
+    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+      return String(value);
+    }
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
+    }
+  }
+
+  _buildTooltipLines(datum, { preferredOrder = [], excludeKeys = [] } = {}) {
+    const fields = this._resolveTooltipFields(datum, { preferredOrder, excludeKeys });
+    return fields.map((fieldName) => `${fieldName}: ${this._formatTooltipValue(datum[fieldName])}`);
+  }
+
+  _onHover() {}
+
+  _onOut() {}
+
+  _onClick() {}
+
+  _onContextMenu() {}
 
   _resolveEndpoint() {
     return this.currentEndpoint || this.sparqlEndpoint || "https://dbpedia.org/sparql";

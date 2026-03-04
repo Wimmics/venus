@@ -47,12 +47,13 @@ export function createLineChartVisualArtifacts({
   const lines = encoding.lines || {};
   const color = lines.color;
   if (color) {
-    const scaleId = color?.field && color?.scale ? makeScaleId(visType, "lines", "color", color.field) : null;
+    const colorScaleConfig = color?.field ? (color.scale || { type: "ordinal", range: "Accent" }) : null;
+    const scaleId = color?.field && colorScaleConfig ? makeScaleId(visType, "lines", "color", color.field) : null;
 
     if (scaleId) {
       const scale = encodingManager.getOrCreateD3Scale(
         scaleId,
-        color.scale,
+        colorScaleConfig,
         rows,
         color.field,
         true,
@@ -71,19 +72,28 @@ export function createLineChartVisualArtifacts({
       encoding: color
     });
 
-    if (color.field && color.scale && scaleId) {
-      artifacts.legends.push(makeLegendDescriptor("lines", "color", color, scaleId, "rows"));
+    if (color.field && scaleId) {
+      artifacts.legends.push(
+        makeLegendDescriptor("lines", "color", { ...color, scale: colorScaleConfig }, scaleId, "rows")
+      );
     }
   }
 
   const size = lines.size;
   if (size) {
-    const scaleId = size?.field && size?.scale ? makeScaleId(visType, "lines", "size", size.field) : null;
+    const sizeScaleConfig = size?.field
+      ? {
+          type: "linear",
+          range: [1, 7],
+          ...(size.scale || {})
+        }
+      : null;
+    const scaleId = size?.field && sizeScaleConfig ? makeScaleId(visType, "lines", "size", size.field) : null;
 
     if (scaleId) {
       const scale = encodingManager.getOrCreateD3Scale(
         scaleId,
-        size.scale,
+        sizeScaleConfig,
         rows,
         size.field,
         false,
@@ -105,8 +115,10 @@ export function createLineChartVisualArtifacts({
       encoding: size
     });
 
-    if (size.field && size.scale && scaleId) {
-      artifacts.legends.push(makeLegendDescriptor("lines", "size", size, scaleId, "rows"));
+    if (size.field && scaleId) {
+      artifacts.legends.push(
+        makeLegendDescriptor("lines", "size", { ...size, scale: sizeScaleConfig }, scaleId, "rows")
+      );
     }
   }
 
@@ -116,15 +128,18 @@ export function createLineChartVisualArtifacts({
   if (pointsEnabled) {
     const pointColor = points.color;
     if (pointColor) {
+      const pointColorScaleConfig = pointColor?.field
+        ? (pointColor.scale || { type: "ordinal", range: "Accent" })
+        : null;
       const pointColorScaleId =
-        pointColor?.field && pointColor?.scale
+        pointColor?.field && pointColorScaleConfig
           ? makeScaleId(visType, "points", "color", pointColor.field)
           : null;
 
       if (pointColorScaleId) {
         const scale = encodingManager.getOrCreateD3Scale(
           pointColorScaleId,
-          pointColor.scale,
+          pointColorScaleConfig,
           rows,
           pointColor.field,
           true,
@@ -143,22 +158,37 @@ export function createLineChartVisualArtifacts({
         encoding: pointColor
       });
 
-      if (pointColor.field && pointColor.scale && pointColorScaleId) {
-        artifacts.legends.push(makeLegendDescriptor("points", "color", pointColor, pointColorScaleId, "rows"));
+      if (pointColor.field && pointColorScaleId) {
+        artifacts.legends.push(
+          makeLegendDescriptor(
+            "points",
+            "color",
+            { ...pointColor, scale: pointColorScaleConfig },
+            pointColorScaleId,
+            "rows"
+          )
+        );
       }
     }
 
     const pointSize = points.size;
     if (pointSize) {
+      const pointSizeScaleConfig = pointSize?.field
+        ? {
+            type: "linear",
+            range: [2, 10],
+            ...(pointSize.scale || {})
+          }
+        : null;
       const pointSizeScaleId =
-        pointSize?.field && pointSize?.scale
+        pointSize?.field && pointSizeScaleConfig
           ? makeScaleId(visType, "points", "size", pointSize.field)
           : null;
 
       if (pointSizeScaleId) {
         const scale = encodingManager.getOrCreateD3Scale(
           pointSizeScaleId,
-          pointSize.scale,
+          pointSizeScaleConfig,
           rows,
           pointSize.field,
           false,
@@ -180,8 +210,16 @@ export function createLineChartVisualArtifacts({
         encoding: pointSize
       });
 
-      if (pointSize.field && pointSize.scale && pointSizeScaleId) {
-        artifacts.legends.push(makeLegendDescriptor("points", "size", pointSize, pointSizeScaleId, "rows"));
+      if (pointSize.field && pointSizeScaleId) {
+        artifacts.legends.push(
+          makeLegendDescriptor(
+            "points",
+            "size",
+            { ...pointSize, scale: pointSizeScaleConfig },
+            pointSizeScaleId,
+            "rows"
+          )
+        );
       }
     }
   }

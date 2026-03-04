@@ -83,32 +83,27 @@ export class VenusLineChart extends VenusBase {
         height: this.height,
         logger: this.logger,
         callbacks: {
-          onPointHover: (datum, x, y) => this._onPointHover(datum, x, y),
-          onPointOut: () => this._onPointOut()
+          onHover: (payload) => this._onHover(payload),
+          onOut: (payload) => this._onOut(payload),
+          onClick: (payload) => this._onClick(payload),
+          onContextMenu: (payload) => this._onContextMenu(payload)
         }
       });
     }
   }
 
-  _onPointHover(datum, x, y) {
+  _onHover(payload = {}) {
+    if (payload.mark !== "point") return;
+    const { datum, x, y } = payload;
     const xField = this.visualEncoding?.x?.field;
     const yField = this.visualEncoding?.y?.field;
     const colorField = this.visualEncoding?.lines?.color?.field;
     const sizeField = this.visualEncoding?.lines?.size?.field;
     const title = xField ? datum?.[xField] : "Point";
-    const yValue = yField ? datum?.[yField] : undefined;
-    const lines = [];
-
-    if (yField) {
-      const numeric = Number(yValue);
-      lines.push(`${yField}: ${Number.isFinite(numeric) ? numeric.toLocaleString() : String(yValue)}`);
-    }
-    if (colorField && datum?.[colorField] !== undefined) {
-      lines.push(`${colorField}: ${String(datum[colorField])}`);
-    }
-    if (sizeField && datum?.[sizeField] !== undefined) {
-      lines.push(`${sizeField}: ${String(datum[sizeField])}`);
-    }
+    const lines = this._buildTooltipLines(datum, {
+      preferredOrder: [yField, colorField, sizeField],
+      excludeKeys: [xField]
+    });
 
     this._showTooltip({ title, lines }, x, y, {
       className: "tooltip line-tooltip",
@@ -118,7 +113,8 @@ export class VenusLineChart extends VenusBase {
     });
   }
 
-  _onPointOut() {
+  _onOut(payload = {}) {
+    if (payload.mark && payload.mark !== "point") return;
     this._hideTooltip("tooltip line-tooltip");
   }
 }

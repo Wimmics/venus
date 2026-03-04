@@ -1,27 +1,27 @@
 import { createRenderer } from "@wimmics/venus-d3renderer";
 import { createEncodingManager } from "@wimmics/venus-encoding";
 import { VIS_TYPES } from "@wimmics/venus-core";
-import { buildBarChart } from "@wimmics/venus-datasource";
+import { buildScatterPlot } from "@wimmics/venus-datasource";
 import { VenusBase } from "./vis-base.js";
 
-export class VenusBarChart extends VenusBase {
+export class VenusScatterPlot extends VenusBase {
   constructor() {
     super({
-      componentName: "VenusBarChart",
-      visType: VIS_TYPES.VENUS_BARCHART,
+      componentName: "VenusScatterPlot",
+      visType: VIS_TYPES.VENUS_SCATTERPLOT,
       defaultWidth: 800,
       defaultHeight: 500
     });
 
     this.rows = [];
-    this.encodingManager = createEncodingManager(VIS_TYPES.VENUS_BARCHART);
+    this.encodingManager = createEncodingManager(VIS_TYPES.VENUS_SCATTERPLOT);
     this.visualEncoding = this.encodingManager.getDefaultEncoding();
 
     this._initDOMStructure();
   }
 
   _buildVisualization(params) {
-    return buildBarChart(params);
+    return buildScatterPlot(params);
   }
 
   _setDataFromBuildResult(result) {
@@ -52,16 +52,16 @@ export class VenusBarChart extends VenusBase {
   }
 
   _getBuildErrorMessage() {
-    return "Failed to build bar chart";
+    return "Failed to build scatter plot";
   }
 
   _getBuildErrorLogKey() {
-    return "buildBarChart failed";
+    return "buildScatterPlot failed";
   }
 
   _initDOMStructure() {
     this._renderBaseDOM({
-      containerClass: "chart-container",
+      containerClass: "scatter-plot-container",
       extraStyles: `
         .plot-area text {
           fill: #333;
@@ -76,7 +76,7 @@ export class VenusBarChart extends VenusBase {
 
     const container = this._getContainerElement();
     if (container && !this.renderer) {
-      this.renderer = createRenderer(VIS_TYPES.VENUS_BARCHART, {
+      this.renderer = createRenderer(VIS_TYPES.VENUS_SCATTERPLOT, {
         container,
         encodingManager: this.encodingManager,
         width: this.width,
@@ -93,21 +93,19 @@ export class VenusBarChart extends VenusBase {
   }
 
   _onHover(payload = {}) {
-    if (payload.mark !== "bar") return;
+    if (payload.mark !== "point") return;
     const { datum, x, y } = payload;
     const xField = this.visualEncoding?.x?.field;
     const yField = this.visualEncoding?.y?.field;
-    const groupField = this.visualEncoding?.groups?.field;
-    const colorField = this.visualEncoding?.bars?.color?.field;
-    const sizeField = this.visualEncoding?.bars?.size?.field;
-    const title = xField ? datum?.[xField] : "Bar";
+    const colorField = this.visualEncoding?.points?.color?.field;
+    const sizeField = this.visualEncoding?.points?.size?.field;
+    const title = xField ? datum?.[xField] : "Point";
     const lines = this._buildTooltipLines(datum, {
-      preferredOrder: [yField, groupField, colorField, sizeField],
-      excludeKeys: [xField]
+      preferredOrder: [xField, yField, colorField, sizeField]
     });
 
     this._showTooltip({ title, lines }, x, y, {
-      className: "tooltip bar-tooltip",
+      className: "tooltip scatter-tooltip",
       offsetX: 12,
       offsetY: -12,
       delayMs: 80
@@ -115,11 +113,11 @@ export class VenusBarChart extends VenusBase {
   }
 
   _onOut(payload = {}) {
-    if (payload.mark && payload.mark !== "bar") return;
-    this._hideTooltip("tooltip bar-tooltip");
+    if (payload.mark && payload.mark !== "point") return;
+    this._hideTooltip("tooltip scatter-tooltip");
   }
 }
 
-if (!customElements.get(VIS_TYPES.VENUS_BARCHART)) {
-  customElements.define(VIS_TYPES.VENUS_BARCHART, VenusBarChart);
+if (!customElements.get(VIS_TYPES.VENUS_SCATTERPLOT)) {
+  customElements.define(VIS_TYPES.VENUS_SCATTERPLOT, VenusScatterPlot);
 }

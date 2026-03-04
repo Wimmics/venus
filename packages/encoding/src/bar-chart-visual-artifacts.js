@@ -47,12 +47,13 @@ export function createBarChartVisualArtifacts({
   const bars = encoding.bars || {};
   const color = bars.color;
   if (color) {
-    const scaleId = color?.field && color?.scale ? makeScaleId(visType, "bars", "color", color.field) : null;
+    const colorScaleConfig = color?.field ? (color.scale || { type: "ordinal", range: "Accent" }) : null;
+    const scaleId = color?.field && colorScaleConfig ? makeScaleId(visType, "bars", "color", color.field) : null;
 
     if (scaleId) {
       const scale = encodingManager.getOrCreateD3Scale(
         scaleId,
-        color.scale,
+        colorScaleConfig,
         rows,
         color.field,
         true,
@@ -71,19 +72,28 @@ export function createBarChartVisualArtifacts({
       encoding: color
     });
 
-    if (color.field && color.scale && scaleId) {
-      artifacts.legends.push(makeLegendDescriptor("bars", "color", color, scaleId, "rows"));
+    if (color.field && scaleId) {
+      artifacts.legends.push(
+        makeLegendDescriptor("bars", "color", { ...color, scale: colorScaleConfig }, scaleId, "rows")
+      );
     }
   }
 
   const size = bars.size;
   if (size) {
-    const scaleId = size?.field && size?.scale ? makeScaleId(visType, "bars", "size", size.field) : null;
+    const sizeScaleConfig = size?.field
+      ? {
+          type: "linear",
+          range: [0.5, 6],
+          ...(size.scale || {})
+        }
+      : null;
+    const scaleId = size?.field && sizeScaleConfig ? makeScaleId(visType, "bars", "size", size.field) : null;
 
     if (scaleId) {
       const scale = encodingManager.getOrCreateD3Scale(
         scaleId,
-        size.scale,
+        sizeScaleConfig,
         rows,
         size.field,
         false,
@@ -105,8 +115,10 @@ export function createBarChartVisualArtifacts({
       encoding: size
     });
 
-    if (size.field && size.scale && scaleId) {
-      artifacts.legends.push(makeLegendDescriptor("bars", "size", size, scaleId, "rows"));
+    if (size.field && scaleId) {
+      artifacts.legends.push(
+        makeLegendDescriptor("bars", "size", { ...size, scale: sizeScaleConfig }, scaleId, "rows")
+      );
     }
   }
 

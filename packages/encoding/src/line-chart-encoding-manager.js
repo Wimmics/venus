@@ -21,7 +21,7 @@ export class LineChartEncodingManager extends EncodingManager {
         },
         size: {
           value: 2,
-          legend: { display: true, position: "right" }
+          legend: { display: true, position: "bottom" }
         }
       },
       points: {
@@ -32,7 +32,7 @@ export class LineChartEncodingManager extends EncodingManager {
         },
         size: {
           value: 3,
-          legend: { display: true, position: "right" }
+          legend: { display: true, position: "bottom" }
         }
       }
     };
@@ -212,14 +212,15 @@ export class LineChartEncodingManager extends EncodingManager {
 
     if (isColorScale) {
       if (isQuant) {
-        const numericValues = this._extractNumericValues(data, field);
-        const breaks = this._computeQuantitativeBreaks(scaleConfig, finalDomain, numericValues, `Color[${field}]`);
-        if (breaks?.bins > 1) {
-          const colors = this._buildThresholdColorRange(scaleConfig.range, breaks.bins, field);
-          const thresholdScale = d3.scaleThreshold().domain(breaks.thresholds).range(colors);
-          thresholdScale.__venusBounds = { min: breaks.min, max: breaks.max };
-          return thresholdScale;
-        }
+        const thresholdScale = this._createQuantitativeThresholdScale({
+          scaleConfig,
+          finalDomain,
+          data,
+          field,
+          scaleType: type,
+          isColorScale: true
+        });
+        if (thresholdScale) return thresholdScale;
       }
 
       return this.colorScaleCalculator.createColorScale({
@@ -229,6 +230,18 @@ export class LineChartEncodingManager extends EncodingManager {
         fallbackInterpolator: null,
         label: `Color[${field}]`
       });
+    }
+
+    if (isQuant) {
+      const thresholdScale = this._createQuantitativeThresholdScale({
+        scaleConfig,
+        finalDomain,
+        data,
+        field,
+        scaleType: type,
+        isColorScale: false
+      });
+      if (thresholdScale) return thresholdScale;
     }
 
     const range = scaleConfig.range || null;

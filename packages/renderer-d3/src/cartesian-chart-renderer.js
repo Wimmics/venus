@@ -181,6 +181,57 @@ export default class CartesianChartRenderer extends BaseRenderer {
     return axis;
   }
 
+  _resolveAxisTitle(axisConfig, fieldFallback) {
+    const hasTitleTag = Boolean(
+      axisConfig &&
+      typeof axisConfig === "object" &&
+      Object.prototype.hasOwnProperty.call(axisConfig, "title")
+    );
+
+    if (hasTitleTag) {
+      const titleConfig = axisConfig.title;
+
+      if (titleConfig && typeof titleConfig === "object") {
+        const display = titleConfig.display !== false;
+        if (!display) return "";
+        if (Object.prototype.hasOwnProperty.call(titleConfig, "value")) {
+          return titleConfig.value === null || titleConfig.value === undefined ? "" : String(titleConfig.value);
+        }
+        return "";
+      }
+
+      if (titleConfig === null || titleConfig === undefined) return "";
+      return String(titleConfig);
+    }
+
+    return typeof fieldFallback === "string" && fieldFallback.trim() ? fieldFallback : "";
+  }
+
+  _renderAxisTitles({ plot, innerWidth, innerHeight, bottomTitle = "", leftTitle = "" }) {
+    if (bottomTitle) {
+      plot
+        .append("text")
+        .attr("class", "axis-title axis-title-x")
+        .attr("x", innerWidth / 2)
+        .attr("y", innerHeight + 46)
+        .attr("text-anchor", "middle")
+        .style("fill", "#333")
+        .style("font-size", "12px")
+        .text(bottomTitle);
+    }
+
+    if (leftTitle) {
+      plot
+        .append("text")
+        .attr("class", "axis-title axis-title-y")
+        .attr("transform", `translate(${-52},${innerHeight / 2}) rotate(-90)`)
+        .attr("text-anchor", "middle")
+        .style("fill", "#333")
+        .style("font-size", "12px")
+        .text(leftTitle);
+    }
+  }
+
   _finalizeLayout({ payload, encoding, visualArtifacts, width, height, margin }) {
     const svgNode = this.svg?.node?.();
     const overflow = measurePlotOverflow(svgNode, ".plot-area", width, height);

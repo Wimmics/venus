@@ -5,6 +5,7 @@ export { default as BaseRenderer } from "./src/base-renderer.js";
 export { default as CartesianChartRenderer } from "./src/cartesian-chart-renderer.js";
 export { default as BarChartRenderer } from "./src/bar-chart-renderer.js";
 export { default as LineChartRenderer } from "./src/line-chart-renderer.js";
+export { default as ScatterPlotRenderer } from "./src/scatter-plot-renderer.js";
 export {
   createRenderer,
   registerRenderer,

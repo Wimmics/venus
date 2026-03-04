@@ -1,0 +1,25 @@
+SELECT ?continent ?continentLabel ?country ?countryLabel ?population ?birthRate ?educationIndex
+WHERE {
+
+  ?country wdt:P31 wd:Q3624078.      # sovereign state
+  ?country wdt:P30 ?continent.       # continent
+
+  # population
+  ?country p:P1082 ?popStatement.
+  ?popStatement ps:P1082 ?population.
+  ?popStatement pq:P585 ?popDate.
+  FILTER(YEAR(?popDate) = 2020)
+
+  # birth rate
+  ?country p:P8763 ?birthStatement.
+  ?birthStatement ps:P8763 ?birthRate.
+  ?birthStatement pq:P585 ?birthDate.
+  FILTER(YEAR(?birthDate) = 2020)
+
+  # education index (optional)
+  OPTIONAL { ?country wdt:P6897 ?educationIndex. }
+
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+
+}
+ORDER BY ?continentLabel ?countryLabel

@@ -29,6 +29,37 @@ export class SizeRangeCalculator {
     return fallbackRange;
   }
 
+  createThresholdSizeRange({
+    data,
+    field,
+    scaleType = "linear",
+    range = null,
+    bins = 5,
+    label = "Size"
+  } = {}) {
+    const binCount = Number.isFinite(bins) ? Math.max(1, Math.floor(bins)) : 5;
+    const normalized = this.createSizeRange({ data, field, scaleType, range, label });
+
+    if (!Array.isArray(normalized) || normalized.length === 0) {
+      return Array.from({ length: binCount }, () => 10);
+    }
+
+    if (normalized.length >= binCount) {
+      return normalized.slice(0, binCount);
+    }
+
+    const start = Number(normalized[0]);
+    const end = Number(normalized[normalized.length - 1]);
+    if (!Number.isFinite(start) || !Number.isFinite(end) || binCount <= 1) {
+      return Array.from({ length: binCount }, () => 10);
+    }
+
+    return Array.from({ length: binCount }, (_, index) => {
+      const ratio = binCount === 1 ? 0 : index / (binCount - 1);
+      return start + (end - start) * ratio;
+    });
+  }
+
   _buildAdaptiveFallbackRange(data) {
     const count = Array.isArray(data) ? data.length : 0;
     if (count > 300) return [2, 10];
@@ -73,4 +104,9 @@ export class SizeRangeCalculator {
 export function createSizeRange(config) {
   const calculator = new SizeRangeCalculator();
   return calculator.createSizeRange(config);
+}
+
+export function createThresholdSizeRange(config) {
+  const calculator = new SizeRangeCalculator();
+  return calculator.createThresholdSizeRange(config);
 }
