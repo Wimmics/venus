@@ -7,7 +7,7 @@
       "encodingPath": "./encoding/vis-graph-minimal-cooccurrence.json",
       "queryPath": "./queries/redford-costars.rq",
       "endpoint": "https://dbpedia.org/sparql",
-      "component": "vis-graph"
+      "component": "venus-graph"
     },
 
     {
@@ -16,7 +16,7 @@
       "encodingPath": "./encoding/vis-graph-directed-color-size.json",
       "queryPath": "./queries/redford-costars.rq",
       "endpoint": "https://dbpedia.org/sparql",
-      "component": "vis-graph"
+      "component": "venus-graph"
     },
     {
       "id": "visgraph-cooccurrence-color-size",
@@ -24,7 +24,7 @@
       "encodingPath": "./encoding/vis-graph-cooccurrence-color-size.json",
       "queryPath": "./queries/redford-costars-birthyear.rq",
       "endpoint": "https://dbpedia.org/sparql",
-      "component": "vis-graph"
+      "component": "venus-graph"
     },
 
 
@@ -35,7 +35,7 @@
       "encodingPath": "./encoding/barchart-simple.json",
       "queryPath": "./queries/redford-costars-count.rq",
       "endpoint": "https://dbpedia.org/sparql",
-      "component": "vis-barchart"
+      "component": "venus-barchart"
     },
     {
       "id": "barchart-stacked",
@@ -43,7 +43,7 @@
       "encodingPath": "./encoding/barchart-stacked.json",
       "queryPath": "./queries/redford-movies-genre-count.rq",
       "endpoint": "https://dbpedia.org/sparql",
-      "component": "vis-barchart"
+      "component": "venus-barchart"
     },
     {
       "id": "barchart-grouped",
@@ -51,7 +51,7 @@
       "encodingPath": "./encoding/barchart-grouped.json",
       "queryPath": "./queries/redford-movies-genre-count.rq",
       "endpoint": "https://dbpedia.org/sparql",
-      "component": "vis-barchart"
+      "component": "venus-barchart"
     }
 
 

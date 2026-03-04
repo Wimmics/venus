@@ -354,7 +354,7 @@ export class EditorApp {
 
     await this.snippetPanelController.setText(
       this.snippetGenerator.generate({
-        component: scenario.component || "vis-graph",
+        component: scenario.component || "venus-graph",
         endpoint,
         queryText,
         encoding: parsedEncoding.value,

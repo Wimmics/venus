@@ -11,4 +11,4 @@ Legend web components and legend factory utilities.
 - Depends on:
   - No internal Venus packages.
 - Used by:
-  - `@wimmics/venus-components` (`vis-graph` and `vis-barchart` legend lifecycle management).
+  - `@wimmics/venus-components` (`venus-graph` and `venus-barchart` legend lifecycle management).

@@ -58,7 +58,7 @@ graph.encoding = {
 - `enabled`: `true | false` global interaction switch (default `true`)
 - `drag`: enable/disable node drag and drop (default `true`)
 - `zoom`: enable/disable pan and zoom (default `true`)
-- `nodeDetailsPanel`: enable/disable internal node details panel (`vis-uri-meta`) lifecycle in `vis-graph` (default `false`)
+- `nodeDetailsPanel`: enable/disable internal node details panel (`venus-uri-meta`) lifecycle in `venus-graph` (default `false`)
 - `tooltip.fields`: optional array of query variable names to display in node tooltip.
   - If omitted or empty, tooltip shows SPARQL/query-derived node fields (and excludes rendering/simulation internals).
   - Special derived field `links` is also accepted (for example to show node degree/count of connected links).

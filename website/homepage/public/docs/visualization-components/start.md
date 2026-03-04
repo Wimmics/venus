@@ -1,12 +1,12 @@
 # Visualization Components
 
-The VENUS architecture is based on Web Components, which encapsulate each visualization technique within a dedicated custom element (e.g., `vis-graph`, `vis-barchart`, `vis-map`). Each component manages its own data pipeline and isolates its logic and rendering behavior.
+The VENUS architecture is based on Web Components, which encapsulate each visualization technique within a dedicated custom element (e.g., `venus-graph`, `venus-barchart`, `venus-map`). Each component manages its own data pipeline and isolates its logic and rendering behavior.
 
 A component can be instantiated in an HTML page as follows:
 
 ```html
-<vis-graph id="graph" width="100%" height="520"></vis-graph>
-<vis-barchart id="bar" width="100%" height="500"></vis-barchart>
+<venus-graph id="graph" width="100%" height="520"></venus-graph>
+<venus-barchart id="bar" width="100%" height="500"></venus-barchart>
 ```
 
 ## Shared Attributes

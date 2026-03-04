@@ -12,5 +12,5 @@ SPARQL data access layer for query execution and metadata retrieval.
   - `@wimmics/venus-core` (logging)
 - Used by:
   - `@wimmics/venus-datasource`
-  - `@wimmics/venus-components` (`vis-graph` and `vis-barchart` through datasource)
+  - `@wimmics/venus-components` (`venus-graph` and `venus-barchart` through datasource)
   - Any app that wants direct SPARQL querying utilities.

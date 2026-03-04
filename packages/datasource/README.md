@@ -14,4 +14,4 @@ Orchestration layer that builds visualization data from query inputs.
   - `@wimmics/venus-sparql` (fetching)
   - `@wimmics/venus-mappers` (raw -> graph mapping)
 - Used by:
-  - `@wimmics/venus-components` (`vis-graph` and `vis-barchart` launch flows).
+  - `@wimmics/venus-components` (`venus-graph` and `venus-barchart` launch flows).

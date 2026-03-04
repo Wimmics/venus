@@ -9,7 +9,7 @@ The `@wimmics/venus-elements` package provides the web components required to de
 Select the desired visualization technique and add the corresponding web component as a target element in your HTML:
 
 ```js
-<vis-graph vis-graph id="vis" width="100%" height="520"></vis-graph>
+<venus-graph id="vis" width="100%" height="520"></venus-graph>
 ```
 
 Then configure and launch it from JavaScript:
@@ -35,4 +35,3 @@ For a full documentation, see [https://wimmics.github.io/venus/](https://wimmics
 A web-based editor is available to explore the components, test configurations, and directly export VENUS specifications for integration into your application. 
 
 The editor is available at [https://wimmics.github.io/venus/editor](https://wimmics.github.io/venus/editor)
-

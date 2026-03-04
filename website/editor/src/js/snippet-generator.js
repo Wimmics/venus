@@ -2,7 +2,7 @@ import { toComponentVarName } from "./utils/component-tag.js";
 
 export class SnippetGenerator {
   generate({ component, endpoint, queryText, encoding, dataSource = "query", sparqlResult = null }) {
-    const tag = component || "vis-graph";
+    const tag = component || "venus-graph";
     const varName = toComponentVarName(tag);
     const prettyEncoding = JSON.stringify(encoding, null, 2);
     const lines = [

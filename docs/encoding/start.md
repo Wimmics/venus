@@ -5,7 +5,7 @@ The encoding underpins most stages of the visualization pipeline, from data tran
 The encoding is a property of the visualization component used to configure the output visualization. For instance:
 
 ```js
-const component = document.querySelector('vis-graph')
+const component = document.querySelector('venus-graph')
 
 component.encoding = { ... }
 ```

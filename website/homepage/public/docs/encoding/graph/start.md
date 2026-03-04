@@ -16,7 +16,7 @@ Network-based visualizations are appropriate when:
 
 VENUS currently supports the following network-based visualization techniques:
 
-- **Force-directed graph (`vis-graph`):** General-purpose network layout where node positions are computed using physical simulation to reveal structure and clusters.
+- **Force-directed graph (`venus-graph`):** General-purpose network layout where node positions are computed using physical simulation to reveal structure and clusters.
 
 Each technique shares the same data access model in VENUS (SPARQL + encoding) but differs in layout strategy and visual semantics.
 

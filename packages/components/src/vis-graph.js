@@ -7,7 +7,7 @@
  * - Emit node selection / details requests
  *
  * Composition:
- * - VisGraph creates and owns a `vis-uri-meta` panel when `interactions.nodeDetailsPanel !== false`.
+ * - VisGraph creates and owns a `venus-uri-meta` panel when `interactions.nodeDetailsPanel !== false`.
  * - This owned panel shares the lifecycle of the VisGraph instance.
  */
 import { createRenderer } from "@wimmics/venus-d3renderer";
@@ -41,7 +41,7 @@ export class VisGraph extends VisBase {
 
   /**
    * Optional backward-compatible external override.
-   * When set, VisGraph stops owning an internal `vis-uri-meta` panel.
+   * When set, VisGraph stops owning an internal `venus-uri-meta` panel.
    */
   set nodeDetailsPanel(el) {
     if (this._ownsNodeDetailsPanel && this._nodeDetailsPanel && this._nodeDetailsPanel !== el) {
@@ -219,7 +219,7 @@ export class VisGraph extends VisBase {
     const container = this._getContainerElement();
     if (!container) return;
 
-    const panel = document.createElement("vis-uri-meta");
+    const panel = document.createElement("venus-uri-meta");
     panel.logger = this.logger;
     panel.proxy = this._resolveProxyUrl();
     panel.sparqlEndpoint = this._resolveEndpoint();
@@ -408,6 +408,6 @@ export class VisGraph extends VisBase {
   }
 }
 
-if (!customElements.get("vis-graph")) {
-  customElements.define("vis-graph", VisGraph);
+if (!customElements.get("venus-graph")) {
+  customElements.define("venus-graph", VisGraph);
 }

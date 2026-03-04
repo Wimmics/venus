@@ -47,7 +47,7 @@ export class DemoControl {
             encodingPath,
             queryPath,
             encoding,
-            component: normalizeComponentTag(entry.component || "vis-graph")
+            component: normalizeComponentTag(entry.component || "venus-graph")
           };
         }
 
@@ -62,7 +62,7 @@ export class DemoControl {
           configPath,
           ...config,
           queryPath,
-          component: normalizeComponentTag(entry.component || config.component || "vis-graph")
+          component: normalizeComponentTag(entry.component || config.component || "venus-graph")
         };
       })
     );

@@ -13,4 +13,4 @@ D3-based rendering runtime for Venus graph visualizations.
   - D3 runtime
   - An encoding manager instance (injected by consumer)
 - Used by:
-  - `@wimmics/venus-components` (`vis-graph` and `vis-barchart` use this renderer).
+  - `@wimmics/venus-components` (`venus-graph` and `venus-barchart` use this renderer).

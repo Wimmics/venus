@@ -6,12 +6,12 @@ A Bar Chart uses either horizontal or vertical bars (column chart) to show discr
 
 Bar Charts are distinguished from Histograms, as they do not display continuous developments over an interval. Instead, Bar Chart's discrete data is categorical and therefore answers the question of "how many?" in each category. 
 
-> **Visualization component:** `<vis-barchart>`
+> **Visualization component:** `<venus-barchart>`
 
 ## Minimal Template
 
 ```html
-<vis-barchart id="bar" width="100%" height="500"></vis-barchart>
+<venus-barchart id="bar" width="100%" height="500"></venus-barchart>
 
 <script type="module">
   import "@wimmics/venus-elements";

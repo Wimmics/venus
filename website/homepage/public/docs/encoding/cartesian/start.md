@@ -17,11 +17,11 @@ Cartesian visualizations are appropriate when:
 
 VENUS currently supports the following Cartesian visualization techniques:
 
-- **Bar chart (`vis-barchart`):** Compares discrete categories using rectangular marks whose length encodes magnitude.
+- **Bar chart (`venus-barchart`):** Compares discrete categories using rectangular marks whose length encodes magnitude.
 
-<!-- - **Line chart (`vis-linechart`)** *(if applicable)*: Displays trends across an ordered or continuous dimension.
+<!-- - **Line chart (`venus-linechart`)** *(if applicable)*: Displays trends across an ordered or continuous dimension.
 
-- **Scatter plot (`vis-scatterplot`)** *(if applicable)*: Shows relationships between two quantitative variables. -->
+- **Scatter plot (`venus-scatterplot`)** *(if applicable)*: Shows relationships between two quantitative variables. -->
 
 Each technique shares the same data access model in VENUS (SPARQL + encoding) but differs in mark type and visual semantics.
 

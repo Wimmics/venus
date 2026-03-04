@@ -10,7 +10,7 @@ By mapping out connected systems, force-directed graphs can be used to interpret
 
 Two types of graphs are supported: "undirected" and "directed". Undirected graphs only display the connections between entities, while directed graphs show if the connections are one-way or two-way through small arrows. 
 
-> **Visualization component:** `<vis-graph>`
+> **Visualization component:** `<venus-graph>`
 
 
 ## Minimal Template
@@ -19,7 +19,7 @@ For a minimal force-directed graph, the encoding must at least define `nodes` an
 
 
 ```html
-<vis-graph id="graph" width="100%" height="520"></vis-graph>
+<venus-graph id="graph" width="100%" height="520"></venus-graph>
 
 <script type="module">
   import "@wimmics/venus-elements";

@@ -46,7 +46,7 @@ export class VisualizationView {
   }
 
   async render({ scenario, endpoint, queryText, encoding, dataSource = "query", sparqlResult = null }) {
-    const tag = scenario?.component || "vis-graph";
+    const tag = scenario?.component || "venus-graph";
     const component = await this._ensureComponent(tag);
 
     if (typeof component.launch !== "function") {
@@ -56,7 +56,7 @@ export class VisualizationView {
       );
     }
 
-    if (tag === "vis-graph" && this.metaPanelEl) {
+    if (tag === "venus-graph" && this.metaPanelEl) {
       component.nodeDetailsPanel = this.metaPanelEl;
     }
 
@@ -70,7 +70,7 @@ export class VisualizationView {
   }
 
   refreshCurrent({ scenario }) {
-    const tag = scenario?.component || "vis-graph";
+    const tag = scenario?.component || "venus-graph";
     Promise.resolve(this._ensureComponent(tag)).then((component) => {
       component?.render?.();
     });

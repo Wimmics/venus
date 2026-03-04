@@ -122,6 +122,6 @@ export class VisBarChart extends VisBase {
   }
 }
 
-if (!customElements.get("vis-barchart")) {
-  customElements.define("vis-barchart", VisBarChart);
+if (!customElements.get("venus-barchart")) {
+  customElements.define("venus-barchart", VisBarChart);
 }
