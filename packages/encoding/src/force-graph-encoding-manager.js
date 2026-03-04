@@ -23,9 +23,7 @@ export class ForceGraphEncodingManager extends EncodingManager {
         drag: true,
         zoom: true,
         nodeDetailsPanel: false,
-        tooltip: {
-          fields: null
-        }
+        tooltip: true
       },
       nodes: {
         field: ["source"],
@@ -50,13 +48,15 @@ export class ForceGraphEncodingManager extends EncodingManager {
           field: "links",
           scale: { type: "linear", domain: [0, 10], range: [8, 25] },
           legend: { display: true, position: "top-right" }
-        }
+        },
+        tooltip: { fields: null }
       },
       links: {
         field: { source: "source", target: "target" },
         distance: 100,
         width: { value: 1.5 },
-        color: { value: "#999" }
+        color: { value: "#999" },
+        tooltip: { fields: null }
       }
     };
   }
@@ -228,10 +228,22 @@ export class ForceGraphEncodingManager extends EncodingManager {
       ...normalizedEncoding,
       interactions: {
         ...(defaults.interactions || {}),
-        ...(normalizedEncoding.interactions || {}),
+        ...(normalizedEncoding.interactions || {})
+      },
+      nodes: {
+        ...(defaults.nodes || {}),
+        ...(normalizedEncoding.nodes || {}),
         tooltip: {
-          ...(defaults.interactions?.tooltip || {}),
-          ...(normalizedEncoding.interactions?.tooltip || {})
+          ...(defaults.nodes?.tooltip || {}),
+          ...(normalizedEncoding.nodes?.tooltip || {})
+        }
+      },
+      links: {
+        ...(defaults.links || {}),
+        ...(normalizedEncoding.links || {}),
+        tooltip: {
+          ...(defaults.links?.tooltip || {}),
+          ...(normalizedEncoding.links?.tooltip || {})
         }
       }
     };
@@ -264,15 +276,24 @@ export class ForceGraphEncodingManager extends EncodingManager {
   }
 
   _validateTooltipConfig(encoding) {
-    const fields = encoding?.interactions?.tooltip?.fields;
-    if (fields == null) return;
-    if (!Array.isArray(fields)) {
-      throw new Error('Invalid encoding: "interactions.tooltip.fields" must be an array of query variable names.');
+    const enabled = encoding?.interactions?.tooltip;
+    if (enabled !== undefined && typeof enabled !== "boolean") {
+      throw new Error('Invalid encoding: "interactions.tooltip" must be a boolean when provided.');
     }
-    const allStrings = fields.every((fieldName) => typeof fieldName === "string" && fieldName.trim().length > 0);
-    if (!allStrings) {
-      throw new Error('Invalid encoding: "interactions.tooltip.fields" must contain non-empty strings only.');
-    }
+
+    const validateFields = (fields, key) => {
+      if (fields == null) return;
+      if (!Array.isArray(fields)) {
+        throw new Error(`Invalid encoding: "${key}" must be an array of query variable names.`);
+      }
+      const allStrings = fields.every((fieldName) => typeof fieldName === "string" && fieldName.trim().length > 0);
+      if (!allStrings) {
+        throw new Error(`Invalid encoding: "${key}" must contain non-empty strings only.`);
+      }
+    };
+
+    validateFields(encoding?.nodes?.tooltip?.fields, "nodes.tooltip.fields");
+    validateFields(encoding?.links?.tooltip?.fields, "links.tooltip.fields");
   }
 
   /**

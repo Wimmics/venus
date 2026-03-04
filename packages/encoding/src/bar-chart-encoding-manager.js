@@ -4,6 +4,9 @@ import { EncodingManager } from "./encoding-manager.js";
 export class BarChartEncodingManager extends EncodingManager {
   getDefaultEncoding() {
     return {
+      interactions: {
+        tooltip: true
+      },
       direction: "vertical",
       stack: false,
       groups: {
@@ -68,6 +71,10 @@ export class BarChartEncodingManager extends EncodingManager {
     const merged = {
       ...this.getDefaultEncoding(),
       ...(userEncoding || {}),
+      interactions: {
+        ...this.getDefaultEncoding().interactions,
+        ...(userEncoding?.interactions || {})
+      },
       groups: { ...this.getDefaultEncoding().groups, ...(userEncoding?.groups || {}) },
       x: { ...this.getDefaultEncoding().x, ...(userEncoding?.x || {}) },
       y: { ...this.getDefaultEncoding().y, ...(userEncoding?.y || {}) },
@@ -87,6 +94,13 @@ export class BarChartEncodingManager extends EncodingManager {
 
     if (!merged?.x?.field || !merged?.y?.field) {
       throw new Error('Invalid encoding: "x.field" and "y.field" are required for bar-chart.');
+    }
+
+    if (
+      merged?.interactions?.tooltip !== undefined &&
+      typeof merged.interactions.tooltip !== "boolean"
+    ) {
+      throw new Error('Invalid encoding: "interactions.tooltip" must be a boolean when provided.');
     }
 
     if (

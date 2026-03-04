@@ -100,9 +100,13 @@ export class VenusLineChart extends VenusBase {
     const colorField = this.visualEncoding?.lines?.color?.field;
     const sizeField = this.visualEncoding?.lines?.size?.field;
     const title = xField ? datum?.[xField] : "Point";
+    const pointMarkConfig = this.visualEncoding?.points?.display !== false
+      ? this.visualEncoding?.points
+      : this.visualEncoding?.lines;
     const lines = this._buildTooltipLines(datum, {
       preferredOrder: [yField, colorField, sizeField],
-      excludeKeys: [xField]
+      excludeKeys: [xField],
+      markConfig: pointMarkConfig
     });
 
     this._showTooltip({ title, lines }, x, y, {

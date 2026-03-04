@@ -103,7 +103,8 @@ export class VenusBarChart extends VenusBase {
     const title = xField ? datum?.[xField] : "Bar";
     const lines = this._buildTooltipLines(datum, {
       preferredOrder: [yField, groupField, colorField, sizeField],
-      excludeKeys: [xField]
+      excludeKeys: [xField],
+      markConfig: this.visualEncoding?.bars
     });
 
     this._showTooltip({ title, lines }, x, y, {

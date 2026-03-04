@@ -327,7 +327,10 @@ export class VenusGraph extends VenusBase {
     }
     const fields = this._resolveTooltipFields(node, {
       preferredOrder,
-      excludeKeys: ["source", "target"]
+      excludeKeys: ["source", "target"],
+      markTooltipFields: Array.isArray(this.visualEncoding?.nodes?.tooltip?.fields)
+        ? this.visualEncoding.nodes.tooltip.fields
+        : null
     });
 
     const lines = [];
@@ -344,6 +347,31 @@ export class VenusGraph extends VenusBase {
   }
 
   _showLinkTooltip(link, x, y) {
+    const linkTooltipFields = this.visualEncoding?.links?.tooltip?.fields;
+    if (Array.isArray(linkTooltipFields) && linkTooltipFields.length > 0) {
+      const lines = this._buildTooltipLines(link, {
+        preferredOrder: linkTooltipFields,
+        excludeKeys: ["source", "target"],
+        markConfig: this.visualEncoding?.links
+      });
+      super._showTooltip(
+        {
+          title: `${link.source?.id ?? link.source} → ${link.target?.id ?? link.target}`,
+          lines
+        },
+        x,
+        y,
+        {
+          className: "tooltip link-tooltip",
+          offsetX: 10,
+          offsetY: -10,
+          dark: true,
+          maxWidth: 380
+        }
+      );
+      return;
+    }
+
     const source = link.source?.id ?? link.source;
     const target = link.target?.id ?? link.target;
     let txt = `${source} → ${target}`;

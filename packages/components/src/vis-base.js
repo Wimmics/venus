@@ -338,6 +338,7 @@ export class VenusBase extends HTMLElement {
   }
 
   _showTooltip(content, x, y, options = {}) {
+    if (!this._isTooltipEnabled()) return;
     const {
       className = "tooltip",
       offsetX = 12,
@@ -397,10 +398,11 @@ export class VenusBase extends HTMLElement {
     if (tooltip) tooltip.remove();
   }
 
-  _resolveTooltipFields(datum, { preferredOrder = [], excludeKeys = [] } = {}) {
+  _resolveTooltipFields(datum, { preferredOrder = [], excludeKeys = [], markTooltipFields = null } = {}) {
     if (!datum || typeof datum !== "object") return [];
+    if (!this._isTooltipEnabled()) return [];
 
-    const configuredFields = this.visualEncoding?.interactions?.tooltip?.fields;
+    const configuredFields = markTooltipFields;
     const hasConfiguredFields = Array.isArray(configuredFields) && configuredFields.length > 0;
     if (hasConfiguredFields) {
       return configuredFields.filter((fieldName) => (
@@ -462,9 +464,17 @@ export class VenusBase extends HTMLElement {
     }
   }
 
-  _buildTooltipLines(datum, { preferredOrder = [], excludeKeys = [] } = {}) {
-    const fields = this._resolveTooltipFields(datum, { preferredOrder, excludeKeys });
+  _buildTooltipLines(datum, { preferredOrder = [], excludeKeys = [], markConfig = null } = {}) {
+    const markTooltipFields = Array.isArray(markConfig?.tooltip?.fields) ? markConfig.tooltip.fields : null;
+    const fields = this._resolveTooltipFields(datum, { preferredOrder, excludeKeys, markTooltipFields });
     return fields.map((fieldName) => `${fieldName}: ${this._formatTooltipValue(datum[fieldName])}`);
+  }
+
+  _isTooltipEnabled() {
+    const tooltipConfig = this.visualEncoding?.interactions?.tooltip;
+    if (tooltipConfig === undefined || tooltipConfig === null) return true;
+    if (typeof tooltipConfig === "boolean") return tooltipConfig;
+    return true;
   }
 
   _onHover() {}

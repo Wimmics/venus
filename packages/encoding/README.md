@@ -26,10 +26,11 @@ graph.encoding = {
     drag: true,
     zoom: true,
     nodeDetailsPanel: false,
-    tooltip: { fields: ["personLabel", "birthYear"] }
+    tooltip: true
   },
   nodes: {
     field: ["species", "family"],
+    tooltip: { fields: ["personLabel", "birthYear"] },
     labels: { display: true },
     stroke: { value: "#ffffff", width: 1.5, display: true },
     color: {
@@ -47,6 +48,7 @@ graph.encoding = {
   },
   links: {
     field: { source: "species", target: "family" },
+    tooltip: { fields: ["type"] },
     color: {
       field: "type",
       value: "#999",
@@ -61,9 +63,13 @@ graph.encoding = {
 - `drag`: enable/disable node drag and drop (default `true`)
 - `zoom`: enable/disable pan and zoom (default `true`)
 - `nodeDetailsPanel`: enable/disable internal node details panel (`venus-uri-meta`) lifecycle in `venus-graph` (default `false`)
-- `tooltip.fields`: optional array of query variable names to display in node tooltip.
-  - If omitted or empty, tooltip shows SPARQL/query-derived node fields (and excludes rendering/simulation internals).
-  - Special derived field `links` is also accepted (for example to show node degree/count of connected links).
+- `tooltip`: `true | false` global tooltip toggle (default `true`)
+
+Tooltip field selection is now defined at mark level:
+- `nodes.tooltip.fields`: optional array of query variable names to display for node tooltips.
+- `links.tooltip.fields`: optional array of query variable names to display for link tooltips.
+- If omitted or empty, tooltip shows SPARQL/query-derived fields (and excludes rendering/simulation internals).
+- Special derived field `links` is also accepted for node tooltip (for example to show node degree/count of connected links).
 
 `nodes.field` accepts:
 - A string (for example `"species"`)

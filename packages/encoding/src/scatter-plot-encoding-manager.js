@@ -4,6 +4,9 @@ import { EncodingManager } from "./encoding-manager.js";
 export class ScatterPlotEncodingManager extends EncodingManager {
   getDefaultEncoding() {
     return {
+      interactions: {
+        tooltip: true
+      },
       x: {
         field: "x",
         axis: { labelAngle: 0 },
@@ -60,6 +63,10 @@ export class ScatterPlotEncodingManager extends EncodingManager {
     const merged = {
       ...this.getDefaultEncoding(),
       ...(userEncoding || {}),
+      interactions: {
+        ...this.getDefaultEncoding().interactions,
+        ...(userEncoding?.interactions || {})
+      },
       x: { ...this.getDefaultEncoding().x, ...(userEncoding?.x || {}) },
       y: { ...this.getDefaultEncoding().y, ...(userEncoding?.y || {}) },
       points: {
@@ -78,6 +85,13 @@ export class ScatterPlotEncodingManager extends EncodingManager {
 
     if (!merged?.x?.field || !merged?.y?.field) {
       throw new Error('Invalid encoding: "x.field" and "y.field" are required for scatter-plot.');
+    }
+
+    if (
+      merged?.interactions?.tooltip !== undefined &&
+      typeof merged.interactions.tooltip !== "boolean"
+    ) {
+      throw new Error('Invalid encoding: "interactions.tooltip" must be a boolean when provided.');
     }
 
     if (
