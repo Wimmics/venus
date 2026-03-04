@@ -1,0 +1,21 @@
+{
+  "title": "Harrison Ford Co-Stars per Movie (Line Chart)",
+  "x": {
+    "field": "movieName",
+    "axis": {
+      "labelAngle": -45,
+      "labelOffset": { "x": -6, "y": 10 }
+    }
+  },
+  "y": {
+    "field": "nbActors",
+    "scale": {
+      "type": "linear"
+    }
+  },
+  "lines": {
+    "size": {
+      "value": 3
+    }
+  }
+}

@@ -1,4 +1,5 @@
 export const VIS_TYPES = Object.freeze({
   FORCE_GRAPH: "force-graph",
-  BAR_CHART: "bar-chart"
+  BAR_CHART: "bar-chart",
+  LINE_CHART: "line-chart"
 });

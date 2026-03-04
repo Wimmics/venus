@@ -1,4 +1,10 @@
 import * as d3 from "d3";
+import {
+  computeAxisAwareMargins,
+  measurePlotOverflow,
+  shouldRefitLayout,
+  growMargins
+} from "./layout-fit.js";
 
 export default class BarChartRenderer {
   constructor(opts = {}) {
@@ -11,6 +17,8 @@ export default class BarChartRenderer {
     this.svg = null;
     this.data = [];
     this.encoding = null;
+    this._fitPass = 0;
+    this._marginOverride = null;
   }
 
   render(chart = { rows: [] }, encoding = null, visualArtifacts = null) {
@@ -32,7 +40,7 @@ export default class BarChartRenderer {
     const xLabelAngle = Number.isFinite(Number(xAxisConfig.labelAngle)) ? Number(xAxisConfig.labelAngle) : 0;
     const xLabelOffset = this._normalizeOffset(xAxisConfig.labelOffset);
     const yLabelOffset = this._normalizeOffset(yAxisConfig.labelOffset);
-    const margin = this._computeMargins({
+    const margin = this._marginOverride || this._computeMargins({
       xLabelAngle,
       xLabelOffset,
       yLabelOffset
@@ -48,6 +56,7 @@ export default class BarChartRenderer {
         .attr("text-anchor", "middle")
         .style("font-size", "14px")
         .text("No data to visualize");
+      this._resetFitState();
       return;
     }
 
@@ -61,14 +70,18 @@ export default class BarChartRenderer {
         .attr("text-anchor", "middle")
         .style("font-size", "14px")
         .text('Invalid encoding: "x.field" and "y.field" are required');
+      this._resetFitState();
       return;
     }
 
     const direction = mapping.direction === "horizontal" ? "horizontal" : "vertical";
     const stackMode = this._resolveStackMode(mapping?.stack);
     const groupField = typeof mapping?.groups?.field === "string" ? mapping.groups.field.trim() : "";
-    const colorEncoding = mapping?.color || {};
+    const barsEncoding = mapping?.bars || {};
+    const colorEncoding = barsEncoding?.color || {};
+    const sizeEncoding = barsEncoding?.size || {};
     const colorField = colorEncoding?.field;
+    const sizeField = sizeEncoding?.field;
     const layoutMode = this._resolveLayoutMode(stackMode, groupField);
     const splitField =
       layoutMode === "grouped"
@@ -81,10 +94,16 @@ export default class BarChartRenderer {
     const artifactScales = visualArtifacts?.scales instanceof Map ? visualArtifacts.scales : new Map();
     const barColorChannel =
       artifactChannels.find((item) => item?.mark === "bars" && item?.channel === "color") || null;
+    const barSizeChannel =
+      artifactChannels.find((item) => item?.mark === "bars" && item?.channel === "size") || null;
     const barColorScale = barColorChannel?.scaleId
       ? artifactScales.get(barColorChannel.scaleId) || null
       : null;
+    const barSizeScale = barSizeChannel?.scaleId
+      ? artifactScales.get(barSizeChannel.scaleId) || null
+      : null;
     const defaultBarColor = barColorChannel?.defaultValue || colorEncoding?.value || "#69b3a2";
+    const defaultBarStrokeWidth = barSizeChannel?.defaultValue ?? sizeEncoding?.value ?? 0;
 
     const plot = this.svg
       .append("g")
@@ -116,6 +135,18 @@ export default class BarChartRenderer {
       if (!barColorScale) return defaultBarColor;
       const color = barColorScale(datum[colorField]);
       return color || defaultBarColor;
+    };
+
+    const strokeWidthForDatum = (datum) => {
+      if (sizeField && barSizeScale) {
+        const raw = Number(datum?.[sizeField]);
+        if (Number.isFinite(raw)) {
+          const scaled = Number(barSizeScale(raw));
+          if (Number.isFinite(scaled) && scaled >= 0) return scaled;
+        }
+      }
+      const fixed = Number(defaultBarStrokeWidth);
+      return Number.isFinite(fixed) && fixed >= 0 ? fixed : 0;
     };
 
     const requestedTickFormat = this._normalizeTickFormatName(yAxisConfig.tickFormat);
@@ -257,6 +288,8 @@ export default class BarChartRenderer {
             if (!barColorScale) return defaultBarColor;
             return barColorScale(datum.datum?.[colorField]) || defaultBarColor;
           })
+          .attr("stroke", "#ffffff")
+          .attr("stroke-width", (datum) => strokeWidthForDatum(datum.datum))
           .on("mouseover", (event, datum) => {
             this.callbacks.onBarHover?.(datum.datum, event.offsetX, event.offsetY);
           })
@@ -284,6 +317,8 @@ export default class BarChartRenderer {
           .attr("width", xScale.bandwidth())
           .attr("height", (datum) => Math.max(0, innerHeight - yScale(datum.value)))
           .attr("fill", (datum) => colorForDatum(datum.datum))
+          .attr("stroke", "#ffffff")
+          .attr("stroke-width", (datum) => strokeWidthForDatum(datum.datum))
           .on("mouseover", (event, datum) => {
             this.callbacks.onBarHover?.(datum.datum, event.offsetX, event.offsetY);
           })
@@ -325,6 +360,8 @@ export default class BarChartRenderer {
           .attr("height", (datum) => Math.max(0, yScale(datum.segment[0]) - yScale(datum.segment[1])))
           .attr("width", xScale.bandwidth())
           .attr("fill", (datum) => colorForDatum(datum.datum))
+          .attr("stroke", "#ffffff")
+          .attr("stroke-width", (datum) => strokeWidthForDatum(datum.datum))
           .on("mouseover", (event, datum) => {
             this.callbacks.onBarHover?.(datum.datum, event.offsetX, event.offsetY);
           })
@@ -333,7 +370,14 @@ export default class BarChartRenderer {
           });
       }
 
-      return;
+      return this._finalizeLayout({
+        chart,
+        encoding,
+        visualArtifacts,
+        width,
+        height,
+        margin
+      });
     }
 
     const yScale = d3.scaleBand().domain(xCategories).range([0, innerHeight]).padding(0.15);
@@ -387,13 +431,22 @@ export default class BarChartRenderer {
           if (!barColorScale) return defaultBarColor;
           return barColorScale(datum.datum?.[colorField]) || defaultBarColor;
         })
+        .attr("stroke", "#ffffff")
+        .attr("stroke-width", (datum) => strokeWidthForDatum(datum.datum))
         .on("mouseover", (event, datum) => {
           this.callbacks.onBarHover?.(datum.datum, event.offsetX, event.offsetY);
         })
         .on("mouseout", () => {
           this.callbacks.onBarOut?.();
         });
-      return;
+      return this._finalizeLayout({
+        chart,
+        encoding,
+        visualArtifacts,
+        width,
+        height,
+        margin
+      });
     }
 
     if (layoutMode === "simple") {
@@ -418,13 +471,22 @@ export default class BarChartRenderer {
         .attr("width", (datum) => Math.max(0, xScale(datum.value)))
         .attr("height", yScale.bandwidth())
         .attr("fill", (datum) => colorForDatum(datum.datum))
+        .attr("stroke", "#ffffff")
+        .attr("stroke-width", (datum) => strokeWidthForDatum(datum.datum))
         .on("mouseover", (event, datum) => {
           this.callbacks.onBarHover?.(datum.datum, event.offsetX, event.offsetY);
         })
         .on("mouseout", () => {
           this.callbacks.onBarOut?.();
         });
-      return;
+      return this._finalizeLayout({
+        chart,
+        encoding,
+        visualArtifacts,
+        width,
+        height,
+        margin
+      });
     }
 
     const stackGenerator = d3.stack().keys(subCategories);
@@ -461,12 +523,23 @@ export default class BarChartRenderer {
       .attr("width", (datum) => Math.max(0, xScale(datum.segment[1]) - xScale(datum.segment[0])))
       .attr("height", yScale.bandwidth())
       .attr("fill", (datum) => colorForDatum(datum.datum))
+      .attr("stroke", "#ffffff")
+      .attr("stroke-width", (datum) => strokeWidthForDatum(datum.datum))
       .on("mouseover", (event, datum) => {
         this.callbacks.onBarHover?.(datum.datum, event.offsetX, event.offsetY);
       })
       .on("mouseout", () => {
         this.callbacks.onBarOut?.();
       });
+
+    return this._finalizeLayout({
+      chart,
+      encoding,
+      visualArtifacts,
+      width,
+      height,
+      margin
+    });
   }
 
   updateData(chart = { rows: [] }) {
@@ -490,6 +563,7 @@ export default class BarChartRenderer {
       this.svg.selectAll("*").remove();
       this.svg = null;
     }
+    this._resetFitState();
   }
 
   _normalizeOffset(offset) {
@@ -503,17 +577,32 @@ export default class BarChartRenderer {
   }
 
   _computeMargins({ xLabelAngle = 0, xLabelOffset = { x: 0, y: 0 }, yLabelOffset = { x: 0, y: 0 } }) {
-    const angle = Math.min(90, Math.max(-90, xLabelAngle));
-    const angledExtra = Math.abs(angle) > 0 ? 24 + Math.abs(angle) * 1.1 : 0;
-    const bottom = Math.max(64, 44 + angledExtra + Math.abs(xLabelOffset.y) + Math.abs(xLabelOffset.x) * 0.3);
-    const left = Math.max(64, 56 + Math.abs(yLabelOffset.x) + Math.abs(yLabelOffset.y) * 0.4);
+    return computeAxisAwareMargins({
+      xLabelAngle,
+      xLabelOffset,
+      yLabelOffset,
+      base: { top: 24, right: 20, bottom: 64, left: 64 }
+    });
+  }
 
-    return {
-      top: 24,
-      right: 20,
-      bottom,
-      left
-    };
+  _finalizeLayout({ chart, encoding, visualArtifacts, width, height, margin }) {
+    const svgNode = this.svg?.node?.();
+    const overflow = measurePlotOverflow(svgNode, ".plot-area", width, height);
+    const shouldRefit = shouldRefitLayout(overflow);
+
+    if (!shouldRefit || this._fitPass >= 1) {
+      this._resetFitState();
+      return;
+    }
+
+    this._fitPass += 1;
+    this._marginOverride = growMargins(margin, overflow, 6);
+    this.render(chart, encoding, visualArtifacts);
+  }
+
+  _resetFitState() {
+    this._fitPass = 0;
+    this._marginOverride = null;
   }
 
   _buildTickFormatter(formatName) {

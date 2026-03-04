@@ -44,7 +44,8 @@ export function createBarChartVisualArtifacts({
   };
   if (!encodingManager || !encoding) return artifacts;
 
-  const color = encoding.color;
+  const bars = encoding.bars || {};
+  const color = bars.color;
   if (color) {
     const scaleId = color?.field && color?.scale ? makeScaleId(visType, "bars", "color", color.field) : null;
 
@@ -72,6 +73,40 @@ export function createBarChartVisualArtifacts({
 
     if (color.field && color.scale && scaleId) {
       artifacts.legends.push(makeLegendDescriptor("bars", "color", color, scaleId, "rows"));
+    }
+  }
+
+  const size = bars.size;
+  if (size) {
+    const scaleId = size?.field && size?.scale ? makeScaleId(visType, "bars", "size", size.field) : null;
+
+    if (scaleId) {
+      const scale = encodingManager.getOrCreateD3Scale(
+        scaleId,
+        size.scale,
+        rows,
+        size.field,
+        false,
+        (config, data, field, isColor) => encodingManager.createD3Scale(config, data, field, isColor)
+      );
+      if (scale) artifacts.scales.set(scaleId, scale);
+    }
+
+    artifacts.channels.push({
+      id: "bars:size",
+      mark: "bars",
+      channel: "size",
+      field: size.field,
+      scaleId,
+      defaultValue:
+        typeof size.value === "number" && !Number.isNaN(size.value) && size.value >= 0
+          ? size.value
+          : 0,
+      encoding: size
+    });
+
+    if (size.field && size.scale && scaleId) {
+      artifacts.legends.push(makeLegendDescriptor("bars", "size", size, scaleId, "rows"));
     }
   }
 

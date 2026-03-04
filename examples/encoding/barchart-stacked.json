@@ -7,9 +7,11 @@
     "field": "nbMovies",
     "scale": { "type": "count" }
   },
-  "color": {
+  "bars": {
+    "color": {
       "field": "studioName",
       "scale": { "type": "ordinal", "range": "Set3" }
+    }
   },
   "stack": true
 }

@@ -18,9 +18,15 @@ export class BarChartEncodingManager extends EncodingManager {
         scale: { type: "linear" },
         axis: {}
       },
-      color: {
-        value: "#69b3a2",
-        legend: { display: true, position: "bottom" }
+      bars: {
+        color: {
+          value: "#69b3a2",
+          legend: { display: true, position: "bottom" }
+        },
+        size: {
+          value: 0,
+          legend: { display: true, position: "right" }
+        }
       }
     };
   }
@@ -35,10 +41,10 @@ export class BarChartEncodingManager extends EncodingManager {
       enc.y.field = sparqlVars[0];
     }
     if (sparqlVars.length > 2) {
-      enc.color.field = sparqlVars[2];
-      enc.color.scale = { type: "ordinal", range: "Set3" };
-      enc.color.legend.display = true;
-      enc.color.legend.title = sparqlVars[2];
+      enc.bars.color.field = sparqlVars[2];
+      enc.bars.color.scale = { type: "ordinal", range: "Set3" };
+      enc.bars.color.legend.display = true;
+      enc.bars.color.legend.title = sparqlVars[2];
     }
     return enc;
   }
@@ -46,8 +52,8 @@ export class BarChartEncodingManager extends EncodingManager {
   resolveFieldMapping(mapping, vars) {
     const xField = mapping?.x?.field && vars.includes(mapping.x.field) ? mapping.x.field : vars[0];
     const yField = mapping?.y?.field && vars.includes(mapping.y.field) ? mapping.y.field : vars[1] || vars[0];
-    const colorField =
-      mapping?.color?.field && vars.includes(mapping.color.field) ? mapping.color.field : null;
+    const colorCandidate = mapping?.bars?.color?.field;
+    const colorField = colorCandidate && vars.includes(colorCandidate) ? colorCandidate : null;
     const groupField =
       mapping?.groups?.field && vars.includes(mapping.groups.field) ? mapping.groups.field : null;
     return { xField, yField, colorField, groupField };
@@ -65,7 +71,18 @@ export class BarChartEncodingManager extends EncodingManager {
       groups: { ...this.getDefaultEncoding().groups, ...(userEncoding?.groups || {}) },
       x: { ...this.getDefaultEncoding().x, ...(userEncoding?.x || {}) },
       y: { ...this.getDefaultEncoding().y, ...(userEncoding?.y || {}) },
-      color: { ...this.getDefaultEncoding().color, ...(userEncoding?.color || {}) }
+      bars: {
+        ...this.getDefaultEncoding().bars,
+        ...(userEncoding?.bars || {}),
+        color: {
+          ...this.getDefaultEncoding().bars.color,
+          ...(userEncoding?.bars?.color || {})
+        },
+        size: {
+          ...this.getDefaultEncoding().bars.size,
+          ...(userEncoding?.bars?.size || {})
+        }
+      }
     };
 
     if (!merged?.x?.field || !merged?.y?.field) {
@@ -90,6 +107,14 @@ export class BarChartEncodingManager extends EncodingManager {
       throw new Error('Invalid encoding: "groups.field" must be a non-empty string when provided.');
     }
 
+    if (
+      merged?.bars?.size?.field !== undefined &&
+      merged?.bars?.size?.field !== null &&
+      (typeof merged.bars.size.field !== "string" || !merged.bars.size.field.trim())
+    ) {
+      throw new Error('Invalid encoding: "bars.size.field" must be a non-empty string when provided.');
+    }
+
     return merged;
   }
 
@@ -97,10 +122,20 @@ export class BarChartEncodingManager extends EncodingManager {
     if (!Array.isArray(rows) || rows.length === 0) return encoding;
     const enc = JSON.parse(JSON.stringify(encoding || {}));
 
-    if (enc.color?.field && enc.color?.scale) {
-      const scaleType = enc.color.scale.type || "ordinal";
-      const userDomain = enc.color.scale.domain;
-      enc.color.scale.domain = this.domainCalculator.getDomain(rows, enc.color.field, userDomain, scaleType);
+    const barColor = enc.bars?.color;
+    if (barColor?.field && barColor?.scale) {
+      const scaleType = barColor.scale.type || "ordinal";
+      const userDomain = barColor.scale.domain;
+      barColor.scale.domain = this.domainCalculator.getDomain(rows, barColor.field, userDomain, scaleType);
+      enc.bars.color = barColor;
+    }
+
+    const barSize = enc.bars?.size;
+    if (barSize?.field && barSize?.scale) {
+      const scaleType = barSize.scale.type || "linear";
+      const userDomain = barSize.scale.domain;
+      barSize.scale.domain = this.domainCalculator.getDomain(rows, barSize.field, userDomain, scaleType);
+      enc.bars.size = barSize;
     }
 
     if (enc.x?.field && enc.x?.scale) {

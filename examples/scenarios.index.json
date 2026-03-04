@@ -52,6 +52,14 @@
       "queryPath": "./queries/redford-movies-genre-count.rq",
       "endpoint": "https://dbpedia.org/sparql",
       "component": "venus-barchart"
+    },
+    {
+      "id": "linechart-simple",
+      "name": "Simple Line Chart: Harrison Ford Co-Stars per Movie",
+      "encodingPath": "./encoding/linechart-simple.json",
+      "queryPath": "./queries/redford-costars-count.rq",
+      "endpoint": "https://dbpedia.org/sparql",
+      "component": "venus-linechart"
     }
 
 
