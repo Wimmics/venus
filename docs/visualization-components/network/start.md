@@ -20,14 +20,4 @@ VENUS currently supports the following network-based visualization techniques:
 
 Each technique shares the same data access model in VENUS (SPARQL + encoding) but differs in layout strategy and visual semantics.
 
-## Encoding Properties
-
-Network-based visualizations require an explicit mapping between SPARQL query variables and the resulting entities and relationships. Accordingly, their encoding relies on the following properties, described in detail below.
-
-| Property |  | Description |
-|---|---|---|
-| [`links`](./links.md) |  | Defines the relationships between entities and their direction. |
-| [`nodes`](./nodes.md) |  | Defines the entities derived from the input SPARQL query or results. |
-
-
 

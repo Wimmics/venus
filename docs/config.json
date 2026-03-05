@@ -4,10 +4,24 @@
   },
   "folders": {
     "visualization-components": {
-      "files": [
+      "items": [
         { "path": "visualization-components/start.md", "label": "Overview" },
-        { "path": "visualization-components/vis-graph.md", "label": "Force-directed graph" },
-        { "path": "visualization-components/vis-barchart.md", "label": "Bar chart" }
+        { "path": "visualization-components/network", "label": "Network Charts" },
+        { "path": "visualization-components/cartesian", "label": "Cartesian Charts" }
+      ]
+    },
+    "visualization-components/network": {
+      "files": [
+        { "path": "visualization-components/network/start.md", "label": "Overview" },
+        { "path": "visualization-components/network/venus-graph.md", "label": "Force-directed graph" }
+      ]
+    },
+    "visualization-components/cartesian": {
+       "files": [
+        { "path": "visualization-components/cartesian/start.md", "label": "Overview" },
+        { "path": "visualization-components/cartesian/venus-barchart.md", "label": "Bar chart" },
+        { "path": "visualization-components/cartesian/venus-linechart.md", "label": "Line chart" },
+        { "path": "visualization-components/cartesian/venus-scatterplot.md", "label": "Scatterplot" }
       ]
     },
     "encoding": {
@@ -15,23 +29,17 @@
         { "path": "encoding/start.md", "label": "Overview" },
         { "path": "encoding/title.md", "label": "Chart Title" },
         { "path": "encoding/field.md", "label": "Data Fields" },
-        { "path": "encoding/graph", "label": "Network" },
-        { "path": "encoding/cartesian", "label": "Cartesian" },
+        { "path": "encoding/x.md", "label": "X Axis"},
+        { "path": "encoding/y.md", "label": "Y Axis"},
+        { "path": "encoding/axis.md", "label": "Axes"},
+        { "path": "encoding/direction.md", "label": "Orientation" },
+        { "path": "encoding/groups.md", "label": "Groups"},
+        { "path": "encoding/stack.md", "label": "Stack"},
         { "path": "encoding/color.md", "label": "Color Channel" },
         { "path": "encoding/scale.md", "label": "Scale Types" },
         { "path": "encoding/legend.md", "label": "Legends" },
-        { "path": "encoding/interactions.md", "label": "User Interactions" }
-      ]
-    },
-    "encoding/cartesian": {
-      "files": [
-        {"path": "encoding/cartesian/start.md", "label": "Overview"},
-        {"path": "encoding/cartesian/x.md", "label": "X Axis"},
-        {"path": "encoding/cartesian/y.md", "label": "Y Axis"},
-        {"path": "encoding/cartesian/axis.md", "label": "Axes"},
-        {"path": "encoding/cartesian/direction.md", "label": "Orientation" },
-        {"path": "encoding/cartesian/groups.md", "label": "Groups"},
-        {"path": "encoding/cartesian/stack.md", "label": "Stack"}
+        { "path": "encoding/interactions.md", "label": "User Interactions" },
+        { "path": "encoding/marks", "label": "Marks" }
       ]
     },
     "data": {
@@ -39,6 +47,15 @@
         { "path": "data/start.md", "label": "Overview" },
         { "path": "data/sparql.md", "label": "SPARQL Queries" },
         { "path": "data/proxy.md", "label": "SPARQL Proxy" }
+      ]
+    },
+    "encoding/marks": {
+      "files": [
+        { "path": "encoding/marks/nodes.md", "label": "Nodes" },
+        { "path": "encoding/marks/links.md", "label": "Links" },
+        { "path": "encoding/marks/points.md", "label": "Points" },
+        { "path": "encoding/marks/bars.md", "label": "Bars" },
+        { "path": "encoding/marks/lines.md", "label": "Lines" }
       ]
     }
   }

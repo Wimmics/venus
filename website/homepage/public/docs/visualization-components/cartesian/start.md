@@ -19,20 +19,8 @@ VENUS currently supports the following Cartesian visualization techniques:
 
 - **Bar chart (`venus-barchart`):** Compares discrete categories using rectangular marks whose length encodes magnitude.
 
-<!-- - **Line chart (`venus-linechart`)** *(if applicable)*: Displays trends across an ordered or continuous dimension.
+- **Line chart (`venus-linechart`):**: Displays trends across an ordered or continuous dimension.
 
-- **Scatter plot (`venus-scatterplot`)** *(if applicable)*: Shows relationships between two quantitative variables. -->
+- **Scatter plot (`venus-scatterplot`):** Shows relationships between two quantitative variables.
 
 Each technique shares the same data access model in VENUS (SPARQL + encoding) but differs in mark type and visual semantics.
-
-## Encoding Properties
-
-Cartesian visualizations expose additional encoding properties dedicated to positional layouts and mark arrangement. These properties complement the common encoding options and are described in detail below.
-
-| Property |  | Description |
-|---|---|---|
-| [`x`](./x.md) |  | Defines the horizontal positional encoding. |
-| [`y`](./y.md) |  | Defines the vertical positional encoding. |
-| [`direction`](./direction.md) |  | Controls the orientation of marks (e.g., bar direction). |
-| [`groups`](./groups.md) |  | Defines the field used to split grouped or stacked bars. |
-| [`stack`](./stack.md) |  | Defines how marks are grouped or stacked. |

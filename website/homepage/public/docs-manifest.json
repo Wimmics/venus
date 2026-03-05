@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-04T16:15:26.861Z",
+  "generatedAt": "2026-03-05T06:45:14.901Z",
   "root": {
     "type": "folder",
     "name": "docs",
@@ -15,16 +15,46 @@
         "entry": "visualization-components/start.md",
         "children": [
           {
-            "type": "file",
-            "name": "vis-graph.md",
-            "title": "Force-directed graph",
-            "path": "visualization-components/vis-graph.md"
+            "type": "folder",
+            "name": "network",
+            "title": "Network Charts",
+            "path": "visualization-components/network",
+            "entry": "visualization-components/network/start.md",
+            "children": [
+              {
+                "type": "file",
+                "name": "venus-graph.md",
+                "title": "Force-directed graph",
+                "path": "visualization-components/network/venus-graph.md"
+              }
+            ]
           },
           {
-            "type": "file",
-            "name": "vis-barchart.md",
-            "title": "Bar chart",
-            "path": "visualization-components/vis-barchart.md"
+            "type": "folder",
+            "name": "cartesian",
+            "title": "Cartesian Charts",
+            "path": "visualization-components/cartesian",
+            "entry": "visualization-components/cartesian/start.md",
+            "children": [
+              {
+                "type": "file",
+                "name": "venus-barchart.md",
+                "title": "Bar chart",
+                "path": "visualization-components/cartesian/venus-barchart.md"
+              },
+              {
+                "type": "file",
+                "name": "venus-linechart.md",
+                "title": "Line chart",
+                "path": "visualization-components/cartesian/venus-linechart.md"
+              },
+              {
+                "type": "file",
+                "name": "venus-scatterplot.md",
+                "title": "Scatterplot",
+                "path": "visualization-components/cartesian/venus-scatterplot.md"
+              }
+            ]
           }
         ]
       },
@@ -69,70 +99,40 @@
             "path": "encoding/field.md"
           },
           {
-            "type": "folder",
-            "name": "graph",
-            "title": "Network",
-            "path": "encoding/graph",
-            "entry": "encoding/graph/start.md",
-            "children": [
-              {
-                "type": "file",
-                "name": "links.md",
-                "title": "Links",
-                "path": "encoding/graph/links.md"
-              },
-              {
-                "type": "file",
-                "name": "nodes.md",
-                "title": "Nodes",
-                "path": "encoding/graph/nodes.md"
-              }
-            ]
+            "type": "file",
+            "name": "x.md",
+            "title": "X Axis",
+            "path": "encoding/x.md"
           },
           {
-            "type": "folder",
-            "name": "cartesian",
-            "title": "Cartesian",
-            "path": "encoding/cartesian",
-            "entry": "encoding/cartesian/start.md",
-            "children": [
-              {
-                "type": "file",
-                "name": "x.md",
-                "title": "X Axis",
-                "path": "encoding/cartesian/x.md"
-              },
-              {
-                "type": "file",
-                "name": "y.md",
-                "title": "Y Axis",
-                "path": "encoding/cartesian/y.md"
-              },
-              {
-                "type": "file",
-                "name": "axis.md",
-                "title": "Axes",
-                "path": "encoding/cartesian/axis.md"
-              },
-              {
-                "type": "file",
-                "name": "direction.md",
-                "title": "Orientation",
-                "path": "encoding/cartesian/direction.md"
-              },
-              {
-                "type": "file",
-                "name": "groups.md",
-                "title": "Groups",
-                "path": "encoding/cartesian/groups.md"
-              },
-              {
-                "type": "file",
-                "name": "stack.md",
-                "title": "Stack",
-                "path": "encoding/cartesian/stack.md"
-              }
-            ]
+            "type": "file",
+            "name": "y.md",
+            "title": "Y Axis",
+            "path": "encoding/y.md"
+          },
+          {
+            "type": "file",
+            "name": "axis.md",
+            "title": "Axes",
+            "path": "encoding/axis.md"
+          },
+          {
+            "type": "file",
+            "name": "direction.md",
+            "title": "Orientation",
+            "path": "encoding/direction.md"
+          },
+          {
+            "type": "file",
+            "name": "groups.md",
+            "title": "Groups",
+            "path": "encoding/groups.md"
+          },
+          {
+            "type": "file",
+            "name": "stack.md",
+            "title": "Stack",
+            "path": "encoding/stack.md"
           },
           {
             "type": "file",
@@ -157,6 +157,45 @@
             "name": "interactions.md",
             "title": "User Interactions",
             "path": "encoding/interactions.md"
+          },
+          {
+            "type": "folder",
+            "name": "marks",
+            "title": "Marks",
+            "path": "encoding/marks",
+            "entry": null,
+            "children": [
+              {
+                "type": "file",
+                "name": "nodes.md",
+                "title": "Nodes",
+                "path": "encoding/marks/nodes.md"
+              },
+              {
+                "type": "file",
+                "name": "links.md",
+                "title": "Links",
+                "path": "encoding/marks/links.md"
+              },
+              {
+                "type": "file",
+                "name": "points.md",
+                "title": "Points",
+                "path": "encoding/marks/points.md"
+              },
+              {
+                "type": "file",
+                "name": "bars.md",
+                "title": "Bars",
+                "path": "encoding/marks/bars.md"
+              },
+              {
+                "type": "file",
+                "name": "lines.md",
+                "title": "Lines",
+                "path": "encoding/marks/lines.md"
+              }
+            ]
           }
         ]
       }

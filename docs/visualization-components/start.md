@@ -7,6 +7,8 @@ A component can be instantiated in an HTML page as follows:
 ```html
 <venus-graph id="graph" width="100%" height="520"></venus-graph>
 <venus-barchart id="bar" width="100%" height="500"></venus-barchart>
+<venus-linechart id="line" width="100%" height="500"></venus-linechart>
+<venus-scatterplot id="scatter" width="100%" height="500"></venus-scatterplot>
 ```
 
 ## Shared Attributes
