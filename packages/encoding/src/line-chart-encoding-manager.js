@@ -18,6 +18,9 @@ export class LineChartEncodingManager extends EncodingManager {
         axis: {}
       },
       lines: {
+        group: {
+          field: null
+        },
         color: {
           value: "#4e79a7",
           legend: { display: true, position: "bottom" }
@@ -48,6 +51,7 @@ export class LineChartEncodingManager extends EncodingManager {
     enc.y.field = sparqlVars[1] || sparqlVars[0];
 
     if (sparqlVars.length > 2) {
+      enc.lines.group.field = sparqlVars[2];
       enc.lines.color.field = sparqlVars[2];
       enc.lines.color.scale = { type: "ordinal", range: "Set3" };
       enc.lines.color.legend.display = true;
@@ -55,10 +59,17 @@ export class LineChartEncodingManager extends EncodingManager {
     }
 
     if (sparqlVars.length > 3) {
-      enc.lines.size.field = sparqlVars[3];
+      enc.lines.color.field = sparqlVars[3];
+      enc.lines.color.scale = { type: "ordinal", range: "Set3" };
+      enc.lines.color.legend.display = true;
+      enc.lines.color.legend.title = sparqlVars[3];
+    }
+
+    if (sparqlVars.length > 4) {
+      enc.lines.size.field = sparqlVars[4];
       enc.lines.size.scale = { type: "linear", range: [1, 7] };
       enc.lines.size.legend.display = true;
-      enc.lines.size.legend.title = sparqlVars[3];
+      enc.lines.size.legend.title = sparqlVars[4];
     }
 
     return enc;
@@ -82,6 +93,10 @@ export class LineChartEncodingManager extends EncodingManager {
       lines: {
         ...this.getDefaultEncoding().lines,
         ...(userEncoding?.lines || {}),
+        group: {
+          ...this.getDefaultEncoding().lines.group,
+          ...(userEncoding?.lines?.group || {})
+        },
         color: {
           ...this.getDefaultEncoding().lines.color,
           ...(userEncoding?.lines?.color || {})
@@ -128,6 +143,14 @@ export class LineChartEncodingManager extends EncodingManager {
       typeof merged.interactions.tooltip !== "boolean"
     ) {
       throw new Error('Invalid encoding: "interactions.tooltip" must be a boolean when provided.');
+    }
+
+    if (
+      merged?.lines?.group?.field !== undefined &&
+      merged?.lines?.group?.field !== null &&
+      (typeof merged.lines.group.field !== "string" || !merged.lines.group.field.trim())
+    ) {
+      throw new Error('Invalid encoding: "lines.group.field" must be a non-empty string when provided.');
     }
 
     if (

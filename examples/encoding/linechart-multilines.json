@@ -1,0 +1,30 @@
+{
+  "title": "Evolution of population over time across countries",
+  "x": {
+    "field": "year",
+    "axis": {
+      "labelAngle": -45,
+      "labelOffset": { "x": -6, "y": 10 }
+    }
+  },
+  "y": {
+    "field": "population",
+    "scale": {
+      "type": "log"
+    },
+    "axis": {
+      "tickFormat": "M"
+    }
+  },
+  "lines": {
+    "group": {
+      "field": "countryLabel"
+    },
+    "size": {
+      "value": 3
+    }, 
+    "color" : {
+      "field": "continentLabel"
+    }
+  }
+}

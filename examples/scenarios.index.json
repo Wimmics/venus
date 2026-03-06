@@ -53,6 +53,8 @@
       "endpoint": "https://dbpedia.org/sparql",
       "component": "venus-barchart"
     },
+
+
     {
       "id": "linechart-simple",
       "name": "Simple Line Chart: Harrison Ford Co-Stars per Movie",
@@ -61,7 +63,14 @@
       "endpoint": "https://dbpedia.org/sparql",
       "component": "venus-linechart"
     },
-
+    {
+      "id": "linechart-multilines",
+      "name": "Multiline Line Chart: Temporal evolution of birth rate per country",
+      "encodingPath": "./encoding/linechart-multilines.json",
+      "queryPath": "./queries/country-population-per-year.rq",
+      "endpoint": "https://query.wikidata.org/sparql",
+      "component": "venus-linechart"
+    },
 
     {
       "id": "scatterplot-simple",

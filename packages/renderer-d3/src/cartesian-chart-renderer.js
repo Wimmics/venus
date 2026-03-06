@@ -5,7 +5,7 @@ import {
   measurePlotOverflow,
   shouldRefitLayout,
   growMargins
-} from "./layout-fit.js";
+} from "./utils/layout-fit.js";
 
 export default class CartesianChartRenderer extends BaseRenderer {
   constructor(opts = {}) {
@@ -156,6 +156,33 @@ export default class CartesianChartRenderer extends BaseRenderer {
     axis.tickFormat(tickFormatter);
 
     const normalizedScaleType = String(scaleType || "").toLowerCase();
+    if (normalizedScaleType === "log") {
+      const domain = typeof scale.domain === "function" ? scale.domain() : null;
+      if (!Array.isArray(domain) || domain.length < 2) return axis;
+      const start = Number(domain[0]);
+      const end = Number(domain[domain.length - 1]);
+      if (!Number.isFinite(start) || !Number.isFinite(end) || start <= 0 || end <= 0 || end < start) {
+        return axis;
+      }
+
+      const minExp = Math.ceil(Math.log10(start));
+      const maxExp = Math.floor(Math.log10(end));
+      if (!Number.isFinite(minExp) || !Number.isFinite(maxExp) || maxExp < minExp) return axis;
+
+      const tickValues = [];
+      for (let exp = minExp; exp <= maxExp; exp += 1) {
+        tickValues.push(10 ** exp);
+        if (tickValues.length > 24) break;
+      }
+
+      if (tickValues.length > 0) {
+        axis.tickValues(tickValues);
+      } else {
+        axis.ticks(8);
+      }
+      return axis;
+    }
+
     const tickStep = Number(axisConfig.tickStep);
     const effectiveStep = Number.isFinite(tickStep) && tickStep > 0
       ? tickStep

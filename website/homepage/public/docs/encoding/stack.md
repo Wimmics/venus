@@ -1,10 +1,12 @@
 # Stack
 
-The `stack` property controls stacked behavior in cartesian charts.
+The `bars.stack` property controls stacked behavior in bar charts.
 
 ```js
 encoding: {
-  stack: false
+  bars: {
+    stack: false
+  }
 }
 ```
 
@@ -12,4 +14,4 @@ encoding: {
 
 | Property | Type | Description |
 |---|---|---|
-| `stack` | `string`/`boolean` | Stack mode for charts. Possible values: `false` (no stacking), `true` (stacked), `"normalize"` (100% stacked proportions). <br>**Default:** `false`. When stacking is enabled and `groups.field` is not set, VENUS uses color categories when available; otherwise it stacks a single series. |
+| `bars.stack` | `string`/`boolean` | Stack mode for bars. Possible values: `false` (no stacking), `true` (stacked), `"normalize"` (100% stacked proportions). <br>**Default:** `false`. When stacking is enabled and `bars.groups.field` is not set, VENUS uses color categories when available; otherwise it stacks a single series. |

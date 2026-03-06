@@ -1,0 +1,18 @@
+SELECT ?continent ?continentLabel ?country ?countryLabel ?population ?year
+WHERE {
+
+  ?country wdt:P31 wd:Q3624078.      # sovereign state
+  ?country wdt:P30 ?continent.       # continent
+
+  # population
+  ?country p:P1082 ?popStatement.
+  ?popStatement ps:P1082 ?population.
+  ?popStatement pq:P585 ?date.
+
+  BIND (YEAR(?date) as ?year)
+  FILTER (?year >= 1990 && ?year <= 2026)
+
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+
+}
+ORDER BY ?continentLabel ?countryLabel

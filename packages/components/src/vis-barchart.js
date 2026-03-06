@@ -97,7 +97,7 @@ export class VenusBarChart extends VenusBase {
     const { datum, x, y } = payload;
     const xField = this.visualEncoding?.x?.field;
     const yField = this.visualEncoding?.y?.field;
-    const groupField = this.visualEncoding?.groups?.field;
+    const groupField = this.visualEncoding?.bars?.groups?.field;
     const colorField = this.visualEncoding?.bars?.color?.field;
     const sizeField = this.visualEncoding?.bars?.size?.field;
     const title = xField ? datum?.[xField] : "Bar";

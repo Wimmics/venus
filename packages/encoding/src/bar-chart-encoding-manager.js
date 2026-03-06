@@ -8,10 +8,6 @@ export class BarChartEncodingManager extends EncodingManager {
         tooltip: true
       },
       direction: "vertical",
-      stack: false,
-      groups: {
-        field: null
-      },
       x: {
         field: "category",
         axis: { labelAngle: 0 }
@@ -22,6 +18,10 @@ export class BarChartEncodingManager extends EncodingManager {
         axis: {}
       },
       bars: {
+        groups: {
+          field: null
+        },
+        stack: false,
         color: {
           value: "#69b3a2",
           legend: { display: true, position: "bottom" }
@@ -58,7 +58,9 @@ export class BarChartEncodingManager extends EncodingManager {
     const colorCandidate = mapping?.bars?.color?.field;
     const colorField = colorCandidate && vars.includes(colorCandidate) ? colorCandidate : null;
     const groupField =
-      mapping?.groups?.field && vars.includes(mapping.groups.field) ? mapping.groups.field : null;
+      mapping?.bars?.groups?.field && vars.includes(mapping.bars.groups.field)
+        ? mapping.bars.groups.field
+        : null;
     return { xField, yField, colorField, groupField };
   }
 
@@ -75,12 +77,19 @@ export class BarChartEncodingManager extends EncodingManager {
         ...this.getDefaultEncoding().interactions,
         ...(userEncoding?.interactions || {})
       },
-      groups: { ...this.getDefaultEncoding().groups, ...(userEncoding?.groups || {}) },
       x: { ...this.getDefaultEncoding().x, ...(userEncoding?.x || {}) },
       y: { ...this.getDefaultEncoding().y, ...(userEncoding?.y || {}) },
       bars: {
         ...this.getDefaultEncoding().bars,
         ...(userEncoding?.bars || {}),
+        groups: {
+          ...this.getDefaultEncoding().bars.groups,
+          ...(userEncoding?.bars?.groups || {})
+        },
+        stack:
+          userEncoding?.bars && Object.prototype.hasOwnProperty.call(userEncoding.bars, "stack")
+            ? userEncoding.bars.stack
+            : this.getDefaultEncoding().bars.stack,
         color: {
           ...this.getDefaultEncoding().bars.color,
           ...(userEncoding?.bars?.color || {})
@@ -91,6 +100,14 @@ export class BarChartEncodingManager extends EncodingManager {
         }
       }
     };
+
+    if (userEncoding && Object.prototype.hasOwnProperty.call(userEncoding, "groups")) {
+      throw new Error('Invalid encoding: top-level "groups" is no longer supported. Use "bars.groups" instead.');
+    }
+
+    if (userEncoding && Object.prototype.hasOwnProperty.call(userEncoding, "stack")) {
+      throw new Error('Invalid encoding: top-level "stack" is no longer supported. Use "bars.stack" instead.');
+    }
 
     if (!merged?.x?.field || !merged?.y?.field) {
       throw new Error('Invalid encoding: "x.field" and "y.field" are required for bar-chart.');
@@ -104,21 +121,21 @@ export class BarChartEncodingManager extends EncodingManager {
     }
 
     if (
-      merged.stack !== undefined &&
-      merged.stack !== true &&
-      merged.stack !== false &&
-      !(typeof merged.stack === "string" && merged.stack.toLowerCase().trim() === "normalize")
+      merged?.bars?.stack !== undefined &&
+      merged?.bars?.stack !== true &&
+      merged?.bars?.stack !== false &&
+      !(typeof merged?.bars?.stack === "string" && merged.bars.stack.toLowerCase().trim() === "normalize")
     ) {
-      throw new Error('Invalid encoding: "stack" must be true, false, or "normalize".');
+      throw new Error('Invalid encoding: "bars.stack" must be true, false, or "normalize".');
     }
 
-    const groupField = merged?.groups?.field;
+    const groupField = merged?.bars?.groups?.field;
     if (
       groupField !== undefined &&
       groupField !== null &&
       (typeof groupField !== "string" || !groupField.trim())
     ) {
-      throw new Error('Invalid encoding: "groups.field" must be a non-empty string when provided.');
+      throw new Error('Invalid encoding: "bars.groups.field" must be a non-empty string when provided.');
     }
 
     if (

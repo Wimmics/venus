@@ -14,7 +14,7 @@ Encoding engine that turns user encoding into validated domains and D3-ready sca
 - Optional top-level `title`: when provided, components render it above the chart area.
 - Optional top-level `background`: chart background color (`"#ffffff"`, `"white"`, etc.).
 - Force graph: `nodes` / `links` channels (`color`, `size`, `stroke`, `labels`, `interactions`).
-- Bar chart: `x`, `y`, `color`, `groups`, `direction`.
+- Bar chart: `x`, `y`, `bars`, `direction`.
 - Color legends are `display: true` by default when color is data-driven (`color.field`).
 - If `color.field` is provided without `color.scale`, a default palette is used: `{ type: "ordinal", range: "Accent" }`.
 
@@ -99,8 +99,6 @@ In co-occurrence mode, nodes are connected when they share the same resolved val
 ## Bar-Chart Example
 ```js
 bar.encoding = {
-  groups: { field: "language" },
-  stack: false,
   x: {
     field: "name",
     axis: {
@@ -117,11 +115,15 @@ bar.encoding = {
     },
     scale: { type: "count" }
   },
-  color: {
-    field: "language",
-    value: "#cccccc",
-    scale: { type: "ordinal", range: "Set1" },
-    legend: { title: "Language", position: "top-right", display: true }
+  bars: {
+    groups: { field: "language" },
+    stack: false,
+    color: {
+      field: "language",
+      value: "#cccccc",
+      scale: { type: "ordinal", range: "Set1" },
+      legend: { title: "Language", position: "top-right", display: true }
+    }
   },
   direction: "vertical"
 };
@@ -131,15 +133,15 @@ bar.encoding = {
 - `"vertical"` (default)
 - `"horizontal"`
 
-`stack`:
+`bars.stack`:
 - `false` (default): no stacking
 - `true`: stacked bar chart
 - `"normalize"`: normalized stacked bar chart (100%)
 
-`groups.field`:
+`bars.groups.field`:
 - optional grouping field used to split each category into multiple bars/segments
-- required if you want grouped bars with `stack: false`
-- stacking (`stack: true` / `"normalize"`) does not require `groups.field`
+- required if you want grouped bars with `bars.stack: false`
+- stacking (`bars.stack: true` / `"normalize"`) does not require `bars.groups.field`
 
 `x.axis` options:
 - `title`: optional object
@@ -157,7 +159,7 @@ bar.encoding = {
 - `tickFormat`: preset string, one of:
   - `"raw"` (default, comma separated)
   - `"integer"` / `"int"` (rounded integers with separators)
-  - `"percent"` / `"percentage"` (best used with `stack: "normalize"`)
+  - `"percent"` / `"percentage"` (best used with `bars.stack: "normalize"`)
   - `"compact"` (Intl compact notation)
   - `"kmb"` (`k`, `M`, `B`, `T`)
   - `"k"` / `"thousands"`

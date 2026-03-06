@@ -35,4 +35,4 @@ encoding: {
 
 - Long category names: set `x.axis.labelAngle` to `-30` or `-45`.
 - Count metrics: set `y.axis.tickFormat` to `"integer"` and `tickStep` to `1`.
-- Percent charts: use `stack: "normalize"` and `tickFormat: "percent"`.
+- Percent charts: use `bars.stack: "normalize"` and `tickFormat: "percent"`.

@@ -8,10 +8,10 @@
     "scale": { "type": "count" }
   },
   "bars": {
+    "stack": true,
     "color": {
       "field": "studioName",
       "scale": { "type": "ordinal", "range": "Set3" }
     }
-  },
-  "stack": true
+  }
 }

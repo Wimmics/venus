@@ -21,9 +21,11 @@ export default class BarChartRenderer extends CartesianChartRenderer {
     const yScaleType = String(yScaleConfig.type || "linear").toLowerCase();
 
     const direction = mapping.direction === "horizontal" ? "horizontal" : "vertical";
-    const stackMode = this._resolveStackMode(mapping?.stack);
-    const groupField = typeof mapping?.groups?.field === "string" ? mapping.groups.field.trim() : "";
     const barsEncoding = mapping?.bars || {};
+    const stackMode = this._resolveStackMode(barsEncoding?.stack);
+    const groupField = typeof barsEncoding?.groups?.field === "string"
+      ? barsEncoding.groups.field.trim()
+      : "";
     const colorEncoding = barsEncoding?.color || {};
     const sizeEncoding = barsEncoding?.size || {};
     const colorField = colorEncoding?.field;
@@ -123,7 +125,7 @@ export default class BarChartRenderer extends CartesianChartRenderer {
       stackMode !== "normalize"
     ) {
       this.logger.warn(
-        'BarChartRenderer: `y.axis.tickFormat: "percent"` is usually meaningful with `stack: "normalize"`. Current stack mode is non-normalized.'
+        'BarChartRenderer: `y.axis.tickFormat: "percent"` is usually meaningful with `bars.stack: "normalize"`. Current stack mode is non-normalized.'
       );
     }
     const yTickFormatter = this._buildTickFormatter(

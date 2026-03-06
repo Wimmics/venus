@@ -30,6 +30,9 @@
     "size": {
       "field": "population",
       "scale": { "type": "log", "range": [2, 20] }
+    }, 
+    "tooltip": {
+      "fields": ["birthRate", "population"]
     }
   }
 }

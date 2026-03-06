@@ -31,13 +31,5 @@
   },
   "links": {
     "field": "movieName"
-  },
-  "interactions": {
-    "tooltip": {
-      "fields": [
-        "actorBirthYear",
-        "links"
-      ]
-    }
   }
 }

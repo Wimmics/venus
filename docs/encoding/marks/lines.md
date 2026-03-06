@@ -2,18 +2,21 @@
 
 The `lines` property configures line marks in `<venus-linechart>`.
 
+Use `lines.group.field` to define how many lines are drawn (one line per distinct value), independently from `lines.color.field`.
+
 ```js
 encoding: {
   lines: {
+    group: { field: "countryLabel" },
     color: {
-      field: "series",
+      field: "continentLabel",
       scale: { type: "ordinal", range: "Accent" },
       legend: { display: true }
     },
     size: {
       value: 2
     },
-    tooltip: { fields: ["series", "value"] }
+    tooltip: { fields: ["countryLabel", "continentLabel", "birthRate"] }
   }
 }
 ```
@@ -22,6 +25,7 @@ encoding: {
 
 | Property | Type | Description |
 |---|---|---|
-| `color` | `object` | Line color config. Possible values: `value`, `field`, `scale`, `legend`. <br>See [`color`](../encoding/color.md) for details. |
-| `size` | `object` | Line stroke width config. Possible values: `value`, `field`, `scale`, `legend`. <br>See [`size`](../encoding/size.md) and [`scale`](../encoding/scale.md) for details. |
-| `tooltip.fields` | `string[]` | Optional tooltip field whitelist for hovered line marks/series. If omitted, fields are selected automatically. <br>Global tooltip toggle is controlled by [`interactions.tooltip`](../encoding/interactions.md). |
+| `group.field` | `string` | Field used to create one line per distinct value (series grouping key). This can differ from `color.field`. <br>**Default:** not set. Backward compatibility fallback: `color.field` is used as grouping key when `group.field` is omitted. |
+| `color` | `object` | Line color config. Possible values: `value`, `field`, `scale`, `legend`. <br>See [`color`](../color.md) for details. |
+| `size` | `object` | Line stroke width config. Possible values: `value`, `field`, `scale`, `legend`. <br>See [`size`](../size.md) and [`scale`](../scale.md) for details. |
+| `tooltip.fields` | `string[]` | Optional tooltip field whitelist for hovered line marks/series. If omitted, fields are selected automatically. <br>Global tooltip toggle is controlled by [`interactions.tooltip`](../interactions.md). |

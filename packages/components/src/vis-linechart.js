@@ -93,20 +93,30 @@ export class VenusLineChart extends VenusBase {
   }
 
   _onHover(payload = {}) {
-    if (payload.mark !== "point") return;
+    if (payload.mark !== "point" && payload.mark !== "series") return;
     const { datum, x, y } = payload;
+    if (!datum) return;
     const xField = this.visualEncoding?.x?.field;
     const yField = this.visualEncoding?.y?.field;
+    const groupField = this.visualEncoding?.lines?.group?.field;
     const colorField = this.visualEncoding?.lines?.color?.field;
     const sizeField = this.visualEncoding?.lines?.size?.field;
-    const title = xField ? datum?.[xField] : "Point";
+    const isSeriesHover = payload.mark === "series";
+    const title = isSeriesHover
+      ? (groupField ? datum?.[groupField] : (payload.seriesKey || "Series"))
+      : (xField ? datum?.[xField] : "Point");
     const pointMarkConfig = this.visualEncoding?.points?.display !== false
       ? this.visualEncoding?.points
       : this.visualEncoding?.lines;
+    const tooltipMarkConfig = isSeriesHover ? this.visualEncoding?.lines : pointMarkConfig;
+    const preferredOrder = isSeriesHover
+      ? [xField, yField, groupField, colorField, sizeField]
+      : [yField, colorField, sizeField];
+    const excludeKeys = isSeriesHover ? [] : [xField];
     const lines = this._buildTooltipLines(datum, {
-      preferredOrder: [yField, colorField, sizeField],
-      excludeKeys: [xField],
-      markConfig: pointMarkConfig
+      preferredOrder,
+      excludeKeys,
+      markConfig: tooltipMarkConfig
     });
 
     this._showTooltip({ title, lines }, x, y, {
@@ -118,7 +128,7 @@ export class VenusLineChart extends VenusBase {
   }
 
   _onOut(payload = {}) {
-    if (payload.mark && payload.mark !== "point") return;
+    if (payload.mark && payload.mark !== "point" && payload.mark !== "series") return;
     this._hideTooltip("tooltip line-tooltip");
   }
 }

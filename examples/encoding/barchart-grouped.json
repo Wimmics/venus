@@ -8,11 +8,11 @@
     "scale": { "type": "count" }
   },
   "bars": {
+    "groups": { "field": "studioName" },
     "color": {
       "field": "studioName",
       "scale": { "type": "ordinal", "range": "Set3" },
       "legend": { "title" : "Studio", "position": "top"}
     }
-  },
-  "groups": {"field": "studioName"}
+  }
 }

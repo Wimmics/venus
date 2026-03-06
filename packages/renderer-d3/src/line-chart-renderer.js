@@ -24,6 +24,7 @@ export default class LineChartRenderer extends CartesianChartRenderer {
       height
     } = this._state || {};
     const linesConfig = mapping?.lines || {};
+    const groupField = linesConfig?.group?.field;
     const lineColorConfig = linesConfig?.color || {};
     const lineSizeConfig = linesConfig?.size || {};
     const colorField = lineColorConfig?.field;
@@ -59,6 +60,8 @@ export default class LineChartRenderer extends CartesianChartRenderer {
     const defaultPointColor = pointColorChannel?.defaultValue || pointsConfig?.color?.value || defaultLineColor;
     const defaultPointSize = pointSizeChannel?.defaultValue || pointsConfig?.size?.value || 3;
 
+    const yScaleType = String(yScaleConfig.type || "linear").toLowerCase();
+
     const rows = this.data
       .map((row, index) => ({
         row,
@@ -67,7 +70,8 @@ export default class LineChartRenderer extends CartesianChartRenderer {
         y: Number(row?.[yField]),
         index
       }))
-      .filter((item) => item.xRaw !== undefined && item.xRaw !== null && Number.isFinite(item.y));
+      .filter((item) => item.xRaw !== undefined && item.xRaw !== null && Number.isFinite(item.y))
+      .filter((item) => (yScaleType === "log" ? item.y > 0 : true));
 
     if (!rows.length) {
       this._renderCenteredMessage(width, height, "No plottable rows found for the selected x/y fields");
@@ -95,6 +99,10 @@ export default class LineChartRenderer extends CartesianChartRenderer {
       xScale = d3.scaleLinear().domain(domain).range([0, innerWidth]);
     } else {
       const domain = Array.from(new Set(xValues));
+      const hasNumericLabels = domain.every((value) => Number.isFinite(Number(value)));
+      if (hasNumericLabels) {
+        domain.sort((a, b) => Number(a) - Number(b));
+      }
       xScale = d3.scalePoint().domain(domain).range([0, innerWidth]).padding(0.2);
     }
 
@@ -106,7 +114,6 @@ export default class LineChartRenderer extends CartesianChartRenderer {
     if (yDomain[0] === yDomain[1]) {
       yDomain = [yDomain[0] - 1, yDomain[1] + 1];
     }
-    const yScaleType = String(yScaleConfig.type || "linear").toLowerCase();
     let yScale = d3.scaleLinear().domain(yDomain).range([innerHeight, 0]).nice();
     if (yScaleType === "sqrt") yScale = d3.scaleSqrt().domain(yDomain).range([innerHeight, 0]).nice();
     if (yScaleType === "log") {
@@ -159,9 +166,15 @@ export default class LineChartRenderer extends CartesianChartRenderer {
       leftTitle: this._resolveAxisTitle(mapping?.y?.axis, yField)
     });
 
-    const groups = d3.group(rows, (item) => (
-      colorField ? String(item.row?.[colorField] ?? "undefined") : "__single__"
-    ));
+    const hasGroupField = typeof groupField === "string" && groupField.trim().length > 0;
+    const fallbackByColorField = typeof colorField === "string" && colorField.trim().length > 0;
+    const resolveSeriesKey = (row) => {
+      if (hasGroupField) return String(row?.[groupField] ?? "undefined");
+      if (fallbackByColorField) return String(row?.[colorField] ?? "undefined");
+      return "__single__";
+    };
+
+    const groups = d3.group(rows, (item) => resolveSeriesKey(item.row));
 
     const toSeriesSizeValue = (seriesRows) => {
       if (!sizeField) return defaultLineSize;
@@ -172,9 +185,13 @@ export default class LineChartRenderer extends CartesianChartRenderer {
       return d3.mean(values);
     };
 
-    const toSeriesColor = (groupKey) => {
+    const toSeriesColor = (seriesRows) => {
       if (!colorField || !colorScale) return defaultLineColor;
-      const color = colorScale(groupKey);
+      const firstValue = seriesRows
+        .map((item) => item?.row?.[colorField])
+        .find((value) => value !== undefined && value !== null);
+      if (firstValue === undefined) return defaultLineColor;
+      const color = colorScale(firstValue);
       return color || defaultLineColor;
     };
 
@@ -222,13 +239,62 @@ export default class LineChartRenderer extends CartesianChartRenderer {
       .x((item) => useContinuousX ? xScale(Number(item.xRaw)) : xScale(String(item.xRaw)))
       .y((item) => yScale(item.y));
 
+    const resolveHoveredDatum = (seriesRows, event) => {
+      if (!Array.isArray(seriesRows) || seriesRows.length === 0) return null;
+      const plotNode = plot?.node?.();
+      if (!plotNode) return seriesRows[0]?.row || null;
+
+      const [mouseX] = d3.pointer(event, plotNode);
+      const projected = seriesRows.map((item) => ({
+        item,
+        px: useContinuousX ? xScale(Number(item.xRaw)) : xScale(String(item.xRaw))
+      })).filter((entry) => Number.isFinite(entry.px));
+      if (!projected.length) return seriesRows[0]?.row || null;
+
+      if (!useContinuousX || projected.length === 1) {
+        const closest = projected.reduce((best, entry) => {
+          if (!best) return entry;
+          return Math.abs(entry.px - mouseX) < Math.abs(best.px - mouseX) ? entry : best;
+        }, null);
+        return closest?.item?.row || seriesRows[0]?.row || null;
+      }
+
+      const bisect = d3.bisector((entry) => entry.px).left;
+      const idx = bisect(projected, mouseX);
+      const left = projected[Math.max(0, idx - 1)];
+      const right = projected[Math.min(projected.length - 1, idx)];
+      if (!left || !right) return projected[Math.max(0, Math.min(projected.length - 1, idx))]?.item?.row || null;
+      if (left === right || !Number.isFinite(right.px - left.px) || right.px === left.px) {
+        return left.item?.row || seriesRows[0]?.row || null;
+      }
+
+      const t = Math.max(0, Math.min(1, (mouseX - left.px) / (right.px - left.px)));
+      const xLeft = Number(left.item.xRaw);
+      const xRight = Number(right.item.xRaw);
+      const yLeft = Number(left.item.y);
+      const yRight = Number(right.item.y);
+      const xInterp = Number.isFinite(xLeft) && Number.isFinite(xRight) ? (xLeft + (xRight - xLeft) * t) : left.item.xRaw;
+      const yInterp = Number.isFinite(yLeft) && Number.isFinite(yRight) ? (yLeft + (yRight - yLeft) * t) : left.item.y;
+
+      return {
+        ...(left.item?.row || {}),
+        [xField]: xInterp,
+        [yField]: yInterp
+      };
+    };
+
     for (const [groupKey, groupRows] of groups.entries()) {
       const sorted = [...groupRows].sort((a, b) => {
         if (useContinuousX) return Number(a.xRaw) - Number(b.xRaw);
+        const aNum = Number(a.xRaw);
+        const bNum = Number(b.xRaw);
+        if (Number.isFinite(aNum) && Number.isFinite(bNum)) {
+          return aNum - bNum;
+        }
         return a.index - b.index;
       });
 
-      const stroke = toSeriesColor(groupKey);
+      const stroke = toSeriesColor(sorted);
       const strokeWidth = toSeriesStrokeWidth(sorted);
 
       plot
@@ -243,11 +309,32 @@ export default class LineChartRenderer extends CartesianChartRenderer {
         .attr("stroke-linejoin", "round")
         .attr("stroke-linecap", "round")
         .attr("d", lineGenerator)
-        .on("mouseover", () => {
+        .on("mouseover", (event) => {
           this._focusMark({ mark: "series", seriesKey: String(groupKey) });
+          const hoveredDatum = resolveHoveredDatum(sorted, event);
+          this.callbacks.onHover?.({
+            mark: "series",
+            datum: hoveredDatum,
+            seriesKey: String(groupKey),
+            x: event.offsetX,
+            y: event.offsetY,
+            event
+          });
+        })
+        .on("mousemove", (event) => {
+          const hoveredDatum = resolveHoveredDatum(sorted, event);
+          this.callbacks.onHover?.({
+            mark: "series",
+            datum: hoveredDatum,
+            seriesKey: String(groupKey),
+            x: event.offsetX,
+            y: event.offsetY,
+            event
+          });
         })
         .on("mouseout", () => {
           this._resetFocusMark({ mark: "series" });
+          this.callbacks.onOut?.({ mark: "series", seriesKey: String(groupKey) });
         });
 
       if (pointsEnabled) {
