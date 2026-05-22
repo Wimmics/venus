@@ -25,25 +25,6 @@
       <div class="w3-content editor-navbar-inner">
         <div class="editor-brand">VENUS Editor <i class="fa-solid fa-circle-info" title="The VENUS Editor helps you discover available visualization components and test encodings before integrating them into a web application. Browse and modify the provided examples to explore VENUS capabilities."></i></div>
         <div class="editor-navbar-actions">
-          <div class="editor-examples-dropdown" id="examplesDropdown">
-            <button
-              type="button"
-              class="editor-examples-button w3-button w3-hover-white"
-              id="examplesDropdownButton"
-              aria-haspopup="menu"
-              aria-expanded="false"
-            >
-              <span class="editor-examples-button-title">Examples</span>
-              <i class="bi bi-caret-down-fill" aria-hidden="true"></i>
-            </button>
-            <div class="editor-examples-menu w3-card" id="examplesDropdownMenu" role="menu" hidden></div>
-            <select
-              class="editor-examples-select-native"
-              id="scenarioSelect"
-              aria-label="Select an example"
-              tabindex="-1"
-            ></select>
-          </div>
           <a class="w3-button w3-hover-white" href="../documentation/" target="_blank" rel="noreferrer">
             Documentation
           </a>
@@ -53,6 +34,53 @@
         </div>
       </div>
     </header>
+    <nav class="editor-createbar" aria-label="Create visualization">
+      <div class="w3-content editor-createbar-inner">
+        <div class="editor-createbar-label">Create From</div>
+        <div class="editor-createbar-actions">
+          <div class="editor-create-dropdown" id="visualizationTypeDropdown">
+            <button
+              type="button"
+              class="editor-create-button btn btn-sm btn-outline-secondary"
+              id="visualizationTypeDropdownButton"
+              aria-haspopup="menu"
+              aria-expanded="false"
+            >
+              <i class="bi bi-bar-chart-line" aria-hidden="true"></i>
+              <span>Visualization Type</span>
+              <i class="bi bi-caret-down-fill" aria-hidden="true"></i>
+            </button>
+            <div
+              class="editor-create-menu editor-type-menu w3-card"
+              id="visualizationTypeDropdownMenu"
+              role="menu"
+              hidden
+            ></div>
+          </div>
+          <div class="editor-createbar-separator" aria-hidden="true"></div>
+          <div class="editor-create-dropdown" id="examplesDropdown">
+            <button
+              type="button"
+              class="editor-create-button btn btn-sm btn-outline-secondary"
+              id="examplesDropdownButton"
+              aria-haspopup="menu"
+              aria-expanded="false"
+            >
+              <i class="bi bi-collection" aria-hidden="true"></i>
+              <span>Examples</span>
+              <i class="bi bi-caret-down-fill" aria-hidden="true"></i>
+            </button>
+            <div class="editor-create-menu editor-examples-menu w3-card" id="examplesDropdownMenu" role="menu" hidden></div>
+            <select
+              class="editor-examples-select-native"
+              id="scenarioSelect"
+              aria-label="Select an example"
+              tabindex="-1"
+            ></select>
+          </div>
+        </div>
+      </div>
+    </nav>
     <div class="container-fluid editor-root">
       <section class="workspace-row" id="workspaceRow">
         <div class="workspace-pane workspace-pane-config d-flex" id="configPane">

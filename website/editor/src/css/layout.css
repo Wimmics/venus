@@ -177,6 +177,52 @@
   font-size: 0.9rem;
 }
 
+.encoding-add-dropdown {
+  position: relative;
+}
+
+.encoding-add-menu {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  right: 0;
+  width: min(280px, calc(100vw - 2rem));
+  max-height: min(420px, calc(100vh - 10rem));
+  overflow: auto;
+  z-index: 10;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--text);
+  box-shadow: 0 12px 24px rgba(31, 41, 55, 0.18);
+  text-align: left;
+}
+
+.encoding-add-group + .encoding-add-group {
+  border-top: 1px solid #e5e7eb;
+}
+
+.encoding-add-group-label {
+  padding: 0.45rem 0.65rem 0.25rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.encoding-add-option {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  padding: 0.42rem 0.65rem;
+  text-align: left;
+}
+
+.encoding-add-option:hover,
+.encoding-add-option:focus-visible {
+  background: #f3f4f6;
+}
+
 .tab-editor-shell {
   position: relative;
   flex: 1 1 auto;

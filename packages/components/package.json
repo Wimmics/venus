@@ -1,6 +1,6 @@
 {
   "name": "@wimmics/venus-elements",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "Web Components for SPARQL/D3 visualizations",
   "type": "module",
   "exports": {

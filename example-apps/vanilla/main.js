@@ -1,4 +1,4 @@
-import "@wimmics/venus-webcomponents";
+import "@wimmics/venus-elements";
 
 const graph = document.querySelector("#graph");
 
@@ -9,9 +9,12 @@ graph.sparqlQuery = `
   } LIMIT 30
 `;
 graph.encoding = {
-  nodes: { field: "source" },
-  links: { field: "target" },
-  color: { field: "source" }
+  nodes: {
+    source: { field: "source" },
+    target: { field: "target" },
+    color: { field: "source" }
+  },
+  links: { type: "directional" }
 };
 
 await graph.launch();

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-06T08:47:25.036Z",
+  "generatedAt": "2026-05-22T09:39:57.424Z",
   "root": {
     "type": "folder",
     "name": "docs",
@@ -100,6 +100,12 @@
           },
           {
             "type": "file",
+            "name": "label.md",
+            "title": "Label",
+            "path": "encoding/label.md"
+          },
+          {
+            "type": "file",
             "name": "x.md",
             "title": "X Axis",
             "path": "encoding/x.md"
@@ -139,6 +145,12 @@
             "name": "color.md",
             "title": "Color Channel",
             "path": "encoding/color.md"
+          },
+          {
+            "type": "file",
+            "name": "labels.md",
+            "title": "Labels",
+            "path": "encoding/labels.md"
           },
           {
             "type": "file",

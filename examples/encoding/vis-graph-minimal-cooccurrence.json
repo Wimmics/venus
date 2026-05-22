@@ -4,6 +4,9 @@
     "field": "actorName"
   },
   "links": {
-    "field": "movieName"
+    "type": "cooccurrence",
+    "context": {
+      "field": "movieName"
+    }
   }
 }

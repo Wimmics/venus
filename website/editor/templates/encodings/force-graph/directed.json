@@ -1,0 +1,13 @@
+{
+  "nodes": {
+    "source": {
+      "field": "source"
+    },
+    "target": {
+      "field": "target"
+    }
+  },
+  "links": {
+    "type": "directional"
+  }
+}

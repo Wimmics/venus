@@ -3,13 +3,20 @@ import { EditorPanelController } from "./editor-panel-controller.js";
 import { safeRun, updateStatus } from "./utils/safe-run.js";
 
 export class SparqlPanelController extends EditorPanelController {
-  constructor({ demoControl, onContentChanged, onAfterReset, statusSelector = "#status" }) {
+  constructor({
+    demoControl,
+    isCustomWorkspace = null,
+    onContentChanged,
+    onAfterReset,
+    statusSelector = "#status"
+  }) {
     super({ demoControl, onContentChanged, onAfterReset, statusSelector });
     this.editor = new CodeViewer({
       holderId: "sparqlEditor",
       language: "sparql",
       readOnly: false
     });
+    this.isCustomWorkspace = isCustomWorkspace;
   }
 
   getToolbarActions() {
@@ -27,6 +34,15 @@ export class SparqlPanelController extends EditorPanelController {
   async resetToScenarioQuery() {
     await safeRun(
       async () => {
+        if (this.isCustomWorkspace?.()) {
+          await this.setText("");
+          if (this.onAfterReset) await this.onAfterReset({ target: "query" });
+          updateStatus("Custom SPARQL query cleared.", {
+            statusSelector: this.statusSelector
+          });
+          return;
+        }
+
         const scenario = this.demoControl.getActiveContext().scenario;
         if (!scenario) {
           updateStatus("No demo selected.", { isError: true, statusSelector: this.statusSelector });

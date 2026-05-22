@@ -1,9 +1,14 @@
 {
   "title": "Co-starring network of Harrison Ford",
   "nodes": {
-    "field": ["actorName", "movieName"]
+    "source": {
+      "field": "actorName"
+    },
+    "target": {
+      "field": "movieName"
+    }
   },
   "links": {
-    "field": {"source" : "actorName", "target": "movieName"}
+    "type": "directional"
   }
 }

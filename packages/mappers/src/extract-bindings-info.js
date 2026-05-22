@@ -4,7 +4,7 @@
 */
 export function extractId(binding) {
     if (!binding) return "unknown";
-    // Si la valeur liée est un littéral, sa "valeur" est son identifiant pour l'affichage si aucun autre label n'est trouvé.
+    // Literal values are stable identifiers when they are used directly as fields.
     if (binding.type === 'literal') return binding.value;
     
     const value = binding.value;
@@ -46,106 +46,33 @@ export function extractId(binding) {
 }
 
 
-/**
- * TODO: Verify whether this is a good idea, it may false the data.
- * Try to pick the most relevant human-readable label for an entity from a SPARQL binding row.
- *
- * Strategy (in order):
- * 1) If the entity value itself is a literal -> use it.
- * 2) If the entity is a URI -> look for conventional label columns (e.g., geneLabel, geneName, ...).
- * 3) Otherwise -> scan other literal columns and pick the "best" one using keyword scoring.
- * 4) Fallback -> extracted identifier (e.g., last URI segment).
- *
- * @param {object} entityBindingValue - The binding object for the entity (e.g., binding[sourceVar]).
- * @param {string} entityVarName - The SPARQL variable name for the entity (e.g., "gene", "proteinOrtholog").
- * @param {object} currentBinding - The full binding row (one SPARQL result line).
- * @param {string[]} allVars - All variables returned by the SPARQL query.
- * @returns {string} A label to display for the node.
- */
-export function extractLabel(entityBindingValue, entityVarName, currentBinding, allVars) {
-  const defaultId = extractId(entityBindingValue);
-
-  if (!entityBindingValue) return defaultId;
-
-  // Priority 1: the entity value is already a literal label
-  if (entityBindingValue.type === "literal") {
-    return entityBindingValue.value;
+export function bindingToValue(bindingValue) {
+  if (!bindingValue || bindingValue.value === undefined || bindingValue.value === null) {
+    return null;
   }
-
-  // If the entity is a URI, attempt to find a label in related columns
-  if (entityBindingValue.type === "uri") {
-    // Priority 2: conventional direct label columns derived from the entity variable name
-    const directLabelSuffixes = [
-      "Label",
-      "Name",
-      "Title",
-      "Term",
-      "Identifier",
-      "Id",
-      "Description"
-    ];
-
-    for (const suffix of directLabelSuffixes) {
-      const key1 = entityVarName + suffix;
-      if (currentBinding[key1] && currentBinding[key1].type === "literal") {
-        return currentBinding[key1].value;
-      }
-
-      // Also try a variant with the suffix starting lowercase (covers inconsistent naming)
-      const key2 = entityVarName + suffix.charAt(0).toLowerCase() + suffix.slice(1);
-      if (currentBinding[key2] && currentBinding[key2].type === "literal") {
-        return currentBinding[key2].value;
-      }
-    }
-
-    // Priority 3: pick the best descriptive literal from other columns (scored by variable name keywords)
-    let bestOtherLabel = null;
-    let bestOtherLabelScore = -1;
-
-    const descriptiveKeywords = {
-      label: 5, name: 5, title: 5, term: 4,              // highly relevant
-      description: 3, summary: 3, comment: 3, text: 2,    // medium relevance
-      taxon: 2, species: 2, organism: 2,                  // taxonomic context
-      disease: 2, condition: 2, syndrome: 2,              // disease context
-      gene: 1, protein: 1, ensembl: 1, uniprot: 1,        // common IDs/types
-      annotation: 1
-    };
-
-    for (const otherVar of allVars) {
-      if (otherVar === entityVarName) continue;
-
-      const otherVarBinding = currentBinding[otherVar];
-      if (!otherVarBinding || otherVarBinding.type !== "literal" || !otherVarBinding.value) continue;
-
-      const otherVarLower = otherVar.toLowerCase();
-      let currentScore = 0;
-
-      for (const keyword in descriptiveKeywords) {
-        if (otherVarLower.includes(keyword)) {
-          currentScore = Math.max(currentScore, descriptiveKeywords[keyword]);
-        }
-      }
-
-      // Extra bonus for generic column names
-      if (["label", "name", "title"].includes(otherVarLower)) currentScore += 2;
-
-      if (currentScore > bestOtherLabelScore) {
-        bestOtherLabelScore = currentScore;
-        bestOtherLabel = otherVarBinding.value;
-      } else if (
-        currentScore === bestOtherLabelScore &&
-        bestOtherLabel &&
-        otherVarBinding.value.length < bestOtherLabel.length
-      ) {
-        // Tie-breaker: prefer shorter label (less verbose)
-        bestOtherLabel = otherVarBinding.value;
-      }
-    }
-
-    if (bestOtherLabel) return bestOtherLabel;
-  }
-
-  // Priority 4: fallback to extracted identifier
-  return defaultId;
+  return bindingValue.value;
 }
 
+/**
+ * Resolve mark label text without guessing from unrelated SPARQL bindings.
+ * `label` accepts a constant string or `{ field }`; otherwise use the mark field value.
+ */
+export function resolveBindingLabel(labelConfig, fieldBindingValue, currentBinding) {
+  if (typeof labelConfig === "string") {
+    return labelConfig;
+  }
+
+  const labelField =
+    labelConfig &&
+    typeof labelConfig === "object" &&
+    typeof labelConfig.field === "string" &&
+    labelConfig.field.trim()
+      ? labelConfig.field.trim()
+      : null;
+
+  if (labelField) {
+    return bindingToValue(currentBinding?.[labelField]) ?? bindingToValue(fieldBindingValue);
+  }
+
+  return bindingToValue(fieldBindingValue);
+}

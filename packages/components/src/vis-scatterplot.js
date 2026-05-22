@@ -99,7 +99,11 @@ export class VenusScatterPlot extends VenusBase {
     const yField = this.visualEncoding?.y?.field;
     const colorField = this.visualEncoding?.points?.color?.field;
     const sizeField = this.visualEncoding?.points?.size?.field;
-    const title = xField ? datum?.[xField] : "Point";
+    const title = this._resolveTooltipTitle(
+      datum,
+      this.visualEncoding?.points,
+      xField ? datum?.[xField] : "Point"
+    );
     const lines = this._buildTooltipLines(datum, {
       preferredOrder: [xField, yField, colorField, sizeField],
       markConfig: this.visualEncoding?.points

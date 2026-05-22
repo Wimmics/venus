@@ -1,0 +1,20 @@
+{
+  "x": {
+    "field": "category"
+  },
+  "y": {
+    "field": "value"
+  },
+  "bars": {
+    "groups": {
+      "field": "group"
+    },
+    "color": {
+      "field": "group",
+      "scale": {
+        "type": "ordinal",
+        "range": "Set3"
+      }
+    }
+  }
+}

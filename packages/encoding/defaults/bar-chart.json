@@ -1,0 +1,39 @@
+{
+  "interactions": {
+    "tooltip": true
+  },
+  "direction": "vertical",
+  "x": {
+    "field": "category",
+    "axis": {
+      "labelAngle": 0
+    }
+  },
+  "y": {
+    "field": "value",
+    "scale": {
+      "type": "linear"
+    },
+    "axis": {}
+  },
+  "bars": {
+    "groups": {
+      "field": null
+    },
+    "stack": false,
+    "color": {
+      "value": "#69b3a2",
+      "legend": {
+        "display": true,
+        "position": "bottom"
+      }
+    },
+    "size": {
+      "value": 0,
+      "legend": {
+        "display": true,
+        "position": "bottom"
+      }
+    }
+  }
+}

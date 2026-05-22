@@ -1,47 +1,10 @@
 import * as d3 from "d3";
 import { EncodingManager } from "./encoding-manager.js";
+import { getDefaultEncodingTemplate } from "./default-encodings.js";
 
 export class LineChartEncodingManager extends EncodingManager {
   getDefaultEncoding() {
-    return {
-      interactions: {
-        tooltip: true
-      },
-      x: {
-        field: "x",
-        axis: { labelAngle: 0 },
-        scale: { type: "ordinal" }
-      },
-      y: {
-        field: "y",
-        scale: { type: "linear" },
-        axis: {}
-      },
-      lines: {
-        group: {
-          field: null
-        },
-        color: {
-          value: "#4e79a7",
-          legend: { display: true, position: "bottom" }
-        },
-        size: {
-          value: 2,
-          legend: { display: true, position: "bottom" }
-        }
-      },
-      points: {
-        display: false,
-        color: {
-          value: "#4e79a7",
-          legend: { display: true, position: "bottom" }
-        },
-        size: {
-          value: 3,
-          legend: { display: true, position: "bottom" }
-        }
-      }
-    };
+    return getDefaultEncodingTemplate("line-chart");
   }
 
   createAdaptiveEncoding(sparqlVars) {
@@ -52,17 +15,6 @@ export class LineChartEncodingManager extends EncodingManager {
 
     if (sparqlVars.length > 2) {
       enc.lines.group.field = sparqlVars[2];
-      enc.lines.color.field = sparqlVars[2];
-      enc.lines.color.scale = { type: "ordinal", range: "Set3" };
-      enc.lines.color.legend.display = true;
-      enc.lines.color.legend.title = sparqlVars[2];
-    }
-
-    if (sparqlVars.length > 3) {
-      enc.lines.color.field = sparqlVars[3];
-      enc.lines.color.scale = { type: "ordinal", range: "Set3" };
-      enc.lines.color.legend.display = true;
-      enc.lines.color.legend.title = sparqlVars[3];
     }
 
     if (sparqlVars.length > 4) {

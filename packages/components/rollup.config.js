@@ -20,6 +20,18 @@ const __dirname = path.dirname(__filename);
 const rqInSparqlPackage = path.resolve(__dirname, "../sparql/queries/**/*.rq");
 const rqLocalToo = path.resolve(__dirname, "src/**/*.rq"); // optional, if you ever add rq files locally
 
+const jsonModules = () => ({
+  name: "json-modules",
+  transform(code, id) {
+    if (!id.endsWith(".json")) return null;
+
+    return {
+      code: `export default ${code.trim()};`,
+      map: { mappings: "" }
+    };
+  }
+});
+
 export default {
   input: "./index.js",
   external,
@@ -31,6 +43,7 @@ export default {
   plugins: [
     // Must run before resolve/commonjs
     string({ include: [rqInSparqlPackage, rqLocalToo] }),
+    jsonModules(),
     resolve({ extensions: [".js", ".mjs", ".json"] }),
     commonjs(),
     terser()

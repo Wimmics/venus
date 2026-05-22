@@ -45,35 +45,43 @@ export class VisualizationView {
     this._downloadBlob(blob, `${fileBaseName}.${ext}`);
   }
 
-  async render({ scenario, endpoint, queryText, encoding, dataSource = "query", sparqlResult = null }) {
-    const tag = scenario?.component || "venus-graph";
-    const component = await this._ensureComponent(tag);
+  async render({ component, scenario, endpoint, queryText, encoding, dataSource = "query", sparqlResult = null }) {
+    const tag = component || scenario?.component || "venus-graph";
+    const componentEl = await this._ensureComponent(tag);
 
-    if (typeof component.launch !== "function") {
-      const ctorName = component?.constructor?.name || "UnknownElement";
+    if (typeof componentEl.launch !== "function") {
+      const ctorName = componentEl?.constructor?.name || "UnknownElement";
       throw new Error(
         `Component "${tag}" is not launchable (instance: ${ctorName}). Expected a VenusBase descendant.`
       );
     }
 
     if (tag === "venus-graph" && this.metaPanelEl) {
-      component.nodeDetailsPanel = this.metaPanelEl;
+      componentEl.nodeDetailsPanel = this.metaPanelEl;
     }
 
-    component.sparqlEndpoint = endpoint;
-    component.sparqlQuery = dataSource === "query" ? queryText : null;
-    component.sparqlResult = dataSource === "provided" ? sparqlResult : null;
-    component.encoding = encoding;
-    await component.launch();
+    componentEl.sparqlEndpoint = endpoint;
+    componentEl.sparqlQuery = dataSource === "query" ? queryText : null;
+    componentEl.sparqlResult = dataSource === "provided" ? sparqlResult : null;
+    componentEl.encoding = encoding;
+    await componentEl.launch();
 
-    return { sparqlData: component.sparqlData || null };
+    return { sparqlData: componentEl.sparqlData || null };
   }
 
-  refreshCurrent({ scenario }) {
-    const tag = scenario?.component || "venus-graph";
+  refreshCurrent({ component, scenario }) {
+    const tag = component || scenario?.component || "venus-graph";
     Promise.resolve(this._ensureComponent(tag)).then((component) => {
       component?.render?.();
     });
+  }
+
+  clear() {
+    if (this.hostEl) {
+      this.hostEl.innerHTML = "";
+    }
+    this.activeComponentTag = null;
+    this.activeComponentEl = null;
   }
 
   async _ensureComponent(tag) {

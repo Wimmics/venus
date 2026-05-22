@@ -1,0 +1,18 @@
+{
+  "x": {
+    "field": "category"
+  },
+  "y": {
+    "field": "value"
+  },
+  "bars": {
+    "stack": true,
+    "color": {
+      "field": "stack",
+      "scale": {
+        "type": "ordinal",
+        "range": "Set3"
+      }
+    }
+  }
+}

@@ -1,37 +1,10 @@
 import * as d3 from "d3";
 import { EncodingManager } from "./encoding-manager.js";
+import { getDefaultEncodingTemplate } from "./default-encodings.js";
 
 export class BarChartEncodingManager extends EncodingManager {
   getDefaultEncoding() {
-    return {
-      interactions: {
-        tooltip: true
-      },
-      direction: "vertical",
-      x: {
-        field: "category",
-        axis: { labelAngle: 0 }
-      },
-      y: {
-        field: "value",
-        scale: { type: "linear" },
-        axis: {}
-      },
-      bars: {
-        groups: {
-          field: null
-        },
-        stack: false,
-        color: {
-          value: "#69b3a2",
-          legend: { display: true, position: "bottom" }
-        },
-        size: {
-          value: 0,
-          legend: { display: true, position: "bottom" }
-        }
-      }
-    };
+    return getDefaultEncodingTemplate("bar-chart");
   }
 
   createAdaptiveEncoding(sparqlVars) {
@@ -42,12 +15,6 @@ export class BarChartEncodingManager extends EncodingManager {
       enc.y.field = sparqlVars[1];
     } else {
       enc.y.field = sparqlVars[0];
-    }
-    if (sparqlVars.length > 2) {
-      enc.bars.color.field = sparqlVars[2];
-      enc.bars.color.scale = { type: "ordinal", range: "Set3" };
-      enc.bars.color.legend.display = true;
-      enc.bars.color.legend.title = sparqlVars[2];
     }
     return enc;
   }

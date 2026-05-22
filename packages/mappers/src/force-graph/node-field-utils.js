@@ -19,7 +19,10 @@ export function inferOwnerVar(fieldName, nodeFields, context = {}) {
     if (fieldName === `${nodeField}Name`) return nodeField;
   }
 
-  if (context.linkType === "directional" && typeof context.sourceVar === "string") {
+  if (
+    (context.linkType === "directional" || context.linkType === "semantic") &&
+    typeof context.sourceVar === "string"
+  ) {
     return context.sourceVar;
   }
   if (typeof context.sourceVar === "string") return context.sourceVar;
@@ -30,17 +33,43 @@ export function collectExplicitNodeFields(mapping, context = {}) {
   const fields = new Set();
   const ownerByField = new Map();
   const nodeFields = normalizeNodeFields(mapping?.nodes?.field);
+  const addOwnedField = (fieldName, ownerVar) => {
+    if (typeof fieldName !== "string" || !fieldName.trim() || !ownerVar) return;
+    fields.add(fieldName);
+    const owners = ownerByField.get(fieldName) || new Set();
+    owners.add(ownerVar);
+    ownerByField.set(fieldName, owners);
+  };
 
   const nodeColorConfig = mapping?.nodes?.color;
   const nodeColorConfigs = [Array.isArray(nodeColorConfig) ? nodeColorConfig[0] : nodeColorConfig].filter(Boolean);
 
   for (const config of nodeColorConfigs) {
     if (typeof config?.field === "string" && config.field.trim()) {
-      fields.add(config.field);
-      ownerByField.set(
+      addOwnedField(
         config.field,
         inferOwnerVar(config.field, nodeFields, context)
       );
+    }
+  }
+
+  const roleColorConfigs = [
+    [mapping?.nodes?.source?.color, context.sourceVar],
+    [mapping?.nodes?.target?.color, context.targetVar]
+  ];
+  for (const [config, ownerVar] of roleColorConfigs) {
+    if (typeof config?.field === "string" && config.field.trim()) {
+      addOwnedField(config.field, ownerVar);
+    }
+  }
+
+  const roleSizeConfigs = [
+    [mapping?.nodes?.source?.size, context.sourceVar],
+    [mapping?.nodes?.target?.size, context.targetVar]
+  ];
+  for (const [config, ownerVar] of roleSizeConfigs) {
+    if (typeof config?.field === "string" && config.field.trim()) {
+      addOwnedField(config.field, ownerVar);
     }
   }
 
@@ -48,12 +77,54 @@ export function collectExplicitNodeFields(mapping, context = {}) {
   const nodeSizeConfigs = [Array.isArray(nodeSizeConfig) ? nodeSizeConfig[0] : nodeSizeConfig].filter(Boolean);
   for (const config of nodeSizeConfigs) {
     if (typeof config?.field === "string" && config.field.trim()) {
-      fields.add(config.field);
-      ownerByField.set(
+      addOwnedField(
         config.field,
         inferOwnerVar(config.field, nodeFields, context)
       );
     }
+  }
+
+  const nodeLabelField = mapping?.nodes?.label?.field;
+  if (typeof nodeLabelField === "string" && nodeLabelField.trim()) {
+    addOwnedField(
+      nodeLabelField,
+      inferOwnerVar(nodeLabelField, nodeFields, context)
+    );
+  }
+
+  const roleLabelFields = [
+    [mapping?.nodes?.source?.label?.field, context.sourceVar],
+    [mapping?.nodes?.target?.label?.field, context.targetVar]
+  ];
+  for (const [fieldName, ownerVar] of roleLabelFields) {
+    addOwnedField(fieldName, ownerVar);
+  }
+
+  const tooltipConfigs = [
+    [mapping?.nodes?.tooltip?.fields, null],
+    [mapping?.nodes?.source?.tooltip?.fields, context.sourceVar],
+    [mapping?.nodes?.target?.tooltip?.fields, context.targetVar]
+  ];
+  for (const [tooltipFields, ownerVar] of tooltipConfigs) {
+    if (!Array.isArray(tooltipFields)) continue;
+    for (const fieldName of tooltipFields) {
+      addOwnedField(
+        fieldName,
+        ownerVar || inferOwnerVar(fieldName, nodeFields, context)
+      );
+    }
+  }
+
+  const tooltipTitleFields = [
+    [mapping?.nodes?.tooltip?.title?.field, null],
+    [mapping?.nodes?.source?.tooltip?.title?.field, context.sourceVar],
+    [mapping?.nodes?.target?.tooltip?.title?.field, context.targetVar]
+  ];
+  for (const [fieldName, ownerVar] of tooltipTitleFields) {
+    addOwnedField(
+      fieldName,
+      ownerVar || inferOwnerVar(fieldName, nodeFields, context)
+    );
   }
 
   return { fields, ownerByField };
@@ -62,8 +133,9 @@ export function collectExplicitNodeFields(mapping, context = {}) {
 export function fieldBelongsToEntity(fieldName, entityVarName, explicitNodeFieldConfig) {
   const ownerByField = explicitNodeFieldConfig?.ownerByField;
   if (!(ownerByField instanceof Map)) return false;
-  const owner = ownerByField.get(fieldName);
-  return typeof owner === "string" && owner === entityVarName;
+  const owners = ownerByField.get(fieldName);
+  if (owners instanceof Set) return owners.has(entityVarName);
+  return typeof owners === "string" && owners === entityVarName;
 }
 
 export function copyRelevantNodeFields(node, binding, vars, entityVarName, explicitNodeFieldConfig = { fields: new Set(), ownerByField: new Map() }) {
@@ -90,6 +162,40 @@ export function copyRelevantNodeFields(node, binding, vars, entityVarName, expli
   }
 }
 
+export function applyNodeLabelField(node, labelConfig) {
+  if (typeof labelConfig === "string") {
+    node.label = labelConfig;
+    return;
+  }
+
+  const labelField =
+    labelConfig &&
+    typeof labelConfig === "object" &&
+    typeof labelConfig.field === "string" &&
+    labelConfig.field.trim()
+      ? labelConfig.field.trim()
+      : null;
+
+  if (labelField && node?.[labelField] !== undefined && node[labelField] !== null) {
+    node.label = node[labelField];
+  }
+}
+
+export function resolveRoleNodeConfig(mapping, node, role, property) {
+  const roles = Array.isArray(node?.roles) ? node.roles : [];
+  if (roles.length === 1 && roles[0] === role && mapping?.nodes?.[role]?.[property] !== undefined) {
+    return mapping.nodes[role][property];
+  }
+  return mapping?.nodes?.[property];
+}
+
+export function addNodeRole(node, role) {
+  if (!node || (role !== "source" && role !== "target")) return;
+  const roles = Array.isArray(node.roles) ? node.roles : [];
+  if (!roles.includes(role)) roles.push(role);
+  node.roles = roles;
+}
+
 export function collectCooccurrenceEntities(binding, nodeVars, extractIdFn) {
   const entities = [];
   const seen = new Set();
@@ -103,4 +209,3 @@ export function collectCooccurrenceEntities(binding, nodeVars, extractIdFn) {
   }
   return entities;
 }
-

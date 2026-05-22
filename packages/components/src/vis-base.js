@@ -416,7 +416,7 @@ export class VenusBase extends HTMLElement {
 
     const renderingKeys = new Set([
       "x", "y", "vx", "vy", "fx", "fy", "px", "py", "index",
-      "sourceLinks", "targetLinks", "originalData", "__meta", "__x"
+      "sourceLinks", "targetLinks", "originalData", "roles", "__meta", "__x"
     ]);
     for (const key of excludeKeys) {
       if (typeof key === "string" && key.trim()) renderingKeys.add(key);
@@ -462,6 +462,31 @@ export class VenusBase extends HTMLElement {
     } catch {
       return String(value);
     }
+  }
+
+  _resolveTooltipTitle(datum, markConfig, fallback = null) {
+    const titleConfig = markConfig?.tooltip?.title;
+    if (typeof titleConfig === "string") return titleConfig;
+
+    const titleField =
+      titleConfig &&
+      typeof titleConfig === "object" &&
+      typeof titleConfig.field === "string" &&
+      titleConfig.field.trim()
+        ? titleConfig.field.trim()
+        : null;
+
+    if (
+      titleField &&
+      datum &&
+      typeof datum === "object" &&
+      datum[titleField] !== undefined &&
+      datum[titleField] !== null
+    ) {
+      return this._formatTooltipValue(datum[titleField]);
+    }
+
+    return fallback;
   }
 
   _buildTooltipLines(datum, { preferredOrder = [], excludeKeys = [], markConfig = null } = {}) {

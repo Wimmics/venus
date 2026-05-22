@@ -3,14 +3,14 @@ import { createLogger } from "@wimmics/venus-core";
 const defaultLogger = createLogger("CooccurrenceGraph", { debug: false });
 
 /**
- * Calcule la co-occurrence basée sur les valeurs partagées de la variable de lien spécifiée.
- * Crée des liens entre entités qui partagent les mêmes valeurs dans la variable de lien spécifiée.
+ * Calcule la co-occurrence basée sur les valeurs partagées d'un champ de contexte.
+ * Crée des liens entre entités qui partagent les mêmes valeurs de contexte.
  *
  * Logging: uses our logger module (no this._log*).
  *
  * @param {Array} bindings - Les bindings collectés avec sourceId, binding et vars
  * @param {string} sourceVar - La variable principale utilisée pour les nœuds
- * @param {string} linkVar - La variable spécifiée pour les liens (semanticVar)
+ * @param {string} linkVar - La variable de contexte spécifiée pour les liens
  * @returns {Array} Les liens de co-occurrence calculés
  */
 export function calculateFlexibleCooccurrence(bindings, sourceVar, linkVar, logger=defaultLogger) {
@@ -37,12 +37,15 @@ export function calculateFlexibleCooccurrence(bindings, sourceVar, linkVar, logg
       if (!valueGroups.has(linkValue)) {
         valueGroups.set(linkValue, {
           value: linkValue,
-          entities: new Set(),
+          entities: new Map(),
           variable: linkVar
         });
       }
 
-      valueGroups.get(linkValue).entities.add(sourceId);
+      const group = valueGroups.get(linkValue);
+      const entityBindings = group.entities.get(sourceId) || [];
+      entityBindings.push(binding);
+      group.entities.set(sourceId, entityBindings);
     }
   });
 
@@ -50,7 +53,7 @@ export function calculateFlexibleCooccurrence(bindings, sourceVar, linkVar, logg
 
   // Créer des liens pour chaque groupe de valeurs partagées
   for (const [linkValue, group] of valueGroups.entries()) {
-    const entities = Array.from(group.entities);
+    const entities = Array.from(group.entities.keys());
 
     // Ne créer des liens que si au moins 2 entités partagent cette valeur
     if (entities.length >= 2) {
@@ -66,14 +69,18 @@ export function calculateFlexibleCooccurrence(bindings, sourceVar, linkVar, logg
             const link = {
               source: sourceEntity,
               target: targetEntity,
-              type: "semantic",
+              type: "cooccurrence",
               semanticLabel: linkValue,
               relationshipType: linkVar,
               tooltip: `Partagent ${linkVar}: ${linkValue}`,
               cooccurrence: true,
               weight: 1,
               groupSize: entities.length,
-              linkVariable: linkVar
+              linkVariable: linkVar,
+              bindingValues: collectBindingValues([
+                ...(group.entities.get(sourceEntity) || []),
+                ...(group.entities.get(targetEntity) || [])
+              ])
             };
 
             cooccurrenceLinks.push(link);
@@ -114,9 +121,10 @@ function _optimizeCooccurrenceLinks(links) {
       linkMap.set(entityPair, {
         source: link.source,
         target: link.target,
-        type: "semantic",
+        type: "cooccurrence",
         cooccurrence: true,
         sharedValues: [],
+        bindingValues: {},
         relationshipTypes: new Set(),
         weight: 0
       });
@@ -129,6 +137,7 @@ function _optimizeCooccurrenceLinks(links) {
       value: link.semanticLabel,
       type: link.relationshipType
     });
+    mergeBindingValues(mergedLink.bindingValues, link.bindingValues);
     mergedLink.relationshipTypes.add(link.relationshipType);
     mergedLink.weight += link.weight;
   });
@@ -137,9 +146,16 @@ function _optimizeCooccurrenceLinks(links) {
   return Array.from(linkMap.values()).map((link) => {
     const relationshipTypes = Array.from(link.relationshipTypes);
     const primaryValue = link.sharedValues[0]?.value || "relation";
+    const {
+      bindingValues,
+      relationshipTypes: _relationshipTypes,
+      ...publicLink
+    } = link;
 
     return {
-      ...link,
+      ...publicLink,
+      ...(relationshipTypes[0] ? { [relationshipTypes[0]]: primaryValue } : {}),
+      ...finalizeBindingValues(bindingValues),
       semanticLabel: primaryValue,
       relationshipType: relationshipTypes.join(", "),
       tooltip: `Co-occurrence: ${link.sharedValues.length} valeur(s) partagée(s) (${relationshipTypes.join(", ")})`,
@@ -148,4 +164,34 @@ function _optimizeCooccurrenceLinks(links) {
       sharedValuesDetails: link.sharedValues
     };
   });
+}
+
+function collectBindingValues(bindings = []) {
+  const valuesByField = {};
+  for (const binding of bindings) {
+    for (const [fieldName, fieldBinding] of Object.entries(binding || {})) {
+      if (fieldBinding?.value === undefined || fieldBinding.value === null) continue;
+      if (!valuesByField[fieldName]) valuesByField[fieldName] = new Set();
+      valuesByField[fieldName].add(fieldBinding.value);
+    }
+  }
+  return valuesByField;
+}
+
+function mergeBindingValues(target = {}, source = {}) {
+  for (const [fieldName, values] of Object.entries(source)) {
+    if (!target[fieldName]) target[fieldName] = new Set();
+    for (const value of values || []) {
+      target[fieldName].add(value);
+    }
+  }
+}
+
+function finalizeBindingValues(valuesByField = {}) {
+  return Object.fromEntries(
+    Object.entries(valuesByField).map(([fieldName, values]) => {
+      const uniqueValues = Array.from(values || []);
+      return [fieldName, uniqueValues.length === 1 ? uniqueValues[0] : uniqueValues];
+    })
+  );
 }

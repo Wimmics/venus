@@ -1,4 +1,9 @@
-import { SCENARIO_INDEX_PATH, STORAGE_KEY } from "./constants.js";
+import {
+  DEFAULT_CUSTOM_TEMPLATE_ID,
+  SCENARIO_INDEX_PATH,
+  STORAGE_KEY,
+  VISUALIZATION_TEMPLATES
+} from "./constants.js";
 import { DemoControl } from "./demo-control.js";
 import { SnippetGenerator } from "./snippet-generator.js";
 import { VisualizationView } from "./visualization-view.js";
@@ -7,6 +12,7 @@ import { SparqlPanelController } from "./sparql-panel-controller.js";
 import { EncodingPanelController } from "./encoding-panel-controller.js";
 import { ResultsPanelController } from "./results-panel-controller.js";
 import { SnippetPanelController } from "./snippet-panel-controller.js";
+import { fetchJson } from "./utils/http-utils.js";
 import { safeRun, updateStatus } from "./utils/safe-run.js";
 
 export class EditorApp {
@@ -15,6 +21,9 @@ export class EditorApp {
     this.examplesDropdownEl = document.getElementById("examplesDropdown");
     this.examplesDropdownButtonEl = document.getElementById("examplesDropdownButton");
     this.examplesDropdownMenuEl = document.getElementById("examplesDropdownMenu");
+    this.visualizationTypeDropdownEl = document.getElementById("visualizationTypeDropdown");
+    this.visualizationTypeDropdownButtonEl = document.getElementById("visualizationTypeDropdownButton");
+    this.visualizationTypeDropdownMenuEl = document.getElementById("visualizationTypeDropdownMenu");
     this.exportDropdownEl = document.getElementById("exportDropdown");
     this.exportDropdownButtonEl = document.getElementById("exportDropdownButton");
     this.exportDropdownMenuEl = document.getElementById("exportDropdownMenu");
@@ -52,9 +61,15 @@ export class EditorApp {
     this.autoRenderTimer = null;
     this.lastRenderedSparqlData = null;
     this.isScenarioLoading = false;
+    this.workspace = {
+      mode: "example",
+      templateId: DEFAULT_CUSTOM_TEMPLATE_ID,
+      component: null
+    };
 
     this.sparqlPanelController = new SparqlPanelController({
       demoControl: this.demoControl,
+      isCustomWorkspace: () => this.isCustomWorkspace(),
       onContentChanged: () => {
         this.scheduleAutoRender();
         void this.updateGeneratedCode();
@@ -67,6 +82,9 @@ export class EditorApp {
 
     this.encodingPanelController = new EncodingPanelController({
       demoControl: this.demoControl,
+      isCustomWorkspace: () => this.isCustomWorkspace(),
+      getCustomDefaultEncoding: () => this.fetchEncodingForActiveTemplate(),
+      getActiveComponent: () => this.getActiveComponent(),
       onContentChanged: () => {
         this.scheduleAutoRender();
         void this.updateGeneratedCode();
@@ -101,6 +119,7 @@ export class EditorApp {
     await this.snippetPanelController.init("// Generated integration snippet will appear here");
 
     await this.demoControl.init();
+    this.setupVisualizationTypeDropdown();
     this.setupExamplesDropdown();
     this.setupExportDropdown();
     if (!this.demoControl.hasScenarios()) {
@@ -131,6 +150,7 @@ export class EditorApp {
     this.visualizationTabButton.addEventListener("shown.bs.tab", () => {
       this.refreshVisualizationTab();
     });
+
   }
 
   async loadScenarioAndRefresh() {
@@ -146,6 +166,7 @@ export class EditorApp {
 
         const loadedScenario = await this.demoControl.loadSelectedScenario();
         const { queryText } = this.demoControl.getActiveContext();
+        this.activateExampleWorkspace(loadedScenario);
 
         this.endpointInputEl.value = loadedScenario.endpoint || "";
         this.resultsAsSourceToggleEl.checked = loadedScenario?.dataSource === "provided";
@@ -160,6 +181,7 @@ export class EditorApp {
         await this.updateGeneratedCode();
         await this.render();
         this.syncExamplesDropdownState();
+        this.syncVisualizationTypeDropdownState();
 
         this.setStatus(`Loaded demo: ${loadedScenario.name || loadedScenario.id}`);
       },
@@ -189,11 +211,42 @@ export class EditorApp {
       const willOpen = this.examplesDropdownMenuEl.hidden;
       this.examplesDropdownMenuEl.hidden = !willOpen;
       this.examplesDropdownButtonEl.setAttribute("aria-expanded", String(willOpen));
+      if (willOpen) this.closeVisualizationTypeDropdown();
     });
 
     document.addEventListener("click", (event) => {
       if (!this.examplesDropdownEl.contains(event.target)) {
         this.closeExamplesDropdown();
+      }
+    });
+  }
+
+  setupVisualizationTypeDropdown() {
+    if (
+      !this.visualizationTypeDropdownEl ||
+      !this.visualizationTypeDropdownButtonEl ||
+      !this.visualizationTypeDropdownMenuEl
+    ) {
+      return;
+    }
+
+    this.rebuildVisualizationTypeDropdownMenu();
+    this.syncVisualizationTypeDropdownState();
+
+    if (this.visualizationTypeDropdownEl.dataset.bound === "1") return;
+    this.visualizationTypeDropdownEl.dataset.bound = "1";
+
+    this.visualizationTypeDropdownButtonEl.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const willOpen = this.visualizationTypeDropdownMenuEl.hidden;
+      this.visualizationTypeDropdownMenuEl.hidden = !willOpen;
+      this.visualizationTypeDropdownButtonEl.setAttribute("aria-expanded", String(willOpen));
+      if (willOpen) this.closeExamplesDropdown();
+    });
+
+    document.addEventListener("click", (event) => {
+      if (!this.visualizationTypeDropdownEl.contains(event.target)) {
+        this.closeVisualizationTypeDropdown();
       }
     });
   }
@@ -239,12 +292,12 @@ export class EditorApp {
     for (const option of options) {
       const item = document.createElement("button");
       item.type = "button";
-      item.className = "editor-examples-option";
+      item.className = "editor-create-option";
       item.setAttribute("role", "menuitem");
       item.dataset.value = option.value;
       item.textContent = option.textContent || option.value;
       item.addEventListener("click", () => {
-        if (this.selectEl.value !== option.value) {
+        if (this.selectEl.value !== option.value || this.isCustomWorkspace()) {
           this.selectEl.value = option.value;
           this.selectEl.dispatchEvent(new Event("change", { bubbles: true }));
         }
@@ -263,16 +316,105 @@ export class EditorApp {
   syncExamplesDropdownState() {
     if (!this.selectEl || !this.examplesDropdownMenuEl) return;
 
-    this.examplesDropdownMenuEl.querySelectorAll(".editor-examples-option").forEach((item) => {
-      item.classList.toggle("is-active", item.dataset.value === this.selectEl.value);
+    this.examplesDropdownMenuEl.querySelectorAll(".editor-create-option").forEach((item) => {
+      item.classList.toggle(
+        "is-active",
+        !this.isCustomWorkspace() && item.dataset.value === this.selectEl.value
+      );
     });
+  }
+
+  rebuildVisualizationTypeDropdownMenu() {
+    if (!this.visualizationTypeDropdownMenuEl) return;
+    this.visualizationTypeDropdownMenuEl.innerHTML = "";
+    for (const template of VISUALIZATION_TEMPLATES) {
+      const item = document.createElement("button");
+      item.type = "button";
+      item.className = "editor-create-option";
+      item.setAttribute("role", "menuitem");
+      item.dataset.templateId = template.id;
+      item.textContent = template.label;
+      item.addEventListener("click", async () => {
+        await this.startCustomWorkspace(template.id);
+        this.closeVisualizationTypeDropdown();
+      });
+      this.visualizationTypeDropdownMenuEl.appendChild(item);
+    }
+
+    this.syncVisualizationTypeDropdownState();
+  }
+
+  closeVisualizationTypeDropdown() {
+    if (!this.visualizationTypeDropdownMenuEl || !this.visualizationTypeDropdownButtonEl) return;
+    this.visualizationTypeDropdownMenuEl.hidden = true;
+    this.visualizationTypeDropdownButtonEl.setAttribute("aria-expanded", "false");
+  }
+
+  syncVisualizationTypeDropdownState() {
+    if (!this.visualizationTypeDropdownMenuEl) return;
+    const activeTemplate = this.getActiveTemplate();
+
+    this.visualizationTypeDropdownMenuEl.querySelectorAll(".editor-create-option").forEach((item) => {
+      item.classList.toggle(
+        "is-active",
+        this.isCustomWorkspace() && item.dataset.templateId === activeTemplate?.id
+      );
+    });
+  }
+
+  activateExampleWorkspace(scenario) {
+    const template = this.getTemplateByComponent(scenario?.component);
+    this.workspace = {
+      mode: "example",
+      templateId: template?.id || DEFAULT_CUSTOM_TEMPLATE_ID,
+      component: scenario?.component || template?.component || "venus-graph"
+    };
+  }
+
+  async startCustomWorkspace(templateId = DEFAULT_CUSTOM_TEMPLATE_ID) {
+    if (this.autoRenderTimer) {
+      clearTimeout(this.autoRenderTimer);
+      this.autoRenderTimer = null;
+    }
+
+    await this.safeRun(
+      async () => {
+        this.isScenarioLoading = true;
+        const template = this.getTemplateById(templateId);
+        this.workspace = {
+          mode: "custom",
+          templateId: template.id,
+          component: template.component
+        };
+
+        this.endpointInputEl.value = "";
+        this.resultsAsSourceToggleEl.checked = false;
+        await this.applyResultsEditorMode();
+        await this.sparqlPanelController.setText("");
+        await this.encodingPanelController.setValue(await this.fetchTemplateEncoding(template));
+        await this.resultsPanelController.setText("{}");
+        this.lastRenderedSparqlData = null;
+        this.visualizationView.clear();
+        this.syncExamplesDropdownState();
+        this.syncVisualizationTypeDropdownState();
+        await this.updateGeneratedCode();
+        this.setStatus(`${template.label} workspace ready.`);
+      },
+      "Failed to create visualization from type"
+    );
+    this.isScenarioLoading = false;
   }
 
   async exportVisualization(format) {
     await this.safeRun(
       async () => {
         const { scenario } = this.demoControl.getActiveContext();
-        const stem = this._buildFileStem(scenario?.name || scenario?.id || "venus-visualization");
+        const activeTemplate = this.getActiveTemplate();
+        const stem = this._buildFileStem(
+          this.isCustomWorkspace()
+            ? `custom-${activeTemplate?.id || "visualization"}`
+            : scenario?.name || scenario?.id || "venus-visualization"
+        );
         this.setStatus(`Exporting ${String(format || "").toUpperCase()}...`);
         await this.visualizationView.exportAs(format, stem);
         this.setStatus(`Exported ${String(format || "").toUpperCase()} successfully`);
@@ -291,14 +433,19 @@ export class EditorApp {
         }
 
         const { scenario } = this.demoControl.getActiveContext();
-        if (!scenario) {
-          this.setStatus("Select a scenario first.", true);
+        const component = this.getActiveComponent();
+        if (!component) {
+          this.setStatus("Select an example or chart type first.", true);
           return;
         }
 
-        const endpoint = this._resolveEndpoint(scenario.endpoint);
+        const endpoint = this._resolveEndpoint(this.isCustomWorkspace() ? "" : scenario?.endpoint);
         const dataSource = this.getDataSourceMode();
         const queryText = await this.sparqlPanelController.getText();
+        if (dataSource === "query" && !String(queryText || "").trim()) {
+          this.setStatus("Enter a SPARQL query to render the selected chart.", true);
+          return;
+        }
 
         let providedSparqlResult = null;
         if (dataSource === "provided") {
@@ -312,6 +459,7 @@ export class EditorApp {
 
         this.setStatus("Rendering...");
         const output = await this.visualizationView.render({
+          component,
           scenario,
           endpoint,
           queryText,
@@ -327,7 +475,7 @@ export class EditorApp {
         }
 
         await this.updateGeneratedCode();
-        this.setStatus(`Rendered: ${scenario.name || scenario.id}`);
+        this.setStatus(`Rendered: ${this.getActiveWorkspaceLabel()}`);
       },
       "Render failed"
     );
@@ -336,13 +484,14 @@ export class EditorApp {
   async updateGeneratedCode() {
     const parsedEncoding = await this.encodingPanelController.parseValue();
     const { scenario } = this.demoControl.getActiveContext();
-    if (!scenario || parsedEncoding.error) {
+    const component = this.getActiveComponent();
+    if (!component || parsedEncoding.error) {
       await this.snippetPanelController.setText("// Invalid or missing configuration");
       return;
     }
 
     const dataSource = this.getDataSourceMode();
-    const endpoint = this._resolveEndpoint(scenario.endpoint);
+    const endpoint = this._resolveEndpoint(this.isCustomWorkspace() ? "" : scenario?.endpoint);
     const queryText = await this.sparqlPanelController.getText();
     const parsedResults = dataSource === "provided"
       ? await this.resultsPanelController.parseJson()
@@ -354,7 +503,7 @@ export class EditorApp {
 
     await this.snippetPanelController.setText(
       this.snippetGenerator.generate({
-        component: scenario.component || "venus-graph",
+        component,
         endpoint,
         queryText,
         encoding: parsedEncoding.value,
@@ -391,10 +540,53 @@ export class EditorApp {
 
   refreshVisualizationTab() {
     const { scenario } = this.demoControl.getActiveContext();
-    if (!scenario) return;
+    const component = this.getActiveComponent();
+    if (!component) return;
     requestAnimationFrame(() => {
-      this.visualizationView.refreshCurrent({ scenario });
+      this.visualizationView.refreshCurrent({ component, scenario });
     });
+  }
+
+  isCustomWorkspace() {
+    return this.workspace.mode === "custom";
+  }
+
+  getActiveComponent() {
+    if (this.workspace.component) return this.workspace.component;
+    return this.demoControl.getActiveContext().scenario?.component || null;
+  }
+
+  getActiveTemplate() {
+    return (
+      this.getTemplateById(this.workspace.templateId) ||
+      this.getTemplateByComponent(this.getActiveComponent())
+    );
+  }
+
+  getTemplateById(id) {
+    return VISUALIZATION_TEMPLATES.find((template) => template.id === id) || VISUALIZATION_TEMPLATES[0];
+  }
+
+  getTemplateByComponent(component) {
+    return VISUALIZATION_TEMPLATES.find((template) => template.component === component) || null;
+  }
+
+  async fetchEncodingForActiveTemplate() {
+    return this.fetchTemplateEncoding(this.getActiveTemplate());
+  }
+
+  async fetchTemplateEncoding(template) {
+    if (!template?.encodingPath) return null;
+    return fetchJson(template.encodingPath);
+  }
+
+  getActiveWorkspaceLabel() {
+    if (!this.isCustomWorkspace()) {
+      const scenario = this.demoControl.getActiveContext().scenario;
+      return scenario?.name || scenario?.id || "example";
+    }
+
+    return `custom ${this.getActiveTemplate()?.label || "chart"}`;
   }
 
   setStatus(message, isError = false) {

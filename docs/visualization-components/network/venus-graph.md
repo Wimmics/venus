@@ -34,9 +34,12 @@ For a minimal force-directed graph, the encoding must at least define `nodes` an
         ?source dbo:starring ?target 
       } LIMIT 30`;
   
-  graph.encoding = { 
-    nodes: { field: "source"}, 
-    links: { field: "target" } 
+  graph.encoding = {
+    nodes: {
+      source: { field: "source" },
+      target: { field: "target" }
+    },
+    links: { type: "directional" }
   };
 
   graph.launch();
@@ -48,8 +51,12 @@ For a minimal force-directed graph, the encoding must at least define `nodes` an
 | Encoding Property | Description | Documentation | Mandatory
 |---|---|---|:---:|
 | `nodes` | Defines node identity and node visual channels (color, size, labels, stroke). | [`nodes`](../encoding/nodes.md) | ✓ 
-| `links` | Defines how links are built and styled (field mapping, color, distance, width). | [`links`](../encoding/links.md) | ✓ 
+| `links` | Defines how links are built and styled (type, relation/context, color, distance, width). | [`links`](../encoding/links.md) | ✓ 
 | `interactions` | Controls interaction behavior such as drag, zoom, tooltips, and node details panel. | [`interactions`](../encoding/interactions.md) | ✗ 
 | `color` | Provides color channel semantics used by both nodes and links. | [`color`](../encoding/color.md) | ✗ 
 | `scale` | Defines value-to-visual mapping for data-driven color/size channels. | [`scale`](../encoding/scale.md) | ✗ 
 | `legend` | Controls legend display, position, and compact mode for mapped channels. | [`legend`](../encoding/legend.md) | ✗ 
+
+Directional and semantic source and target nodes use role blocks such as
+`nodes.source.field`, `nodes.target.field`, and role-specific color rules. See the
+[`nodes`](../../encoding/marks/nodes.md) encoding reference.

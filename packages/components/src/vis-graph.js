@@ -153,7 +153,8 @@ export class VenusGraph extends VenusBase {
       extraStyles: `
         .links line { stroke-opacity: 0.6; }
         .links .directional { marker-end: url(#arrowhead); }
-        .links .semantic { stroke-opacity: 0.7; }
+        .links .semantic,
+        .links .cooccurrence { stroke-opacity: 0.7; }
 
         .node-label { font-size: 12px; pointer-events: none; fill: #333; text-anchor: middle; dominant-baseline: middle; }
 
@@ -299,10 +300,11 @@ export class VenusGraph extends VenusBase {
   }
 
   _showTooltip(node, x, y) {
+    const nodeConfig = this._resolveNodeRoleConfig(node);
     const lines = this._buildNodeTooltipLines(node);
     super._showTooltip(
       {
-        title: node.label || node.id,
+        title: this._resolveTooltipTitle(node, nodeConfig, node.id),
         lines
       },
       x,
@@ -321,15 +323,17 @@ export class VenusGraph extends VenusBase {
     if (!node || typeof node !== "object") return [];
 
     const preferredOrder = ["id", "label", "uri", "type"];
-    const sizeField = this.visualEncoding?.nodes?.size?.field;
-    if (sizeField === "links") {
-      preferredOrder.push("links");
+    const nodeConfig = this._resolveNodeRoleConfig(node);
+    const sizeMetric = nodeConfig?.size?.metric;
+    const colorMetric = nodeConfig?.color?.metric;
+    if (sizeMetric === "degree" || colorMetric === "degree") {
+      preferredOrder.push("degree");
     }
     const fields = this._resolveTooltipFields(node, {
       preferredOrder,
       excludeKeys: ["source", "target"],
-      markTooltipFields: Array.isArray(this.visualEncoding?.nodes?.tooltip?.fields)
-        ? this.visualEncoding.nodes.tooltip.fields
+      markTooltipFields: Array.isArray(nodeConfig?.tooltip?.fields)
+        ? nodeConfig.tooltip.fields
         : null
     });
 
@@ -342,50 +346,46 @@ export class VenusGraph extends VenusBase {
     return lines;
   }
 
+  _resolveNodeRoleConfig(node) {
+    const nodes = this.visualEncoding?.nodes || {};
+    const roles = Array.isArray(node?.roles) ? node.roles : [];
+    if (roles.length !== 1 || !nodes[roles[0]]) return nodes;
+    return {
+      ...nodes,
+      ...nodes[roles[0]],
+      tooltip: nodes[roles[0]].tooltip || nodes.tooltip
+    };
+  }
+
   _hideTooltip() {
     super._hideTooltip("tooltip node-tooltip");
   }
 
   _showLinkTooltip(link, x, y) {
-    const linkTooltipFields = this.visualEncoding?.links?.tooltip?.fields;
-    if (Array.isArray(linkTooltipFields) && linkTooltipFields.length > 0) {
-      const lines = this._buildTooltipLines(link, {
-        preferredOrder: linkTooltipFields,
-        excludeKeys: ["source", "target"],
-        markConfig: this.visualEncoding?.links
-      });
-      super._showTooltip(
-        {
-          title: `${link.source?.id ?? link.source} → ${link.target?.id ?? link.target}`,
-          lines
-        },
-        x,
-        y,
-        {
-          className: "tooltip link-tooltip",
-          offsetX: 10,
-          offsetY: -10,
-          dark: true,
-          maxWidth: 380
-        }
-      );
-      return;
-    }
-
-    const source = link.source?.id ?? link.source;
-    const target = link.target?.id ?? link.target;
-    let txt = `${source} → ${target}`;
-    if (link.type === "semantic") {
-      txt = `${source} ↔ ${target}\nRelation: ${link.semanticLabel || link.tooltip || "relation"}`;
-    }
-    super._showTooltip(txt, x, y, {
+    const fallbackTitle = `${link.source?.id ?? link.source} → ${link.target?.id ?? link.target}`;
+    const title = this._resolveTooltipTitle(link, this.visualEncoding?.links, fallbackTitle);
+    const lines = this._buildTooltipLines(link, {
+      preferredOrder: this._getLinkTooltipPreferredOrder(link),
+      excludeKeys: ["source", "target"],
+      markConfig: this.visualEncoding?.links
+    });
+    super._showTooltip({ title, lines }, x, y, {
       className: "tooltip link-tooltip",
       offsetX: 10,
       offsetY: -10,
       dark: true,
-      whiteSpace: "pre-line",
       maxWidth: 380
     });
+  }
+
+  _getLinkTooltipPreferredOrder(link) {
+    if (link?.type === "semantic") {
+      return ["semanticLabel", "relationshipType"];
+    }
+    if (link?.type === "cooccurrence") {
+      return ["semanticLabel", "relationshipType", "weight", "sharedValuesCount"];
+    }
+    return [];
   }
 
   _hideLinkTooltip() {

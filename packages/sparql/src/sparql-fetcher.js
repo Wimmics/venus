@@ -12,8 +12,8 @@
 import { createLogger } from "@wimmics/venus-core"; // adjust if your core package name differs
 
 export class SparqlDataFetcher {
-  constructor({ debug = false, timeoutMs = 30000, logLevel = "info" } = {}) {
-    this.timeoutMs = Number(timeoutMs) || 30000;
+  constructor({ debug = false, timeoutMs = 300000, logLevel = "info" } = {}) {
+    this.timeoutMs = Number(timeoutMs) || 300000;
     this.log = createLogger("SparqlDataFetcher", { debug: Boolean(debug), level: logLevel });
   }
 

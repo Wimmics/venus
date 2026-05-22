@@ -1,14 +1,6 @@
 import { SparqlToVisMapper } from "../sparql-to-vis-mapper.js";
-import { extractLabel } from "../extract-bindings-info.js";
+import { bindingToValue } from "../extract-bindings-info.js";
 import { VIS_TYPES } from "@wimmics/venus-core";
-
-function bindingToValue(bindingValue, varName, binding, vars) {
-  if (!bindingValue) return null;
-  if (bindingValue.type === "uri") {
-    return extractLabel(bindingValue, varName, binding, vars);
-  }
-  return bindingValue.value;
-}
 
 export class SparqlToLineChartMapper extends SparqlToVisMapper {
   constructor(options = {}) {
@@ -35,7 +27,7 @@ export class SparqlToLineChartMapper extends SparqlToVisMapper {
     const rows = bindings.map((binding) => {
       const row = {};
       for (const varName of vars) {
-        row[varName] = bindingToValue(binding[varName], varName, binding, vars);
+        row[varName] = bindingToValue(binding[varName]);
       }
       return row;
     });

@@ -102,13 +102,14 @@ export class VenusLineChart extends VenusBase {
     const colorField = this.visualEncoding?.lines?.color?.field;
     const sizeField = this.visualEncoding?.lines?.size?.field;
     const isSeriesHover = payload.mark === "series";
-    const title = isSeriesHover
+    const fallbackTitle = isSeriesHover
       ? (groupField ? datum?.[groupField] : (payload.seriesKey || "Series"))
       : (xField ? datum?.[xField] : "Point");
     const pointMarkConfig = this.visualEncoding?.points?.display !== false
       ? this.visualEncoding?.points
       : this.visualEncoding?.lines;
     const tooltipMarkConfig = isSeriesHover ? this.visualEncoding?.lines : pointMarkConfig;
+    const title = this._resolveTooltipTitle(datum, tooltipMarkConfig, fallbackTitle);
     const preferredOrder = isSeriesHover
       ? [xField, yField, groupField, colorField, sizeField]
       : [yField, colorField, sizeField];

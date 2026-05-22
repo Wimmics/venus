@@ -17,6 +17,7 @@
  * @property {Object} meta.mappingResolved
  * @property {string} meta.mappingResolved.sourceVar
  * @property {string|null} meta.mappingResolved.targetVar
- * @property {"directional"|"semantic"} meta.mappingResolved.linkType
- * @property {string|null} meta.mappingResolved.semanticVar
+ * @property {"directional"|"semantic"|"cooccurrence"} meta.mappingResolved.linkType
+ * @property {string|null} meta.mappingResolved.relationVar
+ * @property {string|null} meta.mappingResolved.contextVar
  */

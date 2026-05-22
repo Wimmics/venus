@@ -100,7 +100,11 @@ export class VenusBarChart extends VenusBase {
     const groupField = this.visualEncoding?.bars?.groups?.field;
     const colorField = this.visualEncoding?.bars?.color?.field;
     const sizeField = this.visualEncoding?.bars?.size?.field;
-    const title = xField ? datum?.[xField] : "Bar";
+    const title = this._resolveTooltipTitle(
+      datum,
+      this.visualEncoding?.bars,
+      xField ? datum?.[xField] : "Bar"
+    );
     const lines = this._buildTooltipLines(datum, {
       preferredOrder: [yField, groupField, colorField, sizeField],
       excludeKeys: [xField],

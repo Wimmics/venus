@@ -4,12 +4,13 @@
  * Handles encoding logic specific to force-directed graph visualization:
  * - Node/link field mappings
  * - Adaptive encoding from SPARQL variables
- * - Link type resolution (directional vs semantic)
+ * - Link type resolution (directional, semantic, or co-occurrence)
  * - Domain calculation for nodes and links
  * - D3 scale creation
  */
 import * as d3 from "d3";
 import { EncodingManager } from "./encoding-manager.js";
+import { getDefaultEncodingTemplate } from "./default-encodings.js";
 
 export class ForceGraphEncodingManager extends EncodingManager {
   /**
@@ -17,73 +18,29 @@ export class ForceGraphEncodingManager extends EncodingManager {
    * @returns {Object} Default force-graph encoding config
    */
   getDefaultEncoding() {
-    return {
-      interactions: {
-        enabled: true,
-        drag: true,
-        zoom: true,
-        nodeDetailsPanel: false,
-        tooltip: true
-      },
-      nodes: {
-        field: ["source"],
-        labels: {
-          display: true
-        },
-        stroke: {
-          value: "#ffffff",
-          width: 1.5,
-          display: true
-        },
-        color: {
-          field: "type",
-          scale: {
-            type: "ordinal",
-            domain: ["uri", "literal"],
-            range: ["#69b3a2", "#ff7f0e"]
-          },
-          legend: { display: true,  position: "top-right" }
-        },
-        size: {
-          field: "links",
-          scale: { type: "linear", domain: [0, 10], range: [8, 25] },
-          legend: { display: true, position: "top-right" }
-        },
-        tooltip: { fields: null }
-      },
-      links: {
-        field: { source: "source", target: "target" },
-        distance: 100,
-        width: { value: 1.5 },
-        color: { value: "#999" },
-        tooltip: { fields: null }
-      }
-    };
+    return getDefaultEncodingTemplate("force-graph");
   }
 
   /**
    * Create adaptive encoding from SPARQL variables for force-graph.
-   * Uses first variable for nodes, first two for directional links.
-   * Automatically detects best classification field for node coloring.
+   * Uses first two variables for directional source and target nodes.
    * @param {string[]} sparqlVars - SPARQL variables
-   * @param {Object[]} nodeData - Optional node data for enhanced field detection
-   * @returns {Object} Adaptive encoding config (enhanced if nodeData provided)
+   * @returns {Object} Adaptive encoding config
    */
-  createAdaptiveEncoding(sparqlVars, nodeData = null) {
+  createAdaptiveEncoding(sparqlVars) {
     if (!sparqlVars?.length) return this.getDefaultEncoding();
 
     const enc = this.getDefaultEncoding();
-    enc.nodes.field = [sparqlVars[0]];
-
     if (sparqlVars.length > 1) {
-      enc.links.field = { source: sparqlVars[0], target: sparqlVars[1] };
+      enc.nodes.source = { ...(enc.nodes.source || {}), field: sparqlVars[0] };
+      enc.nodes.target = { ...(enc.nodes.target || {}), field: sparqlVars[1] };
+      enc.links.type = "directional";
     } else {
-      enc.links.field = sparqlVars[0];
-    }
-
-    // Enhance with automatic field detection if node data provided
-    if (nodeData && nodeData.length > 0) {
-      return this.enhanceAdaptiveEncoding(sparqlVars, nodeData, enc);
+      enc.nodes.field = sparqlVars[0];
+      delete enc.nodes.source;
+      delete enc.nodes.target;
+      enc.links.type = "cooccurrence";
+      enc.links.context = { field: sparqlVars[0] };
     }
 
     return enc;
@@ -91,53 +48,43 @@ export class ForceGraphEncodingManager extends EncodingManager {
 
   /**
    * Resolve field mappings for force-graph to determine link types and variable bindings.
-   * Supports:
-   * - Directional links: source -> target
-   * - Semantic links: source <-> target (via a link variable)
-   * - Co-occurrence: single variable mode
+   * Supports directional and semantic source-target links plus co-occurrence
+   * links grouped by a context field.
    * @param {Object} mapping - Encoding mapping config
    * @param {string[]} vars - Available SPARQL variables
    * @returns {Object} Resolved mapping with sourceVar, targetVar, linkType
-   * @throws {Error} If semantic links have invalid variable configuration
+   * @throws {Error} If graph link construction has invalid variable configuration
    */
   resolveFieldMapping(mapping, vars) {
-    const linkField = mapping.links?.field;
     const nodeFields = this._normalizeNodeFields(mapping?.nodes?.field);
+    const sourceVar = mapping?.nodes?.source?.field;
+    const targetVar = mapping?.nodes?.target?.field;
+    const relationVar = mapping?.links?.relation?.field || null;
+    const contextVar = mapping?.links?.context?.field || null;
+    const explicitLinkType = mapping?.links?.type;
+    const linkType = explicitLinkType || (
+      sourceVar && targetVar
+        ? (relationVar ? "semantic" : "directional")
+        : "cooccurrence"
+    );
 
-    let sourceVar = vars[0];
-    let targetVar = vars.length > 1 ? vars[1] : null;
-    let linkType = "directional";
-
-    // Override source from explicit nodes.field if provided
-    if (nodeFields.length) {
-      sourceVar = nodeFields[0];
+    if (linkType === "cooccurrence") {
+      return {
+        sourceVar: nodeFields[0] || vars[0],
+        targetVar: null,
+        linkType,
+        contextVar,
+        relationVar: null
+      };
     }
 
-    // Determine link type from linkField configuration
-    if (linkField) {
-      if (typeof linkField === "string") {
-        // String linkField always indicates co-occurrence based on that variable's values
-        if (vars.includes(linkField)) {
-          linkType = "semantic";
-          sourceVar = nodeFields.length ? nodeFields[0] : vars[0];
-          targetVar = null; // co-occurrence mode handled by mapper
-        }
-      } else if (typeof linkField === "object" && linkField) {
-        // Object linkField with explicit source/target
-        if (
-          linkField.source &&
-          linkField.target &&
-          vars.includes(linkField.source) &&
-          vars.includes(linkField.target)
-        ) {
-          sourceVar = linkField.source;
-          targetVar = linkField.target;
-          linkType = "directional";
-        }
-      }
-    }
-
-    return { sourceVar, targetVar, linkType };
+    return {
+      sourceVar: sourceVar || vars[0],
+      targetVar: targetVar || (vars.length > 1 ? vars[1] : null),
+      linkType,
+      contextVar: null,
+      relationVar: linkType === "semantic" ? relationVar : null
+    };
   }
 
   /**
@@ -155,10 +102,11 @@ export class ForceGraphEncodingManager extends EncodingManager {
 
     // Nodes color domain (single config)
     const nodeColorEncoding = Array.isArray(enc.nodes?.color) ? enc.nodes.color[0] : enc.nodes?.color;
-    if (nodeColorEncoding?.field && nodeColorEncoding?.scale) {
-      const scaleType = nodeColorEncoding.scale.type || "ordinal";
+    const nodeColorKey = this.resolveNodeChannelDataKey(nodeColorEncoding);
+    if (nodeColorKey && nodeColorEncoding?.scale) {
+      const scaleType = nodeColorEncoding.scale.type || (nodeColorEncoding.metric ? "sequential" : "ordinal");
       const userDomain = nodeColorEncoding.scale.domain;
-      nodeColorEncoding.scale.domain = this.domainCalculator.getDomain(nodes, nodeColorEncoding.field, userDomain, scaleType);
+      nodeColorEncoding.scale.domain = this.domainCalculator.getDomain(nodes, nodeColorKey, userDomain, scaleType);
       enc.nodes.color = nodeColorEncoding;
     }
 
@@ -175,8 +123,9 @@ export class ForceGraphEncodingManager extends EncodingManager {
 
     // Nodes size domain (single config)
     const nodeSizeEncoding = Array.isArray(enc.nodes?.size) ? enc.nodes.size[0] : enc.nodes?.size;
-    if (nodeSizeEncoding?.field && nodeSizeEncoding?.scale) {
-      const field = nodeSizeEncoding.field;
+    const nodeSizeKey = this.resolveNodeChannelDataKey(nodeSizeEncoding);
+    if (nodeSizeKey && nodeSizeEncoding?.scale) {
+      const field = nodeSizeKey;
       const scaleType = nodeSizeEncoding.scale.type || "linear";
       const userDomain = nodeSizeEncoding.scale.domain;
       const userRange = nodeSizeEncoding.scale.range;
@@ -213,11 +162,11 @@ export class ForceGraphEncodingManager extends EncodingManager {
     }
 
     // User-provided encoding validation
-    if (!userEncoding?.nodes?.field) {
-      throw new Error('Invalid encoding: "nodes.field" is required (string or array with at least one SPARQL variable).');
-    }
+    this._validateGraphConstructionConfig(userEncoding);
 
     this._validateSingleScaleConfig(userEncoding);
+    this._validateNodeMetricConfig(userEncoding);
+    this._validateRoleNodeConfig(userEncoding);
     const normalizedEncoding = this._normalizeSingleScales(userEncoding);
     this._validateTooltipConfig(normalizedEncoding);
 
@@ -270,9 +219,112 @@ export class ForceGraphEncodingManager extends EncodingManager {
     if (Array.isArray(encoding?.nodes?.size)) {
       throw new Error('Invalid encoding: "nodes.size" must be an object, not an array.');
     }
+    for (const role of ["source", "target"]) {
+      if (Array.isArray(encoding?.nodes?.[role]?.color)) {
+        throw new Error(`Invalid encoding: "nodes.${role}.color" must be an object, not an array.`);
+      }
+      if (Array.isArray(encoding?.nodes?.[role]?.size)) {
+        throw new Error(`Invalid encoding: "nodes.${role}.size" must be an object, not an array.`);
+      }
+    }
     if (Array.isArray(encoding?.links?.color)) {
       throw new Error('Invalid encoding: "links.color" must be an object, not an array.');
     }
+  }
+
+  _validateNodeMetricConfig(encoding) {
+    const validateMetric = (channel, key) => {
+      if (channel?.metric === undefined) return;
+      if (channel.metric !== "degree") {
+        throw new Error(`Invalid encoding: "${key}.metric" must be "degree" when provided.`);
+      }
+      if (channel.field !== undefined) {
+        throw new Error(`Invalid encoding: "${key}" cannot define both "field" and "metric".`);
+      }
+    };
+
+    validateMetric(encoding?.nodes?.color, "nodes.color");
+    validateMetric(encoding?.nodes?.size, "nodes.size");
+    validateMetric(encoding?.nodes?.source?.color, "nodes.source.color");
+    validateMetric(encoding?.nodes?.target?.color, "nodes.target.color");
+    validateMetric(encoding?.nodes?.source?.size, "nodes.source.size");
+    validateMetric(encoding?.nodes?.target?.size, "nodes.target.size");
+
+    const metricColorScaleType = encoding?.nodes?.color?.scale?.type;
+    if (
+      encoding?.nodes?.color?.metric !== undefined &&
+      metricColorScaleType !== undefined &&
+      metricColorScaleType !== "quantitative" &&
+      metricColorScaleType !== "sequential"
+    ) {
+      throw new Error(
+        'Invalid encoding: "nodes.color.scale.type" must be "quantitative" or "sequential" for metric color.'
+      );
+    }
+
+    if (encoding?.links?.color?.metric !== undefined) {
+      throw new Error('Invalid encoding: "links.color.metric" is not supported.');
+    }
+  }
+
+  _validateGraphConstructionConfig(encoding) {
+    if (encoding?.links?.field !== undefined) {
+      throw new Error(
+        'Invalid encoding: "links.field" is no longer supported. Use "nodes.source.field" and "nodes.target.field", "links.relation.field", or "links.context.field".'
+      );
+    }
+    const linkType = encoding?.links?.type;
+    if (linkType && !["directional", "semantic", "cooccurrence"].includes(linkType)) {
+      throw new Error('Invalid encoding: "links.type" must be "directional", "semantic", or "cooccurrence".');
+    }
+    if (linkType === "cooccurrence") {
+      if (!encoding?.nodes?.field) {
+        throw new Error('Invalid encoding: "nodes.field" is required for co-occurrence graph nodes.');
+      }
+      if (typeof encoding?.links?.context?.field !== "string" || !encoding.links.context.field.trim()) {
+        throw new Error('Invalid encoding: "links.context.field" is required for co-occurrence links.');
+      }
+      return;
+    }
+    if (encoding?.links?.context !== undefined && linkType !== "cooccurrence") {
+      throw new Error('Invalid encoding: "links.context" is only supported for co-occurrence links.');
+    }
+    if (!encoding?.nodes?.source?.field || !encoding?.nodes?.target?.field) {
+      throw new Error(
+        'Invalid encoding: "nodes.source.field" and "nodes.target.field" are required for directional and semantic graph links.'
+      );
+    }
+    if ((linkType === "semantic" || encoding?.links?.relation !== undefined) && (
+      typeof encoding?.links?.relation?.field !== "string" ||
+      !encoding.links.relation.field.trim()
+    )) {
+      throw new Error('Invalid encoding: "links.relation.field" is required for semantic links.');
+    }
+  }
+
+  _validateRoleNodeConfig(encoding) {
+    const validateRole = (role) => {
+      const config = encoding?.nodes?.[role];
+      if (!config) return;
+      const supportedKeys = new Set(["field", "color", "size", "label", "tooltip"]);
+      const unsupportedKeys = Object.keys(config).filter((key) => !supportedKeys.has(key));
+      if (unsupportedKeys.length) {
+        throw new Error(`Invalid encoding: "nodes.${role}" has unsupported properties: ${unsupportedKeys.join(", ")}.`);
+      }
+    };
+
+    validateRole("source");
+    validateRole("target");
+  }
+
+  resolveNodeChannelDataKey(channelEncoding) {
+    if (typeof channelEncoding?.field === "string" && channelEncoding.field.trim()) {
+      return channelEncoding.field;
+    }
+    if (channelEncoding?.metric === "degree") {
+      return "degree";
+    }
+    return null;
   }
 
   _validateTooltipConfig(encoding) {
@@ -293,6 +345,8 @@ export class ForceGraphEncodingManager extends EncodingManager {
     };
 
     validateFields(encoding?.nodes?.tooltip?.fields, "nodes.tooltip.fields");
+    validateFields(encoding?.nodes?.source?.tooltip?.fields, "nodes.source.tooltip.fields");
+    validateFields(encoding?.nodes?.target?.tooltip?.fields, "nodes.target.tooltip.fields");
     validateFields(encoding?.links?.tooltip?.fields, "links.tooltip.fields");
   }
 

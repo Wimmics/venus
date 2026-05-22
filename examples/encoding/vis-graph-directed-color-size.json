@@ -1,21 +1,28 @@
 {
   "title": "Co-starring network of Harrison Ford",
   "nodes": {
-    "field": ["actorName", "movieName"],
-    "color": {
-      "field": "distributorName",
-      "value": "#cccccc",
-      "scale": {
-        "type": "ordinal",
-        "range": "Set3"
-      },
-      "legend": {
-        "title": "Movie Distributor",
-        "position": "top-left"
+    "source": {
+      "field": "actorName",
+      "color": {
+        "value": "#69b3a2"
+      }
+    },
+    "target": {
+      "field": "movieName",
+      "color": {
+        "field": "distributorName",
+        "scale": {
+          "type": "ordinal",
+          "range": "Set3"
+        },
+        "legend": {
+          "title": "Movie Distributor",
+          "position": "top-left"
+        }
       }
     },
     "size": {
-      "field": "links",
+      "metric": "degree",
       "scale": {
         "type": "linear",
         "range": [
@@ -30,6 +37,6 @@
     }
   },
   "links": {
-    "field": {"source": "actorName", "target": "movieName"}
+    "type": "directional"
   }
 }

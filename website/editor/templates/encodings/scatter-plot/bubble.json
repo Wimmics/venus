@@ -1,0 +1,20 @@
+{
+  "x": {
+    "field": "x"
+  },
+  "y": {
+    "field": "y"
+  },
+  "points": {
+    "size": {
+      "field": "size",
+      "scale": {
+        "type": "linear",
+        "range": [
+          2,
+          10
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "x": {
+    "field": "x"
+  },
+  "y": {
+    "field": "y"
+  },
+  "lines": {
+    "group": {
+      "field": "series"
+    },
+    "color": {
+      "field": "series"
+    }
+  }
+}

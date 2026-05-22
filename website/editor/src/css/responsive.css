@@ -8,13 +8,24 @@
     width: 100%;
   }
 
-  .editor-examples-dropdown {
+  .editor-createbar-inner {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .editor-createbar-actions,
+  .editor-create-dropdown,
+  .editor-create-button {
     width: 100%;
   }
 
-  .editor-examples-button {
-    min-width: 0;
-    width: 100%;
+  .editor-createbar-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .editor-createbar-separator {
+    display: none;
   }
 
   .editor-examples-menu {

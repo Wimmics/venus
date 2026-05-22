@@ -1,0 +1,11 @@
+{
+  "nodes": {
+    "field": "node"
+  },
+  "links": {
+    "type": "cooccurrence",
+    "context": {
+      "field": "group"
+    }
+  }
+}

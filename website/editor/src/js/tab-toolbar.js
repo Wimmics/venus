@@ -13,7 +13,7 @@ export class TabToolbar {
 
     this.holderEl.innerHTML = "";
     for (const action of this.actions) {
-      this.holderEl.appendChild(this.createButton(action));
+      this.holderEl.appendChild(action.createElement ? action.createElement() : this.createButton(action));
     }
   }
 

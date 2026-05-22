@@ -17,6 +17,7 @@ Encoding engine that turns user encoding into validated domains and D3-ready sca
 - Bar chart: `x`, `y`, `bars`, `direction`.
 - Color legends are `display: true` by default when color is data-driven (`color.field`).
 - If `color.field` is provided without `color.scale`, a default palette is used: `{ type: "ordinal", range: "Accent" }`.
+- No color field is inferred from SPARQL variables. Marks keep their constant default color until the encoding defines `color.field` or a supported `color.metric`.
 
 ## Force-Graph Example
 ```js
@@ -29,7 +30,8 @@ graph.encoding = {
     tooltip: true
   },
   nodes: {
-    field: ["species", "family"],
+    source: { field: "species" },
+    target: { field: "family" },
     tooltip: { fields: ["personLabel", "birthYear"] },
     labels: { display: true },
     stroke: { value: "#ffffff", width: 1.5, display: true },
@@ -47,7 +49,7 @@ graph.encoding = {
     }
   },
   links: {
-    field: { source: "species", target: "family" },
+    type: "directional",
     tooltip: { fields: ["type"] },
     color: {
       field: "type",
@@ -66,19 +68,25 @@ graph.encoding = {
 - `tooltip`: `true | false` global tooltip toggle (default `true`)
 
 Tooltip field selection is now defined at mark level:
+- `*.tooltip.title`: optional constant title or `{ field }` title for mark tooltips.
 - `nodes.tooltip.fields`: optional array of query variable names to display for node tooltips.
 - `links.tooltip.fields`: optional array of query variable names to display for link tooltips.
 - If omitted or empty, tooltip shows SPARQL/query-derived fields (and excludes rendering/simulation internals).
-- Special derived field `links` is also accepted for node tooltip (for example to show node degree/count of connected links).
 
-`nodes.field` accepts:
-- A string (for example `"species"`)
-- An array of strings (for example `["species"]` or `["species", "family"]`)
+Node identity fields depend on the graph construction mode:
+- Directional and semantic graphs use `nodes.source.field` and `nodes.target.field`.
+- Co-occurrence graphs use `nodes.field` as a string or an array of peer node fields.
 
-`links.field` controls link construction:
-- Object `{ source, target }`: directional links from source to target.
-- String (data field name): co-occurrence mode.
-In co-occurrence mode, nodes are connected when they share the same resolved value of `links.field`. If `nodes.field` contains multiple entries, all those fields are considered as node identities for co-occurrence.
+Node color and size can be data-driven from either query-derived node fields or graph metrics:
+- `nodes.color.field` / `nodes.size.field`: use a field copied from the SPARQL results.
+- `nodes.color.metric` / `nodes.size.metric`: use a transformed graph metric. The supported metric is currently `"degree"`, the number of links connected to a node.
+- Metrics and fields are mutually exclusive on a single color or size encoding. Metric color uses a quantitative or sequential color scale, for example `{ metric: "degree", scale: { type: "sequential", range: "Viridis" } }`.
+
+`links.type` controls link construction:
+- `"directional"` creates source-target links from `nodes.source.field` to `nodes.target.field`.
+- `"semantic"` uses the same endpoints and `links.relation.field` for the relation field.
+- `"cooccurrence"` connects `nodes.field` values that share `links.context.field`.
+If `nodes.field` contains multiple entries in co-occurrence mode, all those fields are considered as node identities.
 
 `nodes.labels` controls node text labels:
 - `display`: `true | false` (default `true`)

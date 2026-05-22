@@ -60,32 +60,37 @@ export default class ForceGraphRenderer extends BaseRenderer {
     const shouldConstrainNodes = !zoomEnabled;
     const artifactChannels = Array.isArray(visualArtifacts?.channels) ? visualArtifacts.channels : [];
     const artifactScales = visualArtifacts?.scales instanceof Map ? visualArtifacts.scales : new Map();
-    const findChannel = (mark, channel) =>
-      artifactChannels.find((item) => item?.mark === mark && item?.channel === channel) || null;
+    const findChannel = (mark, channel, role = null) =>
+      artifactChannels.find((item) => (
+        item?.mark === mark &&
+        item?.channel === channel &&
+        (role ? item?.role === role : !item?.role)
+      )) || null;
     const nodeColorChannel = findChannel("nodes", "color");
+    const sourceNodeColorChannel = findChannel("nodes", "color", "source");
+    const targetNodeColorChannel = findChannel("nodes", "color", "target");
     const nodeSizeChannel = findChannel("nodes", "size");
+    const sourceNodeSizeChannel = findChannel("nodes", "size", "source");
+    const targetNodeSizeChannel = findChannel("nodes", "size", "target");
     const linkColorChannel = findChannel("links", "color");
 
-    const nodeColorConfig = nodeColorChannel?.encoding || {};
-    const nodeColorScale = nodeColorChannel?.scaleId
-      ? artifactScales.get(nodeColorChannel.scaleId) || null
-      : null;
-
-    const getNodeColor = (d) => {
-      const field = nodeColorConfig?.field;
-      const defaultColor = nodeColorChannel?.defaultValue || nodeColorConfig?.value || "#cccccc";
+    const resolveNodeChannelColor = (d, channel) => {
+      const config = channel?.encoding || {};
+      const scale = channel?.scaleId ? artifactScales.get(channel.scaleId) || null : null;
+      const field = channel?.field;
+      const defaultColor = channel?.defaultValue || config?.value || "#cccccc";
       if (!field || d[field] === undefined) return defaultColor;
 
-      if (nodeColorScale) {
+      if (scale) {
         const value = d[field];
-        const isThreshold = typeof nodeColorScale.invertExtent === "function";
+        const isThreshold = typeof scale.invertExtent === "function";
         if (isThreshold) {
-          const color = nodeColorScale(value);
+          const color = scale(value);
           if (color) return color;
         } else {
-          const dom = nodeColorScale.domain?.() || [];
+          const dom = scale.domain?.() || [];
           if (!dom.length || dom.includes(value)) {
-            const color = nodeColorScale(value);
+            const color = scale(value);
             if (color) return color;
           }
         }
@@ -94,18 +99,40 @@ export default class ForceGraphRenderer extends BaseRenderer {
       return defaultColor;
     };
 
-    const nodeSizeConfig = nodeSizeChannel?.encoding || {};
-    const nodeSizeScale = nodeSizeChannel?.scaleId
-      ? artifactScales.get(nodeSizeChannel.scaleId) || null
-      : null;
+    const getNodeColor = (d) => {
+      const roles = Array.isArray(d?.roles) ? d.roles : [];
+      if (roles.length === 1 && roles[0] === "source" && sourceNodeColorChannel) {
+        return resolveNodeChannelColor(d, sourceNodeColorChannel);
+      }
+      if (roles.length === 1 && roles[0] === "target" && targetNodeColorChannel) {
+        return resolveNodeChannelColor(d, targetNodeColorChannel);
+      }
+      return resolveNodeChannelColor(d, nodeColorChannel);
+    };
+
+    const resolveNodeSizeChannel = (d) => {
+      const roles = Array.isArray(d?.roles) ? d.roles : [];
+      if (roles.length === 1 && roles[0] === "source" && sourceNodeSizeChannel) {
+        return sourceNodeSizeChannel;
+      }
+      if (roles.length === 1 && roles[0] === "target" && targetNodeSizeChannel) {
+        return targetNodeSizeChannel;
+      }
+      return nodeSizeChannel;
+    };
 
     const getNodeRadius = (d) => {
-      const field = nodeSizeConfig?.field;
+      const channel = resolveNodeSizeChannel(d);
+      const nodeSizeConfig = channel?.encoding || {};
+      const nodeSizeScale = channel?.scaleId
+        ? artifactScales.get(channel.scaleId) || null
+        : null;
+      const field = channel?.field;
       const channelDefaultRadius =
-        typeof nodeSizeChannel?.defaultValue === "number" &&
-        !Number.isNaN(nodeSizeChannel.defaultValue) &&
-        nodeSizeChannel.defaultValue > 0
-          ? nodeSizeChannel.defaultValue
+        typeof channel?.defaultValue === "number" &&
+        !Number.isNaN(channel.defaultValue) &&
+        channel.defaultValue > 0
+          ? channel.defaultValue
           : null;
       const encodingDefaultRadius =
         typeof nodeSizeConfig?.value === "number" &&

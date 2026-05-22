@@ -3,7 +3,7 @@
 import "./src/register-all.js";
 
 // Bindings treatment
-export { extractId, extractLabel } from "./src/extract-bindings-info.js"
+export { bindingToValue, extractId, resolveBindingLabel } from "./src/extract-bindings-info.js"
 
 // Mapper methods
 export { createSparqlMapper, listSparqlMappers } from "./src/mapper-factory.js"

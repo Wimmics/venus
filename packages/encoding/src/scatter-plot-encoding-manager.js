@@ -1,34 +1,10 @@
 import * as d3 from "d3";
 import { EncodingManager } from "./encoding-manager.js";
+import { getDefaultEncodingTemplate } from "./default-encodings.js";
 
 export class ScatterPlotEncodingManager extends EncodingManager {
   getDefaultEncoding() {
-    return {
-      interactions: {
-        tooltip: true
-      },
-      x: {
-        field: "x",
-        axis: { labelAngle: 0 },
-        scale: { type: "linear" }
-      },
-      y: {
-        field: "y",
-        scale: { type: "linear" },
-        axis: {}
-      },
-      points: {
-        display: true,
-        color: {
-          value: "#4e79a7",
-          legend: { display: true, position: "bottom" }
-        },
-        size: {
-          value: 4,
-          legend: { display: true, position: "bottom" }
-        }
-      }
-    };
+    return getDefaultEncodingTemplate("scatter-plot");
   }
 
   createAdaptiveEncoding(sparqlVars) {
@@ -36,13 +12,6 @@ export class ScatterPlotEncodingManager extends EncodingManager {
     if (!Array.isArray(sparqlVars) || sparqlVars.length === 0) return enc;
     enc.x.field = sparqlVars[0];
     enc.y.field = sparqlVars[1] || sparqlVars[0];
-
-    if (sparqlVars.length > 2) {
-      enc.points.color.field = sparqlVars[2];
-      enc.points.color.scale = { type: "ordinal", range: "Set3" };
-      enc.points.color.legend.display = true;
-      enc.points.color.legend.title = sparqlVars[2];
-    }
 
     if (sparqlVars.length > 3) {
       enc.points.size.field = sparqlVars[3];

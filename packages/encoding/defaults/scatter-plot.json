@@ -1,0 +1,38 @@
+{
+  "interactions": {
+    "tooltip": true
+  },
+  "x": {
+    "field": "x",
+    "axis": {
+      "labelAngle": 0
+    },
+    "scale": {
+      "type": "linear"
+    }
+  },
+  "y": {
+    "field": "y",
+    "scale": {
+      "type": "linear"
+    },
+    "axis": {}
+  },
+  "points": {
+    "display": true,
+    "color": {
+      "value": "#4e79a7",
+      "legend": {
+        "display": true,
+        "position": "bottom"
+      }
+    },
+    "size": {
+      "value": 4,
+      "legend": {
+        "display": true,
+        "position": "bottom"
+      }
+    }
+  }
+}
