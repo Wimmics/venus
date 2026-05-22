@@ -8,15 +8,15 @@ encoding: {
     color: { value: "#69b3a2" },
     source: {
       field: "source",
-      label: { field: "sourceLabel" }
+      labels: { field: "sourceLabel", display: false }
     },
     target: {
       field: "target",
-      color: { field: "targetType" }
+      color: { field: "targetType" },
+      stroke: { value: "#0f766e", width: 2 }
     },
     size: { field: "value" },
-    label: { field: "name" },
-    labels: { display: true },
+    labels: { field: "name", display: true },
     stroke: { value: "#fff", width: 1.5, display: true },
     tooltip: { fields: ["label", "value"] }
   }
@@ -33,11 +33,11 @@ encoding: {
 | `target.field` | `string` | Target node identity field for directional and semantic graphs. |
 | `source.color` / `target.color` | `object` | Role-specific color config. Falls back to `nodes.color` when omitted. <br>See [`color`](../encoding/color.md) for details. |
 | `source.size` / `target.size` | `object` | Role-specific node size config. Falls back to `nodes.size` when omitted. |
-| `source.label` / `target.label` | `string` / `object` | Role-specific label text or label field. Falls back to `nodes.label` when omitted. |
+| `source.labels` / `target.labels` | `object` | Role-specific label text and visible label display config. Falls back to `nodes.labels` when omitted. |
+| `source.stroke` / `target.stroke` | `object` | Role-specific node outline style. Falls back to `nodes.stroke` when omitted. |
 | `source.tooltip` / `target.tooltip` | `object` | Role-specific tooltip title and fields. Falls back to `nodes.tooltip` when omitted. |
 | `size` | `object` | Node size config. Possible values: `value`, `field`, `scale`, `legend`. <br>See [`size`](../encoding/size.md) and [`scale`](../encoding/scale.md) for details. |
-| `label` | `string` / `object` | Node label text as a constant or field. <br>See [`label`](../label.md) for details. |
-| `labels` | `object` | Node label display config. Possible values: `display`. <br>See [`labels`](../labels.md) for details. |
+| `labels` | `object` | Node label text and visible label display config. Possible values: `display`, `value`, `field`. <br>See [`labels`](../labels.md) for details. |
 | `stroke` | `object` | Node outline style. Possible values: `value` (CSS color), `width` (number/string), `display` (boolean). <br>**Default:** `{ value: "#ffffff", width: 1.5, display: true }`. |
 | `tooltip.title` | `string` / `object` | Optional tooltip title as a constant string or `{ field }`. |
 | `tooltip.fields` | `string[]` | Optional tooltip field whitelist for hovered nodes. If omitted, fields are selected automatically. <br>Global tooltip toggle is controlled by [`interactions.tooltip`](../encoding/interactions.md). |
@@ -69,7 +69,8 @@ encoding: {
 ```
 
 `nodes.source` and `nodes.target` define endpoint fields and may scope
-data-driven `color`, `size`, `label`, and `tooltip` config to that role.
+`color`, `size`, `labels`, `stroke`, and `tooltip` config to
+that role.
 Role-specific fields are copied only to nodes built from that role. When the
 same entity appears as both a source and a target, VENUS uses general `nodes`
 config for that node.

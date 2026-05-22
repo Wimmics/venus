@@ -80,7 +80,7 @@ export default class CartesianChartRenderer extends BaseRenderer {
   }
 
   _getMarginBase() {
-    return { top: 24, right: 20, bottom: 64, left: 64 };
+    return { top: 24, right: 20, bottom: 64, left: 30 };
   }
 
   _computeMargins({ xLabelAngle = 0, xLabelOffset = { x: 0, y: 0 }, yLabelOffset = { x: 0, y: 0 } }) {
@@ -262,7 +262,15 @@ export default class CartesianChartRenderer extends BaseRenderer {
   _finalizeLayout({ payload, encoding, visualArtifacts, width, height, margin }) {
     const svgNode = this.svg?.node?.();
     const overflow = measurePlotOverflow(svgNode, ".plot-area", width, height);
-    const shouldRefit = shouldRefitLayout(overflow);
+
+    const relevantOverflow = {
+      top: overflow.top,
+      right: overflow.right,
+      bottom: overflow.bottom,
+      left: 0 // do not auto-grow left margin
+    };
+
+    const shouldRefit = shouldRefitLayout(relevantOverflow);
 
     if (!shouldRefit || this._fitPass >= 1) {
       this._resetFitState();
@@ -270,7 +278,7 @@ export default class CartesianChartRenderer extends BaseRenderer {
     }
 
     this._fitPass += 1;
-    this._marginOverride = growMargins(margin, overflow, 6);
+    this._marginOverride = growMargins(margin, relevantOverflow, 6);
     this.render(payload, encoding, visualArtifacts);
   }
 

@@ -170,7 +170,6 @@ export default class LineChartRenderer extends CartesianChartRenderer {
     const fallbackByColorField = typeof colorField === "string" && colorField.trim().length > 0;
     const resolveSeriesKey = (row) => {
       if (hasGroupField) return String(row?.[groupField] ?? "undefined");
-      if (fallbackByColorField) return String(row?.[colorField] ?? "undefined");
       return "__single__";
     };
 

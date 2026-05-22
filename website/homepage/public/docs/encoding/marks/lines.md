@@ -7,7 +7,7 @@ Use `lines.group.field` to define how many lines are drawn (one line per distinc
 ```js
 encoding: {
   lines: {
-    label: { field: "countryLabel" },
+    labels: { field: "countryLabel" },
     group: { field: "countryLabel" },
     color: {
       field: "continentLabel",
@@ -26,7 +26,7 @@ encoding: {
 
 | Property | Type | Description |
 |---|---|---|
-| `label` | `string` / `object` | Line label text as a constant or field. <br>See [`label`](../label.md) for details. |
+| `labels` | `object` | Line label text as a constant value or field. <br>See [`labels`](../labels.md) for details. |
 | `group.field` | `string` | Field used to create one line per distinct value (series grouping key). This can differ from `color.field`. <br>**Default:** not set. Backward compatibility fallback: `color.field` is used as grouping key when `group.field` is omitted. |
 | `color` | `object` | Line color config. Possible values: `value`, `field`, `scale`, `legend`. <br>See [`color`](../color.md) for details. |
 | `size` | `object` | Line stroke width config. Possible values: `value`, `field`, `scale`, `legend`. <br>See [`size`](../size.md) and [`scale`](../scale.md) for details. |

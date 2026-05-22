@@ -58,7 +58,7 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 
 				for (const { varName, id } of entityEntries) {
 					if (!nodesMap.has(id)) {
-						const node = this._makeNode(binding, vars, varName, id, explicitNodeFieldConfig, mapping?.nodes?.label);
+						const node = this._makeNode(binding, vars, varName, id, explicitNodeFieldConfig, mapping?.nodes?.labels);
 						nodesMap.set(id, node);
 					}
 					if (!cooccurrenceBindings) cooccurrenceBindings = [];
@@ -72,13 +72,13 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 			const sourceId = extractId(binding[sourceVar]);
 			
 			if (!nodesMap.has(sourceId)) {
-				const node = this._makeNode(binding, vars, sourceVar, sourceId, explicitNodeFieldConfig, mapping?.nodes?.label);
+				const node = this._makeNode(binding, vars, sourceVar, sourceId, explicitNodeFieldConfig, mapping?.nodes?.labels);
 				nodesMap.set(sourceId, node);
 			}
 			const sourceNode = nodesMap.get(sourceId);
 			addNodeRole(sourceNode, "source");
 			copyRelevantNodeFields(sourceNode, binding, vars, sourceVar, explicitNodeFieldConfig);
-			applyNodeLabelField(sourceNode, resolveRoleNodeConfig(mapping, sourceNode, "source", "label"));
+			applyNodeLabelField(sourceNode, resolveRoleNodeConfig(mapping, sourceNode, "source", "labels"));
 			
 			if (linkType === "directional" && targetVar && binding[targetVar]) {
 				addDirectionalLink({
@@ -91,7 +91,7 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 					explicitNodeFieldConfig,
 					copyNodeFields: copyRelevantNodeFields,
 						nodeLabel: mapping?.nodes,
-					linkLabel: mapping?.links?.label
+					linkLabel: mapping?.links?.labels
 				});
 				continue;
 			}
@@ -108,7 +108,7 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 					explicitNodeFieldConfig,
 					copyNodeFields: copyRelevantNodeFields,
 						nodeLabel: mapping?.nodes,
-					linkLabel: mapping?.links?.label
+					linkLabel: mapping?.links?.labels
 				});
 				continue;
 			}
@@ -145,7 +145,7 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 		
 		const node = {
 			id,
-			label: resolveBindingLabel(typeof labelConfig === "string" ? labelConfig : null, bindingValue, binding),
+			label: resolveBindingLabel(labelConfig, bindingValue, binding),
 			uri: bindingValue.type === "uri" ? bindingValue.value : null,
 			type: bindingValue.type,
 			originalData: {}

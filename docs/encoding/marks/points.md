@@ -6,7 +6,7 @@ The `points` property configures point marks in Cartesian visualizations (for ex
 encoding: {
   points: {
     display: true,
-    label: { field: "countryLabel" },
+    labels: { field: "countryLabel" },
     color: {
       field: "continentLabel",
       scale: { type: "ordinal", range: "Accent" },
@@ -27,7 +27,7 @@ encoding: {
 | Property | Type | Description |
 |---|---|---|
 | `display` | `boolean` | Point visibility. <br>**Default:** chart-specific (`true` for scatter, optional for line chart points). |
-| `label` | `string` / `object` | Point label text as a constant or field. <br>See [`label`](../label.md) for details. |
+| `labels` | `object` | Point label text as a constant value or field. <br>See [`labels`](../labels.md) for details. |
 | `color` | `object` | Point color config. Possible values: `value`, `field`, `scale`, `legend`. <br>See [`color`](../encoding/color.md) for details. |
 | `size` | `object` | Point size config. Possible values: `value`, `field`, `scale`, `legend`. <br>See [`size`](../encoding/size.md) and [`scale`](../encoding/scale.md) for details. |
 | `tooltip.title` | `string` / `object` | Optional tooltip title as a constant string or `{ field }`. |

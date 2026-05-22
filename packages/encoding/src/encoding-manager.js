@@ -143,6 +143,14 @@ export class EncodingManager {
     return baseTypes.includes(type) || extraTypes.includes(type);
   }
 
+  _rejectLegacyMarkLabels(encoding, marks = []) {
+    for (const mark of marks) {
+      if (encoding?.[mark]?.label !== undefined) {
+        throw new Error(`Invalid encoding: "${mark}.label" is no longer supported. Use "${mark}.labels" instead.`);
+      }
+    }
+  }
+
   _resolveScaleDomain(scaleConfig, data, field, type, { requireArrayData = false } = {}) {
     if (!scaleConfig) return null;
 

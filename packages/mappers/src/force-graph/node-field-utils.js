@@ -84,7 +84,7 @@ export function collectExplicitNodeFields(mapping, context = {}) {
     }
   }
 
-  const nodeLabelField = mapping?.nodes?.label?.field;
+  const nodeLabelField = mapping?.nodes?.labels?.field;
   if (typeof nodeLabelField === "string" && nodeLabelField.trim()) {
     addOwnedField(
       nodeLabelField,
@@ -93,8 +93,8 @@ export function collectExplicitNodeFields(mapping, context = {}) {
   }
 
   const roleLabelFields = [
-    [mapping?.nodes?.source?.label?.field, context.sourceVar],
-    [mapping?.nodes?.target?.label?.field, context.targetVar]
+    [mapping?.nodes?.source?.labels?.field, context.sourceVar],
+    [mapping?.nodes?.target?.labels?.field, context.targetVar]
   ];
   for (const [fieldName, ownerVar] of roleLabelFields) {
     addOwnedField(fieldName, ownerVar);
@@ -162,18 +162,18 @@ export function copyRelevantNodeFields(node, binding, vars, entityVarName, expli
   }
 }
 
-export function applyNodeLabelField(node, labelConfig) {
-  if (typeof labelConfig === "string") {
-    node.label = labelConfig;
+export function applyNodeLabelField(node, labelsConfig) {
+  if (typeof labelsConfig?.value === "string") {
+    node.label = labelsConfig.value;
     return;
   }
 
   const labelField =
-    labelConfig &&
-    typeof labelConfig === "object" &&
-    typeof labelConfig.field === "string" &&
-    labelConfig.field.trim()
-      ? labelConfig.field.trim()
+    labelsConfig &&
+    typeof labelsConfig === "object" &&
+    typeof labelsConfig.field === "string" &&
+    labelsConfig.field.trim()
+      ? labelsConfig.field.trim()
       : null;
 
   if (labelField && node?.[labelField] !== undefined && node[labelField] !== null) {

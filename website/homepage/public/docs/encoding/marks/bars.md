@@ -7,7 +7,7 @@ The `bars` property configures bar marks in `<venus-barchart>`.
 ```js
 encoding: {
   bars: {
-    label: { field: "genre" },
+    labels: { field: "genre" },
     groups: { field: "genre" },
     stack: false,
     color: {
@@ -27,7 +27,7 @@ encoding: {
 
 | Property | Type | Description |
 |---|---|---|
-| `label` | `string` / `object` | Bar label text as a constant or field. <br>See [`label`](../label.md) for details. |
+| `labels` | `object` | Bar label text as a constant value or field. <br>See [`labels`](../labels.md) for details. |
 | `groups.field` | `string` | Field used to split each x-category into grouped sub-categories when `bars.stack: false`. <br>**Default:** not set (simple non-grouped bars). |
 | `stack` | `string`/`boolean` | Stacking mode. Possible values: `false`, `true`, `"normalize"`. <br>**Default:** `false`. |
 | `color` | `object` | Bar color config. Possible values: `value`, `field`, `scale`, `legend`. <br>See [`color`](../color.md) for details. |

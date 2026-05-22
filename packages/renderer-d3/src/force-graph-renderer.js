@@ -110,6 +110,18 @@ export default class ForceGraphRenderer extends BaseRenderer {
       return resolveNodeChannelColor(d, nodeColorChannel);
     };
 
+    const resolveRoleNodeConfig = (d, property) => {
+      const roles = Array.isArray(d?.roles) ? d.roles : [];
+      const role = roles.length === 1 ? roles[0] : null;
+      if (
+        (role === "source" || role === "target") &&
+        mapping.nodes?.[role]?.[property] !== undefined
+      ) {
+        return mapping.nodes[role][property];
+      }
+      return mapping.nodes?.[property] || {};
+    };
+
     const resolveNodeSizeChannel = (d) => {
       const roles = Array.isArray(d?.roles) ? d.roles : [];
       if (roles.length === 1 && roles[0] === "source" && sourceNodeSizeChannel) {
@@ -190,14 +202,7 @@ export default class ForceGraphRenderer extends BaseRenderer {
     const getLinkWidth = () => linkWidthConfig.value || 1.5;
 
     const linkDistance = mapping.links?.distance || 100;
-    const nodeLabelsConfig = mapping.nodes?.labels || {};
-    const showNodeLabels = nodeLabelsConfig.display !== false;
-    const nodeStrokeConfig = mapping.nodes?.stroke || {};
-    const showNodeStroke = nodeStrokeConfig.display !== false;
-    const nodeStrokeColor =
-      typeof nodeStrokeConfig.value === "string" && nodeStrokeConfig.value.trim()
-        ? nodeStrokeConfig.value
-        : "#ffffff";
+    const showNodeLabels = (d) => resolveRoleNodeConfig(d, "labels").display !== false;
     const parseStrokeWidth = (value, fallback = 1.5) => {
       if (Number.isFinite(value) && Number(value) >= 0) return Number(value);
       if (typeof value === "string") {
@@ -209,9 +214,17 @@ export default class ForceGraphRenderer extends BaseRenderer {
       }
       return fallback;
     };
-    const nodeStrokeWidth = parseStrokeWidth(nodeStrokeConfig.width, 1.5);
-    const getNodeStroke = () => (showNodeStroke ? nodeStrokeColor : "none");
-    const getNodeStrokeWidth = () => (showNodeStroke ? nodeStrokeWidth : 0);
+    const getNodeStroke = (d) => {
+      const nodeStrokeConfig = resolveRoleNodeConfig(d, "stroke");
+      if (nodeStrokeConfig.display === false) return "none";
+      return typeof nodeStrokeConfig.value === "string" && nodeStrokeConfig.value.trim()
+        ? nodeStrokeConfig.value
+        : "#ffffff";
+    };
+    const getNodeStrokeWidth = (d) => {
+      const nodeStrokeConfig = resolveRoleNodeConfig(d, "stroke");
+      return nodeStrokeConfig.display === false ? 0 : parseStrokeWidth(nodeStrokeConfig.width, 1.5);
+    };
 
     this.simulation = d3
       .forceSimulation(this.nodes)
@@ -304,7 +317,7 @@ export default class ForceGraphRenderer extends BaseRenderer {
     };
 
     const computeLabelOpacity = (d, zoomK) => {
-      if (!showNodeLabels) return 0;
+      if (!showNodeLabels(d)) return 0;
       const zoomOpacity = interpolate(zoomK, 0.45, 0.95);
       const renderedRadius = getNodeRadius(d) * zoomK;
       const sizeOpacity = interpolate(renderedRadius, 3, 7);
@@ -405,9 +418,11 @@ export default class ForceGraphRenderer extends BaseRenderer {
       .attr("fill", getNodeColor)
       .attr("stroke", getNodeStroke)
       .attr("stroke-width", getNodeStrokeWidth);
-    labelSel = showNodeLabels
-      ? this.nodeGroup.append("text").attr("class", "node-label").text((d) => d.label || d.id)
-      : null;
+    labelSel = this.nodeGroup
+      .filter(showNodeLabels)
+      .append("text")
+      .attr("class", "node-label")
+      .text((d) => d.label || d.id);
     if (labelSel) {
       const initialZoom = zoomEnabled ? d3.zoomTransform(this.svg.node()).k : 1;
       labelSel.style("opacity", (d) => computeLabelOpacity(d, initialZoom));

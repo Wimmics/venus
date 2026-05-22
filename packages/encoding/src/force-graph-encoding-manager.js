@@ -162,6 +162,7 @@ export class ForceGraphEncodingManager extends EncodingManager {
     }
 
     // User-provided encoding validation
+    this._rejectLegacyMarkLabels(userEncoding, ["nodes", "links"]);
     this._validateGraphConstructionConfig(userEncoding);
 
     this._validateSingleScaleConfig(userEncoding);
@@ -306,7 +307,7 @@ export class ForceGraphEncodingManager extends EncodingManager {
     const validateRole = (role) => {
       const config = encoding?.nodes?.[role];
       if (!config) return;
-      const supportedKeys = new Set(["field", "color", "size", "label", "tooltip"]);
+      const supportedKeys = new Set(["field", "color", "size", "labels", "stroke", "tooltip"]);
       const unsupportedKeys = Object.keys(config).filter((key) => !supportedKeys.has(key));
       if (unsupportedKeys.length) {
         throw new Error(`Invalid encoding: "nodes.${role}" has unsupported properties: ${unsupportedKeys.join(", ")}.`);

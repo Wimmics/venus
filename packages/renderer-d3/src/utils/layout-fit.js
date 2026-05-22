@@ -4,23 +4,32 @@ export function computeAxisAwareMargins({
   yLabelOffset = { x: 0, y: 0 },
   base = { top: 24, right: 20, bottom: 64, left: 64 }
 } = {}) {
-  const angle = Math.min(90, Math.max(-90, Number(xLabelAngle) || 0));
+  const validNumber = (value, fallback) => {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : fallback;
+  };
+
+  const baseTop = validNumber(base.top, 24);
+  const baseRight = validNumber(base.right, 20);
+  const baseBottom = validNumber(base.bottom, 64);
+  const baseLeft = validNumber(base.left, 64);
+
+  const angle = Math.min(90, Math.max(-90, validNumber(xLabelAngle, 0)));
   const angledExtra = Math.abs(angle) > 0 ? 24 + Math.abs(angle) * 1.1 : 0;
 
-  const bottom = Math.max(
-    Number(base.bottom) || 64,
-    44 + angledExtra + Math.abs(xLabelOffset?.y || 0) + Math.abs(xLabelOffset?.x || 0) * 0.3
-  );
-  const left = Math.max(
-    Number(base.left) || 64,
-    56 + Math.abs(yLabelOffset?.x || 0) + Math.abs(yLabelOffset?.y || 0) * 0.4
-  );
-
   return {
-    top: Number(base.top) || 24,
-    right: Number(base.right) || 20,
-    bottom,
-    left
+    top: baseTop,
+    right: baseRight,
+    bottom:
+      baseBottom +
+      angledExtra +
+      Math.abs(xLabelOffset?.y || 0) +
+      Math.abs(xLabelOffset?.x || 0) * 0.3,
+
+    left:
+      baseLeft +
+      Math.abs(yLabelOffset?.x || 0) +
+      Math.abs(yLabelOffset?.y || 0) * 0.4
   };
 }
 

@@ -143,9 +143,9 @@ export default class BarChartRenderer extends CartesianChartRenderer {
 
     const groupedBars = xCategories.flatMap((xCategory) =>
       subCategories.map((subCategory) => {
-        const bucket = aggregated.get(xCategory)?.get(subCategory) || { value: 0, sample: null };
+        const bucket = aggregated.get(xCategory)?.get(subCategory) || { value: 0, sample: null, values: {} };
         const value = bucket.value || 0;
-        const base = bucket.sample ? { ...bucket.sample } : {};
+        const base = this._createAggregateDatum(bucket);
         base[xField] = xCategory;
         base[yField] = value;
         if (splitField) base[splitField] = subCategory;
@@ -168,9 +168,9 @@ export default class BarChartRenderer extends CartesianChartRenderer {
     const stackedRows = xCategories.map((xCategory) => {
       const row = { __x: xCategory, __meta: {} };
       for (const subCategory of subCategories) {
-        const bucket = aggregated.get(xCategory)?.get(subCategory) || { value: 0, sample: null };
+        const bucket = aggregated.get(xCategory)?.get(subCategory) || { value: 0, sample: null, values: {} };
         row[subCategory] = bucket.value || 0;
-        const base = bucket.sample ? { ...bucket.sample } : {};
+        const base = this._createAggregateDatum(bucket);
         base[xField] = xCategory;
         base[yField] = row[subCategory];
         if (splitField) base[splitField] = subCategory;
@@ -282,9 +282,9 @@ export default class BarChartRenderer extends CartesianChartRenderer {
           });
       } else if (layoutMode === "simple") {
         const simpleBars = xCategories.map((xCategory) => {
-          const bucket = aggregated.get(xCategory)?.get("__single__") || { value: 0, sample: null };
+          const bucket = aggregated.get(xCategory)?.get("__single__") || { value: 0, sample: null, values: {} };
           const value = bucket.value || 0;
-          const base = bucket.sample ? { ...bucket.sample } : {};
+          const base = this._createAggregateDatum(bucket);
           base[xField] = xCategory;
           base[yField] = value;
           return { x: xCategory, value, datum: base };
@@ -449,9 +449,9 @@ export default class BarChartRenderer extends CartesianChartRenderer {
 
     if (layoutMode === "simple") {
       const simpleBars = xCategories.map((xCategory) => {
-        const bucket = aggregated.get(xCategory)?.get("__single__") || { value: 0, sample: null };
+        const bucket = aggregated.get(xCategory)?.get("__single__") || { value: 0, sample: null, values: {} };
         const value = bucket.value || 0;
-        const base = bucket.sample ? { ...bucket.sample } : {};
+        const base = this._createAggregateDatum(bucket);
         base[xField] = xCategory;
         base[yField] = value;
         return { x: xCategory, value, datum: base };
@@ -579,7 +579,7 @@ export default class BarChartRenderer extends CartesianChartRenderer {
     for (const xCategory of xCategories) {
       const subMap = new Map();
       for (const subCategory of subCategories) {
-        subMap.set(subCategory, { value: 0, sample: null });
+        subMap.set(subCategory, { value: 0, sample: null, values: {} });
       }
       aggregated.set(xCategory, subMap);
     }
@@ -587,13 +587,32 @@ export default class BarChartRenderer extends CartesianChartRenderer {
     for (const row of rows) {
       if (!aggregated.has(row.x)) continue;
       const subMap = aggregated.get(row.x);
-      if (!subMap.has(row.sub)) subMap.set(row.sub, { value: 0, sample: null });
+      if (!subMap.has(row.sub)) subMap.set(row.sub, { value: 0, sample: null, values: {} });
       const bucket = subMap.get(row.sub);
       bucket.value += row.y;
       if (!bucket.sample) bucket.sample = row.raw;
+      this._mergeAggregateValues(bucket.values, row.raw);
       subMap.set(row.sub, bucket);
     }
     return aggregated;
+  }
+
+  _createAggregateDatum(bucket = {}) {
+    const datum = bucket.sample ? { ...bucket.sample } : {};
+    for (const [fieldName, values] of Object.entries(bucket.values || {})) {
+      datum[fieldName] = values.length === 1 ? values[0] : [...values];
+    }
+    return datum;
+  }
+
+  _mergeAggregateValues(valuesByField, row = {}) {
+    for (const [fieldName, value] of Object.entries(row || {})) {
+      if (value === undefined || value === null) continue;
+      if (!Array.isArray(valuesByField[fieldName])) valuesByField[fieldName] = [];
+      if (!valuesByField[fieldName].includes(value)) {
+        valuesByField[fieldName].push(value);
+      }
+    }
   }
 
   _focusMark({ mark, activeElement } = {}) {

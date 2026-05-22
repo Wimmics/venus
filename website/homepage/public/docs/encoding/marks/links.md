@@ -7,7 +7,7 @@ encoding: {
   links: {
     type: "semantic",
     relation: { field: "relationship" },
-    label: { field: "relationshipName" },
+    labels: { field: "relationshipName" },
     color: { value: "#999" },
     distance: 100,
     tooltip: { fields: ["type"] }
@@ -22,7 +22,7 @@ encoding: {
 | `type` | `string` | Link construction model. Possible values: `directional`, `semantic`, `cooccurrence`. <br>**Default:** `directional` for source-target graphs. |
 | `relation.field` | `string` | Relation field for `semantic` source-target links. The endpoints are defined by `nodes.source.field` and `nodes.target.field`. |
 | `context.field` | `string` | Shared context field for `cooccurrence` links. Nodes that share a context value are connected. |
-| `label` | `string` / `object` | Link label text as a constant or field. <br>See [`label`](../label.md) for details. |
+| `labels` | `object` | Link label text as a constant value or field. <br>See [`labels`](../labels.md) for details. |
 | `color` | `object` | Link color configuration. Supported properties: `value`, `field`, `scale`, `legend`. <br>See [`color`](../encoding/color.md) for details. |
 | `distance` | `number` | Preferred force-link distance. Must be a positive number. <br>**Default:** `100`. |
 | `width.value` | `number` | Constant link thickness. Must be a positive number. <br>**Default:** `1.5`. |

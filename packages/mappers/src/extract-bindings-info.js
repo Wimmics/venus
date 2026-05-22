@@ -55,19 +55,23 @@ export function bindingToValue(bindingValue) {
 
 /**
  * Resolve mark label text without guessing from unrelated SPARQL bindings.
- * `label` accepts a constant string or `{ field }`; otherwise use the mark field value.
+ * `labels` accepts `{ value }` or `{ field }`; otherwise use the mark field value.
  */
-export function resolveBindingLabel(labelConfig, fieldBindingValue, currentBinding) {
-  if (typeof labelConfig === "string") {
-    return labelConfig;
-  }
+export function resolveBindingLabel(labelsConfig, fieldBindingValue, currentBinding) {
+  const labelValue =
+    labelsConfig &&
+    typeof labelsConfig === "object" &&
+    typeof labelsConfig.value === "string"
+      ? labelsConfig.value
+      : null;
+  if (labelValue !== null) return labelValue;
 
   const labelField =
-    labelConfig &&
-    typeof labelConfig === "object" &&
-    typeof labelConfig.field === "string" &&
-    labelConfig.field.trim()
-      ? labelConfig.field.trim()
+    labelsConfig &&
+    typeof labelsConfig === "object" &&
+    typeof labelsConfig.field === "string" &&
+    labelsConfig.field.trim()
+      ? labelsConfig.field.trim()
       : null;
 
   if (labelField) {

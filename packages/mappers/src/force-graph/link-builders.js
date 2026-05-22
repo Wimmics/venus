@@ -21,20 +21,20 @@ export function addDirectionalLink({
   if (!nodesMap.has(targetId)) {
     const node = {
       id: targetId,
-      label: resolveBindingLabel(typeof nodeLabel?.label === "string" ? nodeLabel.label : null, targetBinding, binding),
+      label: resolveBindingLabel(nodeLabel?.labels, targetBinding, binding),
       uri: targetBinding.type === "uri" ? targetBinding.value : null,
       type: targetBinding.type,
       originalData: {}
     };
 
     copyNodeFields(node, binding, vars, targetVar, explicitNodeFieldConfig);
-    applyNodeLabelField(node, nodeLabel?.label);
+    applyNodeLabelField(node, nodeLabel?.labels);
     nodesMap.set(targetId, node);
   }
   const targetNode = nodesMap.get(targetId);
   addNodeRole(targetNode, "target");
   copyNodeFields(targetNode, binding, vars, targetVar, explicitNodeFieldConfig);
-  applyNodeLabelField(targetNode, resolveRoleNodeConfig({ nodes: nodeLabel }, targetNode, "target", "label"));
+  applyNodeLabelField(targetNode, resolveRoleNodeConfig({ nodes: nodeLabel }, targetNode, "target", "labels"));
 
   const linkKey = `${sourceId}-${targetId}`;
   if (!linksMap.has(linkKey)) {
@@ -45,14 +45,9 @@ export function addDirectionalLink({
       label: resolveBindingLabel(linkLabel, targetBinding, binding)
     };
 
-    for (const varName of vars) {
-      if (binding[varName]) {
-        link[varName] = binding[varName].value;
-      }
-    }
-
     linksMap.set(linkKey, link);
   }
+  mergeLinkBindingValues(linksMap.get(linkKey), binding, vars);
 }
 
 export function addSemanticLink({
@@ -76,20 +71,20 @@ export function addSemanticLink({
   if (!nodesMap.has(targetId)) {
     const node = {
       id: targetId,
-      label: resolveBindingLabel(typeof nodeLabel?.label === "string" ? nodeLabel.label : null, targetBinding, binding),
+      label: resolveBindingLabel(nodeLabel?.labels, targetBinding, binding),
       uri: targetBinding.type === "uri" ? targetBinding.value : null,
       type: targetBinding.type,
       originalData: {}
     };
 
     copyNodeFields(node, binding, vars, targetVar, explicitNodeFieldConfig);
-    applyNodeLabelField(node, nodeLabel?.label);
+    applyNodeLabelField(node, nodeLabel?.labels);
     nodesMap.set(targetId, node);
   }
   const targetNode = nodesMap.get(targetId);
   addNodeRole(targetNode, "target");
   copyNodeFields(targetNode, binding, vars, targetVar, explicitNodeFieldConfig);
-  applyNodeLabelField(targetNode, resolveRoleNodeConfig({ nodes: nodeLabel }, targetNode, "target", "label"));
+  applyNodeLabelField(targetNode, resolveRoleNodeConfig({ nodes: nodeLabel }, targetNode, "target", "labels"));
 
   const linkKey = `${sourceId}-${targetId}-semantic`;
   if (!linksMap.has(linkKey)) {
@@ -107,12 +102,24 @@ export function addSemanticLink({
       tooltip: semanticLabel
     };
 
-    for (const varName of vars) {
-      if (binding[varName]) {
-        link[varName] = binding[varName].value;
-      }
-    }
-
     linksMap.set(linkKey, link);
   }
+  mergeLinkBindingValues(linksMap.get(linkKey), binding, vars);
+}
+
+function mergeLinkBindingValues(link, binding, vars = []) {
+  if (!link) return;
+  for (const varName of vars) {
+    const nextValue = binding?.[varName]?.value;
+    if (nextValue === undefined || nextValue === null) continue;
+    link[varName] = mergeUniqueValue(link[varName], nextValue);
+  }
+}
+
+function mergeUniqueValue(currentValue, nextValue) {
+  if (currentValue === undefined || currentValue === null) return nextValue;
+  if (Array.isArray(currentValue)) {
+    return currentValue.includes(nextValue) ? currentValue : [...currentValue, nextValue];
+  }
+  return currentValue === nextValue ? currentValue : [currentValue, nextValue];
 }

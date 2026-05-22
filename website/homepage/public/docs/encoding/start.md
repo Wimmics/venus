@@ -27,9 +27,8 @@ The encoding properties are designed to be transferable across visualizations, t
 |---|---|
 | [`title`](./title.md) | Defines the chart title. |
 | [`field`](./field.md) | Maps data variables to visual marks and channels. |
-| [`label`](./label.md) | Defines explicit mark label text from a constant or field. |
 | [`color`](./color.md) | Configures the color of visual marks, either constant or data-driven. |
 | [`size`](./size.md) | Configures the size of visual marks, either constant or data-driven. |
-| [`labels`](./labels.md) | Controls labels for marks that support label display. |
+| [`labels`](./labels.md) | Configures label text and visibility for marks. |
 | [`legend`](./legend.md) | Customizes the color and size legends. |
 | [`interactions`](./interactions.md) | Configures user interactions with the visualization. |

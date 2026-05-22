@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-22T09:39:57.424Z",
+  "generatedAt": "2026-05-22T13:40:13.795Z",
   "root": {
     "type": "folder",
     "name": "docs",
@@ -97,12 +97,6 @@
             "name": "field.md",
             "title": "Data Fields",
             "path": "encoding/field.md"
-          },
-          {
-            "type": "file",
-            "name": "label.md",
-            "title": "Label",
-            "path": "encoding/label.md"
           },
           {
             "type": "file",

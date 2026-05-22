@@ -21,6 +21,8 @@ export class SplitViewResizer {
     this.applyLayout();
   }
 
+  
+
   bindEvents() {
     this.boundMove = this.onPointerMove.bind(this);
     this.boundUp = this.onPointerUp.bind(this);

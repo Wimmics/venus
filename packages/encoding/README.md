@@ -88,10 +88,14 @@ Node color and size can be data-driven from either query-derived node fields or 
 - `"cooccurrence"` connects `nodes.field` values that share `links.context.field`.
 If `nodes.field` contains multiple entries in co-occurrence mode, all those fields are considered as node identities.
 
-`nodes.labels` controls node text labels:
+`labels` configures mark label text:
+- `value`: constant label text
+- `field`: data field used as label text
+
+`nodes.labels`, `nodes.source.labels`, and `nodes.target.labels` also control visible node labels:
 - `display`: `true | false` (default `true`)
 
-`nodes.stroke` controls node outline style:
+`nodes.stroke`, `nodes.source.stroke`, and `nodes.target.stroke` control node outline style:
 - `value`: CSS color string (name or hex), for example `"white"` or `"#ffffff"` (default `"#ffffff"`)
 - `width`: stroke width as a number (`2`) or CSS-like pixel string (`"2px"`) (default `1.5`)
 - `display`: `true | false` (default `true`)

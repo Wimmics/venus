@@ -33,6 +33,9 @@ export class LineChartEncodingManager extends EncodingManager {
       return this.createAdaptiveEncoding(vars);
     }
 
+    this._rejectLegacyMarkLabels(userEncoding, ["lines", "points"]);
+    this._validateTooltipConfig(userEncoding)
+
     const merged = {
       ...this.getDefaultEncoding(),
       ...(userEncoding || {}),
@@ -56,6 +59,10 @@ export class LineChartEncodingManager extends EncodingManager {
         size: {
           ...this.getDefaultEncoding().lines.size,
           ...(userEncoding?.lines?.size || {})
+        },
+        tooltip: {
+          ...this.getDefaultEncoding().lines.tooltip,
+          ...(userEncoding?.lines?.tooltip || {})
         }
       },
       points: {
@@ -68,6 +75,10 @@ export class LineChartEncodingManager extends EncodingManager {
         size: {
           ...this.getDefaultEncoding().points.size,
           ...(userEncoding?.points?.size || {})
+        },
+        tooltip: {
+          ...this.getDefaultEncoding().points.tooltip,
+          ...(userEncoding?.points?.tooltip || {})
         }
       }
     };
@@ -129,6 +140,27 @@ export class LineChartEncodingManager extends EncodingManager {
     }
 
     return merged;
+  }
+
+  _validateTooltipConfig(encoding) {
+    const enabled = encoding?.interactions?.tooltip;
+    if (enabled !== undefined && typeof enabled !== "boolean") {
+      throw new Error('Invalid encoding: "interactions.tooltip" must be a boolean when provided.');
+    }
+
+    const validateFields = (fields, key) => {
+      if (fields == null) return;
+      if (!Array.isArray(fields)) {
+        throw new Error(`Invalid encoding: "${key}" must be an array of query variable names.`);
+      }
+      const allStrings = fields.every((fieldName) => typeof fieldName === "string" && fieldName.trim().length > 0);
+      if (!allStrings) {
+        throw new Error(`Invalid encoding: "${key}" must contain non-empty strings only.`);
+      }
+    };
+
+    validateFields(encoding?.lines?.tooltip?.fields, "lines.tooltip.fields");
+    validateFields(encoding?.points?.tooltip?.fields, "points.tooltip.fields");
   }
 
   populateDomainsFromData(encoding, rows = []) {

@@ -1,7 +1,7 @@
 import { EditorPanelController } from "./editor-panel-controller.js";
 import { EncodingEditor } from "./encoding-editor.js";
 import { insertEncodingSnippet } from "./encoding-authoring/encoding-insertion.js";
-import { getEncodingSnippetGroups } from "./encoding-authoring/encoding-snippets.js";
+import { getEncodingAddPicker } from "./encoding-authoring/encoding-snippets.js";
 import { safeRun, updateStatus } from "./utils/safe-run.js";
 
 export class EncodingPanelController extends EditorPanelController {
@@ -56,20 +56,24 @@ export class EncodingPanelController extends EditorPanelController {
     button.className = "btn btn-sm btn-outline-secondary";
     button.title = "Add encoding property";
     button.setAttribute("aria-label", "Add encoding property");
-    button.setAttribute("aria-haspopup", "menu");
+    button.setAttribute("aria-haspopup", "dialog");
     button.setAttribute("aria-expanded", "false");
     button.innerHTML = '<i class="bi bi-plus-lg" aria-hidden="true"></i>';
 
     const menu = document.createElement("div");
     menu.className = "encoding-add-menu";
-    menu.setAttribute("role", "menu");
+    menu.setAttribute("role", "dialog");
+    menu.setAttribute("aria-label", "Add encoding property");
     menu.hidden = true;
+    menu.addEventListener("click", (event) => {
+      event.stopPropagation();
+    });
 
-    button.addEventListener("click", (event) => {
+    button.addEventListener("click", async (event) => {
       event.stopPropagation();
       const willOpen = menu.hidden;
       if (willOpen) {
-        this.rebuildAddMenu(menu);
+        await this.rebuildAddMenu(menu);
       }
       menu.hidden = !willOpen;
       button.setAttribute("aria-expanded", String(willOpen));
@@ -87,34 +91,82 @@ export class EncodingPanelController extends EditorPanelController {
     return holder;
   }
 
-  rebuildAddMenu(menu) {
+  async rebuildAddMenu(menu) {
+    const parsed = await this.parseValue();
+    console.log("parsed =", parsed)
+    const picker = getEncodingAddPicker(
+      this.getActiveComponent?.(),
+      parsed.error ? {} : parsed.value
+    );
+    console.log("picker = ", picker)
     menu.innerHTML = "";
-    const groups = getEncodingSnippetGroups(this.getActiveComponent?.());
 
-    for (const group of groups) {
-      const section = document.createElement("section");
-      section.className = "encoding-add-group";
+    const createBranch = (label, className) => {
+      const branch = document.createElement("details");
+      branch.className = `encoding-add-tree-branch ${className}`.trim();
 
-      const heading = document.createElement("div");
-      heading.className = "encoding-add-group-label";
-      heading.textContent = group.label;
-      section.appendChild(heading);
+      const summary = document.createElement("summary");
+      summary.textContent = label;
 
-      for (const snippet of group.items) {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "encoding-add-option";
-        button.setAttribute("role", "menuitem");
-        button.textContent = snippet.label;
-        button.addEventListener("click", async () => {
-          await this.addSnippet(snippet);
-          this.closeAddMenu();
-        });
-        section.appendChild(button);
+      const children = document.createElement("div");
+      children.className = "encoding-add-tree-children";
+      branch.append(summary, children);
+      return { branch, children };
+    };
+
+    const createAction = (label, snippet, className = "") => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = `encoding-add-tree-action ${className}`.trim();
+      button.textContent = label;
+      button.addEventListener("click", async () => {
+        await this.addSnippet(snippet);
+        this.closeAddMenu();
+      });
+      return button;
+    };
+
+    const appendProperties = (holder, properties = []) => {
+      for (const item of properties) {
+        if (item.variants.length === 1 && item.variants[0].label === "Add") {
+          holder.appendChild(createAction(item.label, item.variants[0].snippet));
+          continue;
+        }
+
+        const property = createBranch(item.label, "encoding-add-tree-property");
+        for (const option of item.variants) {
+          property.children.appendChild(
+            createAction(option.label, option.snippet, "encoding-add-tree-variant")
+          );
+        }
+        holder.appendChild(property.branch);
+      }
+    };
+
+    const tree = document.createElement("div");
+    tree.className = "encoding-add-tree";
+    for (const scope of picker.scopes) {
+      if (scope.variants) {
+        appendProperties(tree, [scope]);
+        continue;
       }
 
-      menu.appendChild(section);
+      const scopeBranch = createBranch(scope.label, "encoding-add-tree-scope");
+
+      if (scope.roles) {
+        for (const role of scope.roles) {
+          const roleBranch = createBranch(`${role.label} nodes`, "encoding-add-tree-role");
+          appendProperties(roleBranch.children, role.properties);
+          scopeBranch.children.appendChild(roleBranch.branch);
+        }
+      } else {
+        appendProperties(scopeBranch.children, scope.properties);
+      }
+
+      tree.appendChild(scopeBranch.branch);
     }
+
+    menu.appendChild(tree);
   }
 
   closeAddMenu() {
@@ -145,7 +197,9 @@ export class EncodingPanelController extends EditorPanelController {
 
         await this.setValue(insertion.value);
         const action =
-          insertion.status === "completed"
+          insertion.status === "removed"
+            ? "removed from"
+            : insertion.status === "completed"
             ? "completed in"
             : insertion.status === "replaced"
               ? "updated in"

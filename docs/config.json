@@ -29,7 +29,6 @@
         { "path": "encoding/start.md", "label": "Overview" },
         { "path": "encoding/title.md", "label": "Chart Title" },
         { "path": "encoding/field.md", "label": "Data Fields" },
-        { "path": "encoding/label.md", "label": "Label" },
         { "path": "encoding/x.md", "label": "X Axis"},
         { "path": "encoding/y.md", "label": "Y Axis"},
         { "path": "encoding/axis.md", "label": "Axes"},
