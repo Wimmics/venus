@@ -14,6 +14,7 @@ function getToastStack() {
 }
 
 function showToast(message, { isError = false } = {}) {
+  return;
   if (!message) return;
   const stack = getToastStack();
   const toast = document.createElement("div");
@@ -37,6 +38,7 @@ export function updateStatus(message, { isError = false, statusSelector = "#stat
     statusEl.classList.toggle("error", Boolean(isError));
   }
   showToast(message, { isError });
+  console.log(message)
 }
 
 export async function safeRun(action, { fallbackMessage, statusSelector = "#status" } = {}) {

@@ -1,0 +1,16 @@
+{
+  "name": "@wimmics/venus-scales",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": [
+    "./index.js",
+    "./dist/index.js"
+  ],
+  "main": "./index.js",
+ 
+  "dependencies": {
+    "@wimmics/venus-core": "file:../core",
+    "@wimmics/venus-scales": "file:../scales"
+  }
+}

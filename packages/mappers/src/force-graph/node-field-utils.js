@@ -207,5 +207,6 @@ export function collectCooccurrenceEntities(binding, nodeVars, extractIdFn) {
     seen.add(id);
     entities.push({ varName, id });
   }
+ 
   return entities;
 }

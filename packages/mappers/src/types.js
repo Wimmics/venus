@@ -1,23 +1,21 @@
 /**
  * @typedef {Object} MapContext
- * @property {any} encoding
- * @property {any} defaultEncoding
- * @property {(vars: string[]) => any} createAdaptiveEncoding
- * @property {(mapping: any, vars: string[]) => ({sourceVar: string, targetVar: (string|null), linkType: string})} resolveFieldMapping
+ * @property {any} encoding - Normalized and validated encoding.
  * @property {{ debug?: Function, info?: Function, warn?: Function, error?: Function }} [logger]
  */
-
 
 /**
  * @typedef {Object} MapResult
  * @property {CanonicalGraph} graph
  * @property {Object} meta
- * @property {boolean} meta.usedAdaptiveEncoding
  * @property {Array<string>} meta.vars
  * @property {Object} meta.mappingResolved
- * @property {string} meta.mappingResolved.sourceVar
+ * @property {string|null} meta.mappingResolved.sourceVar
  * @property {string|null} meta.mappingResolved.targetVar
+ * @property {Array<string>} meta.mappingResolved.sourceVars
+ * @property {Array<string>} meta.mappingResolved.targetVars
  * @property {"directional"|"semantic"|"cooccurrence"} meta.mappingResolved.linkType
  * @property {string|null} meta.mappingResolved.relationVar
  * @property {string|null} meta.mappingResolved.contextVar
+ * @property {any} meta.encodingUsed
  */

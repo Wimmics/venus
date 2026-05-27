@@ -1,570 +1,570 @@
 import { createLogger } from "@wimmics/venus-core";
-import { createVisualArtifacts } from "@wimmics/venus-encoding";
 import { createLegends, positionLegends } from "@wimmics/venus-legends";
+import { createVisualArtifactsCompiler } from "@wimmics/venus-visual-artifacts";
 
 export class VenusBase extends HTMLElement {
-  static get observedAttributes() {
-    return ["width", "height", "resize"];
-  }
-
-  constructor({ componentName, visType, defaultWidth = 800, defaultHeight = 600 } = {}) {
-    super();
-    this.attachShadow({ mode: "open" });
-
-    this.visType = visType;
-    this.logger = createLogger(componentName || "VenusBase", { debug: false });
-    this.width = defaultWidth;
-    this.height = defaultHeight;
-
-    this.currentEndpoint = null;
-    this.currentProxyUrl = null;
-    this.sparqlData = null;
-
-    this.internalData = new WeakMap();
-    this.internalData.set(this, {});
-
-    this._legends = [];
-    this._visualArtifacts = { scales: new Map(), channels: [], legends: [] };
-    this.renderer = null;
-    this.tooltipTimeout = null;
-    this.resizeObserver = null;
-    this.resizeRaf = null;
-    this._lastObservedSize = { width: 0, height: 0 };
-    this.resizeEnabled = true;
-  }
-
-  connectedCallback() {
-    this._applyDimensions();
-    this.resizeEnabled = this._parseBooleanAttributeValue(this.getAttribute("resize"), true);
-    this._applyResizeBehavior();
-    this.render();
-  }
-
-  disconnectedCallback() {
-    this._stopResizeObserver();
-  }
-
-  attributeChangedCallback(name, oldValue, newValue) {
-    if (oldValue === newValue) return;
-
-    if (name === "width") {
-      this.width = this._normalizeDimensionValue(newValue, this.width);
-      this._applyDimensions();
-      this.render();
-      return;
-    }
-    if (name === "height") {
-      this.height = this._normalizeDimensionValue(newValue, this.height);
-      this._applyDimensions();
-      this.render();
-      return;
-    }
-    if (name === "resize") {
-      this.resizeEnabled = this._parseBooleanAttributeValue(newValue, true);
-      this._applyResizeBehavior();
-      this.render();
-    }
-  }
-
-  set sparqlQuery(query) {
-    const data = this.internalData.get(this) || {};
-    data.sparqlQuery = query;
-    this.internalData.set(this, data);
-  }
-  get sparqlQuery() {
-    return this.internalData.get(this)?.sparqlQuery;
-  }
-
-  set sparqlEndpoint(endpoint) {
-    const data = this.internalData.get(this) || {};
-    data.sparqlEndpoint = endpoint;
-    this.internalData.set(this, data);
-  }
-  get sparqlEndpoint() {
-    return this.internalData.get(this)?.sparqlEndpoint;
-  }
-
-  set sparqlResult(jsonData) {
-    const data = this.internalData.get(this) || {};
-    data.sparqlResult = jsonData;
-    this.internalData.set(this, data);
-  }
-  get sparqlResult() {
-    return this.internalData.get(this)?.sparqlResult;
-  }
-
-  set encoding(mapping) {
-    const data = this.internalData.get(this) || {};
-    data.encoding = mapping;
-    this.internalData.set(this, data);
-    this.setEncoding(mapping);
-  }
-  get encoding() {
-    return this.internalData.get(this)?.encoding;
-  }
-
-  set proxy(url) {
-    const data = this.internalData.get(this) || {};
-    data.proxy = url;
-    this.internalData.set(this, data);
-  }
-  get proxy() {
-    return this.internalData.get(this)?.proxy;
-  }
-
-  getEncoding() {
-    return JSON.parse(JSON.stringify(this.visualEncoding));
-  }
-
-  async launch() {
-    const result = await this._buildVisualization({
-      endpoint: this._resolveEndpoint(),
-      query: this.sparqlQuery,
-      jsonData: this.sparqlResult,
-      proxyUrl: this._resolveProxyUrl(),
-      encoding: this.visualEncoding,
-      encodingManager: this.encodingManager
-    });
-
-    if (result.status !== "success") {
-      this._notify(result.message || this._getBuildErrorMessage(), "error");
-      this.logger.error(this._getBuildErrorLogKey(), result);
-      return;
-    }
-
-    this._setDataFromBuildResult(result);
-    this.sparqlData = result.raw;
-
-    const meta = result.meta || {};
-    if (meta.encodingUsed) {
-      this.visualEncoding = meta.encodingUsed;
-      this._populateDomains();
-    } else if (meta.usedAdaptiveEncoding) {
-      this.visualEncoding = this._createAdaptiveEncoding(meta);
-      this._populateDomains();
-    }
-
-    this.render();
-  }
-
-  setEncoding(encoding) {
-    try {
-      this.visualEncoding = this.encodingManager.deriveEncoding(
-        encoding,
-        this.sparqlData?.head?.vars,
-        this.sparqlData
-      );
-    } catch (error) {
-      this._notify(error.message, "error");
-      return;
-    }
-
-    if (this._hasData()) {
-      this._populateDomains();
-    }
-    this.render();
-  }
-
-  render() {
-    const container = this._getContainerElement();
-    if (container) {
-      this._applyDimensions();
-      container.style.background = this._resolveBackgroundColor();
-      this._updateTitle(container);
-    }
-
-    if (!this.renderer) return;
-    this._compileVisualArtifacts();
-    this._manageLegends();
-    this._syncRendererSizeFromContainer(container);
-    this.renderer.render(this._getRenderPayload(), this.visualEncoding, this._visualArtifacts);
-  }
-
-  _manageLegends() {
-    const container = this._getContainerElement();
-    if (!container) return;
-
-    this._destroyLegends();
-
-    const legendConfig = {
-      legendItems: this._visualArtifacts?.legends || [],
-      datasets: this._getLegendDatasets(),
-      getScaleById: (scaleId) => this._visualArtifacts?.scales?.get(scaleId) || null
-    };
-
-    const newLegends = createLegends(legendConfig);
-    const relayoutLegends = () => {
-      const topInset = this._getLegendTopInset(container);
-      positionLegends(container, this._legends, {
-        position: "bottom",
-        spacing: 20,
-        gap: 20,
-        stackGap: 12,
-        topInset
-      });
-      this._applyLegendSurfaceInsets(container);
-    };
-
-    newLegends.forEach((legend) => {
-      legend.addEventListener("legendtoggle", () => {
-        requestAnimationFrame(() => relayoutLegends());
-      });
-      container.appendChild(legend);
-      this._legends.push(legend);
-    });
-
-    relayoutLegends();
-    // Custom elements can finalize internal layout one frame later.
-    // Run a deferred pass so bottom legends are centered side by side at first paint.
-    requestAnimationFrame(() => relayoutLegends());
-  }
-
-  _destroyLegends() {
-    this._legends.forEach((legend) => legend.remove());
-    this._legends = [];
-  }
-
-  _compileVisualArtifacts() {
-    if (!this._hasData()) {
-      this._visualArtifacts = { scales: new Map(), channels: [], legends: [] };
-      return;
-    }
-
-    try {
-      this._visualArtifacts = createVisualArtifacts(this.visType, {
-        encodingManager: this.encodingManager,
-        encoding: this.visualEncoding,
-        ...this._getArtifactPayload()
-      });
-    } catch (error) {
-      this.logger.warn("Failed to compile visual artifacts", { message: error?.message });
-      this._visualArtifacts = { scales: new Map(), channels: [], legends: [] };
-    }
-  }
-
-  _resolveBackgroundColor() {
-    const background = this.visualEncoding?.background;
-    if (typeof background === "string" && background.trim()) return background;
-    if (background && typeof background.value === "string" && background.value.trim()) {
-      return background.value;
-    }
-    return "#ffffff";
-  }
-
-  _resolveTitleText() {
-    const title = this.visualEncoding?.title;
-    if (typeof title === "string" && title.trim()) return title.trim();
-    return null;
-  }
-
-  _getLegendTopInset(container) {
-    const titleElement = container?.querySelector(".vis-title");
-    if (!titleElement || titleElement.style.display === "none") return 0;
-    return Math.max(0, Math.round(titleElement.getBoundingClientRect().height));
-  }
-
-  _applyLegendSurfaceInsets(container) {
-    const surface = container?.querySelector(".vis-surface");
-    if (!surface) return;
-
-    const reservingLegends = this._legends.filter((legend) => legend?._legendCompact === false);
-    if (!reservingLegends.length) {
-      surface.style.paddingTop = "0px";
-      surface.style.paddingRight = "0px";
-      surface.style.paddingBottom = "0px";
-      surface.style.paddingLeft = "0px";
-      return;
-    }
-
-    const surfaceRect = surface.getBoundingClientRect();
-    const inset = { top: 0, right: 0, bottom: 0, left: 0 };
-    const reserveGap = 8;
-
-    reservingLegends.forEach((legend) => {
-      const rect = legend.getBoundingClientRect();
-      const position = legend?._legendPosition || "bottom";
-
-      if (position === "top" || position === "top-left" || position === "top-right") {
-        inset.top = Math.max(inset.top, Math.round(rect.bottom - surfaceRect.top + reserveGap));
-      }
-      if (position === "bottom" || position === "bottom-left" || position === "bottom-right") {
-        inset.bottom = Math.max(inset.bottom, Math.round(surfaceRect.bottom - rect.top + reserveGap));
-      }
-      if (position === "left" || position === "top-left" || position === "bottom-left") {
-        inset.left = Math.max(inset.left, Math.round(rect.right - surfaceRect.left + reserveGap));
-      }
-      if (position === "right" || position === "top-right" || position === "bottom-right") {
-        inset.right = Math.max(inset.right, Math.round(surfaceRect.right - rect.left + reserveGap));
-      }
-    });
-
-    const maxHorizontal = Math.max(0, Math.floor(surfaceRect.width / 2) - 1);
-    const maxVertical = Math.max(0, Math.floor(surfaceRect.height / 2) - 1);
-    surface.style.paddingTop = `${Math.max(0, Math.min(inset.top, maxVertical))}px`;
-    surface.style.paddingRight = `${Math.max(0, Math.min(inset.right, maxHorizontal))}px`;
-    surface.style.paddingBottom = `${Math.max(0, Math.min(inset.bottom, maxVertical))}px`;
-    surface.style.paddingLeft = `${Math.max(0, Math.min(inset.left, maxHorizontal))}px`;
-  }
-
-  _updateTitle(container) {
-    const titleElement = container?.querySelector(".vis-title");
-    if (!titleElement) return;
-    const title = this._resolveTitleText();
-    if (title) {
-      titleElement.textContent = title;
-      titleElement.style.display = "block";
-      return;
-    }
-    titleElement.textContent = "";
-    titleElement.style.display = "none";
-  }
-
-  _notify(message, type = "info") {
-    const old = this.shadowRoot.querySelector(".notification");
-    if (old) old.remove();
-
-    const container = this._getContainerElement();
-    if (!container) return;
-
-    const n = document.createElement("div");
-    n.className = `notification ${type}`;
-    n.textContent = message;
-    container.appendChild(n);
-
-    setTimeout(() => {
-      n.classList.add("fade-out");
-      setTimeout(() => n.remove(), 500);
-    }, 2500);
-  }
-
-  _showTooltip(content, x, y, options = {}) {
-    if (!this._isTooltipEnabled()) return;
-    const {
-      className = "tooltip",
-      offsetX = 12,
-      offsetY = -12,
-      delayMs = 0,
-      dark = false,
-      whiteSpace = "normal",
-      maxWidth = 320
-    } = options;
-
-    this._hideTooltip(className);
-    if (this.tooltipTimeout) clearTimeout(this.tooltipTimeout);
-
-    const render = () => {
-      const container = this._getContainerElement();
-      if (!container) return;
-
-      const tooltip = document.createElement("div");
-      tooltip.className = `${className}${dark ? " dark" : ""}`;
-      tooltip.style.whiteSpace = whiteSpace;
-      tooltip.style.maxWidth = `${maxWidth}px`;
-
-      if (typeof content === "string") {
-        tooltip.textContent = content;
-      } else if (content && typeof content === "object") {
-        if (content.title) {
-          const title = document.createElement("div");
-          title.style.fontWeight = "bold";
-          title.style.marginBottom = "6px";
-          title.textContent = String(content.title);
-          tooltip.appendChild(title);
-        }
-
-        const lines = Array.isArray(content.lines) ? content.lines : [];
-        for (const line of lines) {
-          const row = document.createElement("div");
-          row.textContent = String(line);
-          tooltip.appendChild(row);
-        }
-      }
-
-      tooltip.style.left = `${x + offsetX}px`;
-      tooltip.style.top = `${y + offsetY}px`;
-      container.appendChild(tooltip);
-    };
-
-    if (delayMs > 0) {
-      this.tooltipTimeout = setTimeout(render, delayMs);
-      return;
-    }
-    render();
-  }
-
-  _hideTooltip(className = "tooltip") {
-    if (this.tooltipTimeout) clearTimeout(this.tooltipTimeout);
-    const tooltip = this.shadowRoot.querySelector(`.${className.split(" ").join(".")}`);
-    if (tooltip) tooltip.remove();
-  }
-
-  _resolveTooltipFields(datum, { preferredOrder = [], excludeKeys = [], markTooltipFields = null } = {}) {
-    if (!datum || typeof datum !== "object") return [];
-    if (!this._isTooltipEnabled()) return [];
-
-    const configuredFields = markTooltipFields;
-    const hasConfiguredFields = Array.isArray(configuredFields) && configuredFields.length > 0;
-    if (hasConfiguredFields) {
-      return configuredFields.filter((fieldName) => (
-        typeof fieldName === "string" &&
-        fieldName.trim() &&
-        Object.prototype.hasOwnProperty.call(datum, fieldName) &&
-        datum[fieldName] !== undefined &&
-        datum[fieldName] !== null
-      ));
-    }
-
-    const renderingKeys = new Set([
-      "x", "y", "vx", "vy", "fx", "fy", "px", "py", "index",
-      "sourceLinks", "targetLinks", "originalData", "roles", "__meta", "__x"
-    ]);
-    for (const key of excludeKeys) {
-      if (typeof key === "string" && key.trim()) renderingKeys.add(key);
-    }
-
-    const ordered = [];
-    const seen = new Set();
-
-    for (const key of preferredOrder) {
-      if (typeof key !== "string" || !key.trim()) continue;
-      if (!Object.prototype.hasOwnProperty.call(datum, key)) continue;
-      if (datum[key] === undefined || datum[key] === null) continue;
-      ordered.push(key);
-      seen.add(key);
-    }
-
-    const sourceKeys = Object.keys(datum.originalData || {});
-    for (const key of sourceKeys) {
-      if (seen.has(key)) continue;
-      if (!Object.prototype.hasOwnProperty.call(datum, key)) continue;
-      if (datum[key] === undefined || datum[key] === null) continue;
-      ordered.push(key);
-      seen.add(key);
-    }
-
-    for (const key of Object.keys(datum)) {
-      if (renderingKeys.has(key) || seen.has(key)) continue;
-      const value = datum[key];
-      if (value === undefined || value === null) continue;
-      ordered.push(key);
-      seen.add(key);
-    }
-
-    return ordered;
-  }
-
-  _formatTooltipValue(value) {
-    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-      return String(value);
-    }
-    try {
-      return JSON.stringify(value);
-    } catch {
-      return String(value);
-    }
-  }
-
-  _resolveTooltipTitle(datum, markConfig, fallback = null) {
-    const titleConfig = markConfig?.tooltip?.title;
-    if (typeof titleConfig === "string") return titleConfig;
-
-    const titleField =
-      titleConfig &&
-      typeof titleConfig === "object" &&
-      typeof titleConfig.field === "string" &&
-      titleConfig.field.trim()
-        ? titleConfig.field.trim()
-        : null;
-
-    if (
-      titleField &&
-      datum &&
-      typeof datum === "object" &&
-      datum[titleField] !== undefined &&
-      datum[titleField] !== null
-    ) {
-      return this._formatTooltipValue(datum[titleField]);
-    }
-
-    return fallback;
-  }
-
-  _buildTooltipLines(datum, { preferredOrder = [], excludeKeys = [], markConfig = null } = {}) {
-    const markTooltipFields = Array.isArray(markConfig?.tooltip?.fields) ? markConfig.tooltip.fields : null;
-    const fields = this._resolveTooltipFields(datum, { preferredOrder, excludeKeys, markTooltipFields });
-    return fields.map((fieldName) => `${fieldName}: ${this._formatTooltipValue(datum[fieldName])}`);
-  }
-
-  _isTooltipEnabled() {
-    const tooltipConfig = this.visualEncoding?.interactions?.tooltip;
-    if (tooltipConfig === undefined || tooltipConfig === null) return true;
-    if (typeof tooltipConfig === "boolean") return tooltipConfig;
-    return true;
-  }
-
-  _onHover() {}
-
-  _onOut() {}
-
-  _onClick() {}
-
-  _onContextMenu() {}
-
-  _resolveEndpoint() {
-    return this.currentEndpoint || this.sparqlEndpoint || "https://dbpedia.org/sparql";
-  }
-
-  _resolveProxyUrl() {
-    return this.currentProxyUrl || this.proxy || null;
-  }
-
-  _createAdaptiveEncoding(meta) {
-    return this.encodingManager.createAdaptiveEncoding(...this._getAdaptiveEncodingArgs(meta));
-  }
-
-  _getAdaptiveEncodingArgs(meta) {
-    return [meta?.vars];
-  }
-
-  _getBuildErrorMessage() {
-    return "Failed to build visualization";
-  }
-
-  _getBuildErrorLogKey() {
-    return "build failed";
-  }
-
-  _buildVisualization() {
-    throw new Error("_buildVisualization must be implemented by subclass");
-  }
-
-  _setDataFromBuildResult() {
-    throw new Error("_setDataFromBuildResult must be implemented by subclass");
-  }
-
-  _populateDomains() {
-    throw new Error("_populateDomains must be implemented by subclass");
-  }
-
-  _hasData() {
-    throw new Error("_hasData must be implemented by subclass");
-  }
-
-  _getRenderPayload() {
-    throw new Error("_getRenderPayload must be implemented by subclass");
-  }
-
-  _getLegendDatasets() {
-    throw new Error("_getLegendDatasets must be implemented by subclass");
-  }
-
-  _getArtifactPayload() {
-    throw new Error("_getArtifactPayload must be implemented by subclass");
-  }
-
-  _renderBaseDOM({ containerClass = "vis-container", extraStyles = "" } = {}) {
-    this._containerClassName = containerClass;
-    this.shadowRoot.innerHTML = `
+	static get observedAttributes() {
+		return ["width", "height", "resize"];
+	}
+	
+	constructor({ componentName, visType, defaultWidth = 800, defaultHeight = 600 } = {}) {
+		super();
+		this.attachShadow({ mode: "open" });
+		
+		this.visType = visType;
+		this.logger = createLogger(componentName || "VenusBase", { debug: false });
+		this.width = defaultWidth;
+		this.height = defaultHeight;
+		
+		this.currentEndpoint = null;
+		this.currentProxyUrl = null;
+		this.sparqlData = null;
+		
+		this.internalData = new WeakMap();
+		this.internalData.set(this, {});
+		
+		this.visualArtifactsCompiler = createVisualArtifactsCompiler(this.visType);
+		
+		this._legends = [];
+		this._visualArtifacts = { scales: new Map(), channels: [], legends: [] };
+		this.renderer = null;
+		this.tooltipTimeout = null;
+		this.resizeObserver = null;
+		this.resizeRaf = null;
+		this._lastObservedSize = { width: 0, height: 0 };
+		this.resizeEnabled = true;
+	}
+	
+	connectedCallback() {
+		this._applyDimensions();
+		this.resizeEnabled = this._parseBooleanAttributeValue(this.getAttribute("resize"), true);
+		this._applyResizeBehavior();
+		this.render();
+	}
+	
+	disconnectedCallback() {
+		this._stopResizeObserver();
+	}
+	
+	attributeChangedCallback(name, oldValue, newValue) {
+		if (oldValue === newValue) return;
+		
+		if (name === "width") {
+			this.width = this._normalizeDimensionValue(newValue, this.width);
+			this._applyDimensions();
+			this.render();
+			return;
+		}
+		if (name === "height") {
+			this.height = this._normalizeDimensionValue(newValue, this.height);
+			this._applyDimensions();
+			this.render();
+			return;
+		}
+		if (name === "resize") {
+			this.resizeEnabled = this._parseBooleanAttributeValue(newValue, true);
+			this._applyResizeBehavior();
+			this.render();
+		}
+	}
+	
+	set sparqlQuery(query) {
+		const data = this.internalData.get(this) || {};
+		data.sparqlQuery = query;
+		this.internalData.set(this, data);
+	}
+	get sparqlQuery() {
+		return this.internalData.get(this)?.sparqlQuery;
+	}
+	
+	set sparqlEndpoint(endpoint) {
+		const data = this.internalData.get(this) || {};
+		data.sparqlEndpoint = endpoint;
+		this.internalData.set(this, data);
+	}
+	get sparqlEndpoint() {
+		return this.internalData.get(this)?.sparqlEndpoint;
+	}
+	
+	set sparqlResult(jsonData) {
+		const data = this.internalData.get(this) || {};
+		data.sparqlResult = jsonData;
+		this.internalData.set(this, data);
+	}
+	get sparqlResult() {
+		return this.internalData.get(this)?.sparqlResult;
+	}
+	
+	set encoding(mapping) {
+		const data = this.internalData.get(this) || {};
+		data.encoding = mapping;
+		this.internalData.set(this, data);
+		this.setEncoding(mapping);
+	}
+	get encoding() {
+		return this.internalData.get(this)?.encoding;
+	}
+	
+	set proxy(url) {
+		const data = this.internalData.get(this) || {};
+		data.proxy = url;
+		this.internalData.set(this, data);
+	}
+	get proxy() {
+		return this.internalData.get(this)?.proxy;
+	}
+	
+	getEncoding() {
+		return JSON.parse(JSON.stringify(this.visualEncoding));
+	}
+	
+	async launch() {
+
+		const result = await this._buildVisualization({
+			endpoint: this._resolveEndpoint(),
+			query: this.sparqlQuery,
+			jsonData: this.sparqlResult,
+			proxyUrl: this._resolveProxyUrl(),
+			encoding: this.visualEncoding,
+			encodingManager: this.encodingManager
+		})
+		
+		
+		if (result.status !== "success") {
+			this._notify(result.message || this._getBuildErrorMessage(), "error");
+			this.logger.error(this._getBuildErrorLogKey(), result);
+			return;
+		}
+		
+		if (result.raw?.head?.vars) {
+			try {
+				this.encodingManager.validateReferencedFields(
+					this.visualEncoding,
+					result.raw.head.vars
+				);
+			} catch (error) {
+					console.error("[VENUS encoding field error]", error);
+					this._notify(error.message, "error");
+				return;
+			}
+		}
+
+		this._setDataFromBuildResult(result);
+		this.sparqlData = result.raw;
+
+		this.render();
+	}
+	
+	setEncoding(encoding) {
+		try {
+			this.visualEncoding = this.encodingManager.validateEncoding(encoding)
+		} catch (error) {
+			this._notify(error.message, "error");
+			return;
+		}
+		
+		this.render();
+	}
+	
+	render() {
+		const container = this._getContainerElement();
+		if (container) {
+			this._applyDimensions();
+			container.style.background = this._resolveBackgroundColor();
+			this._updateTitle(container);
+		}
+		
+		if (!this.renderer) return;
+		this._compileVisualArtifacts();
+		this._manageLegends();
+		this._syncRendererSizeFromContainer(container);
+		this.renderer.render(this._getRenderPayload(), this.visualEncoding, this._visualArtifacts);
+	}
+	
+	_manageLegends() {
+		const container = this._getContainerElement();
+		if (!container) return;
+		
+		this._destroyLegends();
+		
+		const legendConfig = {
+			legendItems: this._visualArtifacts?.legends || [],
+			datasets: this._getLegendDatasets(),
+			getScaleById: (scaleId) => this._visualArtifacts?.scales?.get(scaleId) || null
+		};
+		
+		const newLegends = createLegends(legendConfig);
+		const relayoutLegends = () => {
+			const topInset = this._getLegendTopInset(container);
+			positionLegends(container, this._legends, {
+				position: "bottom",
+				spacing: 20,
+				gap: 20,
+				stackGap: 12,
+				topInset
+			});
+			this._applyLegendSurfaceInsets(container);
+		};
+		
+		newLegends.forEach((legend) => {
+			legend.addEventListener("legendtoggle", () => {
+				requestAnimationFrame(() => relayoutLegends());
+			});
+			container.appendChild(legend);
+			this._legends.push(legend);
+		});
+		
+		relayoutLegends();
+		// Custom elements can finalize internal layout one frame later.
+		// Run a deferred pass so bottom legends are centered side by side at first paint.
+		requestAnimationFrame(() => relayoutLegends());
+	}
+	
+	_destroyLegends() {
+		this._legends.forEach((legend) => legend.remove());
+		this._legends = [];
+	}
+	
+	_compileVisualArtifacts() {
+		console.log("has data = ", this._hasData())
+		if (!this._hasData()) {
+			this._visualArtifacts = { scales: new Map(), channels: [], legends: [] };
+			return;
+		}
+		console.log("Computing artifacts...")
+		try {
+			this._visualArtifacts = this.visualArtifactsCompiler.build({
+				encoding: this.visualEncoding,
+				marks: this.encodingManager.getMarks(),
+				...this._getArtifactPayload()
+			});
+
+			console.log("visual artifacts = ", this.visualArtifacts)
+		} catch (error) {
+			this.logger.warn("Failed to compile visual artifacts", {
+				message: error?.message
+			});
+			
+			this._visualArtifacts = { scales: new Map(), channels: [], legends: [] };
+		}
+	}
+	
+	_resolveBackgroundColor() {
+		const background = this.visualEncoding?.background;
+		if (typeof background === "string" && background.trim()) return background;
+		if (background && typeof background.value === "string" && background.value.trim()) {
+			return background.value;
+		}
+		return "#ffffff";
+	}
+	
+	_resolveTitleText() {
+		const title = this.visualEncoding?.title;
+		if (typeof title === "string" && title.trim()) return title.trim();
+		return null;
+	}
+	
+	_getLegendTopInset(container) {
+		const titleElement = container?.querySelector(".vis-title");
+		if (!titleElement || titleElement.style.display === "none") return 0;
+		return Math.max(0, Math.round(titleElement.getBoundingClientRect().height));
+	}
+	
+	_applyLegendSurfaceInsets(container) {
+		const surface = container?.querySelector(".vis-surface");
+		if (!surface) return;
+		
+		const reservingLegends = this._legends.filter((legend) => legend?._legendCompact === false);
+		if (!reservingLegends.length) {
+			surface.style.paddingTop = "0px";
+			surface.style.paddingRight = "0px";
+			surface.style.paddingBottom = "0px";
+			surface.style.paddingLeft = "0px";
+			return;
+		}
+		
+		const surfaceRect = surface.getBoundingClientRect();
+		const inset = { top: 0, right: 0, bottom: 0, left: 0 };
+		const reserveGap = 8;
+		
+		reservingLegends.forEach((legend) => {
+			const rect = legend.getBoundingClientRect();
+			const position = legend?._legendPosition || "bottom";
+			
+			if (position === "top" || position === "top-left" || position === "top-right") {
+				inset.top = Math.max(inset.top, Math.round(rect.bottom - surfaceRect.top + reserveGap));
+			}
+			if (position === "bottom" || position === "bottom-left" || position === "bottom-right") {
+				inset.bottom = Math.max(inset.bottom, Math.round(surfaceRect.bottom - rect.top + reserveGap));
+			}
+			if (position === "left" || position === "top-left" || position === "bottom-left") {
+				inset.left = Math.max(inset.left, Math.round(rect.right - surfaceRect.left + reserveGap));
+			}
+			if (position === "right" || position === "top-right" || position === "bottom-right") {
+				inset.right = Math.max(inset.right, Math.round(surfaceRect.right - rect.left + reserveGap));
+			}
+		});
+		
+		const maxHorizontal = Math.max(0, Math.floor(surfaceRect.width / 2) - 1);
+		const maxVertical = Math.max(0, Math.floor(surfaceRect.height / 2) - 1);
+		surface.style.paddingTop = `${Math.max(0, Math.min(inset.top, maxVertical))}px`;
+		surface.style.paddingRight = `${Math.max(0, Math.min(inset.right, maxHorizontal))}px`;
+		surface.style.paddingBottom = `${Math.max(0, Math.min(inset.bottom, maxVertical))}px`;
+		surface.style.paddingLeft = `${Math.max(0, Math.min(inset.left, maxHorizontal))}px`;
+	}
+	
+	_updateTitle(container) {
+		const titleElement = container?.querySelector(".vis-title");
+		if (!titleElement) return;
+		const title = this._resolveTitleText();
+		if (title) {
+			titleElement.textContent = title;
+			titleElement.style.display = "block";
+			return;
+		}
+		titleElement.textContent = "";
+		titleElement.style.display = "none";
+	}
+	
+	_notify(message, type = "info") {
+		const old = this.shadowRoot.querySelector(".notification");
+		if (old) old.remove();
+		
+		const container = this._getContainerElement();
+		if (!container) return;
+		
+		const n = document.createElement("div");
+		n.className = `notification ${type}`;
+		n.textContent = message;
+		container.appendChild(n);
+		
+		setTimeout(() => {
+			n.classList.add("fade-out");
+			setTimeout(() => n.remove(), 500);
+		}, 2500);
+	}
+	
+	_showTooltip(content, x, y, options = {}) {
+		if (!this._isTooltipEnabled()) return;
+		const {
+			className = "tooltip",
+			offsetX = 12,
+			offsetY = -12,
+			delayMs = 0,
+			dark = false,
+			whiteSpace = "normal",
+			maxWidth = 320
+		} = options;
+		
+		this._hideTooltip(className);
+		if (this.tooltipTimeout) clearTimeout(this.tooltipTimeout);
+		
+		const render = () => {
+			const container = this._getContainerElement();
+			if (!container) return;
+			
+			const tooltip = document.createElement("div");
+			tooltip.className = `${className}${dark ? " dark" : ""}`;
+			tooltip.style.whiteSpace = whiteSpace;
+			tooltip.style.maxWidth = `${maxWidth}px`;
+			
+			if (typeof content === "string") {
+				tooltip.textContent = content;
+			} else if (content && typeof content === "object") {
+				if (content.title) {
+					const title = document.createElement("div");
+					title.style.fontWeight = "bold";
+					title.style.marginBottom = "6px";
+					title.textContent = String(content.title);
+					tooltip.appendChild(title);
+				}
+				
+				const lines = Array.isArray(content.lines) ? content.lines : [];
+				for (const line of lines) {
+					const row = document.createElement("div");
+					row.textContent = String(line);
+					tooltip.appendChild(row);
+				}
+			}
+			
+			tooltip.style.left = `${x + offsetX}px`;
+			tooltip.style.top = `${y + offsetY}px`;
+			container.appendChild(tooltip);
+		};
+		
+		if (delayMs > 0) {
+			this.tooltipTimeout = setTimeout(render, delayMs);
+			return;
+		}
+		render();
+	}
+	
+	_hideTooltip(className = "tooltip") {
+		if (this.tooltipTimeout) clearTimeout(this.tooltipTimeout);
+		const tooltip = this.shadowRoot.querySelector(`.${className.split(" ").join(".")}`);
+		if (tooltip) tooltip.remove();
+	}
+	
+	_resolveTooltipFields(datum, { preferredOrder = [], excludeKeys = [], markTooltipFields = null } = {}) {
+		if (!datum || typeof datum !== "object") return [];
+		if (!this._isTooltipEnabled()) return [];
+		
+		const configuredFields = markTooltipFields;
+		const hasConfiguredFields = Array.isArray(configuredFields) && configuredFields.length > 0;
+		if (hasConfiguredFields) {
+			return configuredFields.filter((fieldName) => (
+				typeof fieldName === "string" &&
+				fieldName.trim() &&
+				Object.prototype.hasOwnProperty.call(datum, fieldName) &&
+				datum[fieldName] !== undefined &&
+				datum[fieldName] !== null
+			));
+		}
+		
+		const renderingKeys = new Set([
+			"x", "y", "vx", "vy", "fx", "fy", "px", "py", "index",
+			"sourceLinks", "targetLinks", "originalData", "roles", "__meta", "__x"
+		]);
+		for (const key of excludeKeys) {
+			if (typeof key === "string" && key.trim()) renderingKeys.add(key);
+		}
+		
+		const ordered = [];
+		const seen = new Set();
+		
+		for (const key of preferredOrder) {
+			if (typeof key !== "string" || !key.trim()) continue;
+			if (!Object.prototype.hasOwnProperty.call(datum, key)) continue;
+			if (datum[key] === undefined || datum[key] === null) continue;
+			ordered.push(key);
+			seen.add(key);
+		}
+		
+		const sourceKeys = Object.keys(datum.originalData || {});
+		for (const key of sourceKeys) {
+			if (seen.has(key)) continue;
+			if (!Object.prototype.hasOwnProperty.call(datum, key)) continue;
+			if (datum[key] === undefined || datum[key] === null) continue;
+			ordered.push(key);
+			seen.add(key);
+		}
+		
+		for (const key of Object.keys(datum)) {
+			if (renderingKeys.has(key) || seen.has(key)) continue;
+			const value = datum[key];
+			if (value === undefined || value === null) continue;
+			ordered.push(key);
+			seen.add(key);
+		}
+		
+		return ordered;
+	}
+	
+	_formatTooltipValue(value) {
+		if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+			return String(value);
+		}
+		try {
+			return JSON.stringify(value);
+		} catch {
+			return String(value);
+		}
+	}
+	
+	_resolveTooltipTitle(datum, markConfig, fallback = null) {
+		const titleConfig = markConfig?.tooltip?.title;
+		if (typeof titleConfig === "string") return titleConfig;
+		
+		const titleField =
+		titleConfig &&
+		typeof titleConfig === "object" &&
+		typeof titleConfig.field === "string" &&
+		titleConfig.field.trim()
+		? titleConfig.field.trim()
+		: null;
+		
+		if (
+			titleField &&
+			datum &&
+			typeof datum === "object" &&
+			datum[titleField] !== undefined &&
+			datum[titleField] !== null
+		) {
+			return this._formatTooltipValue(datum[titleField]);
+		}
+		
+		return fallback;
+	}
+	
+	_buildTooltipLines(datum, { preferredOrder = [], excludeKeys = [], markConfig = null } = {}) {
+		const markTooltipFields = Array.isArray(markConfig?.tooltip?.fields) ? markConfig.tooltip.fields : null;
+		const fields = this._resolveTooltipFields(datum, { preferredOrder, excludeKeys, markTooltipFields });
+		return fields.map((fieldName) => `${fieldName}: ${this._formatTooltipValue(datum[fieldName])}`);
+	}
+	
+	_isTooltipEnabled() {
+		const tooltipConfig = this.visualEncoding?.interactions?.tooltip;
+		if (tooltipConfig === undefined || tooltipConfig === null) return true;
+		if (typeof tooltipConfig === "boolean") return tooltipConfig;
+		return true;
+	}
+	
+	_onHover() {}
+	
+	_onOut() {}
+	
+	_onClick() {}
+	
+	_onContextMenu() {}
+	
+	_resolveEndpoint() {
+		return this.currentEndpoint || this.sparqlEndpoint || "https://dbpedia.org/sparql";
+	}
+	
+	_resolveProxyUrl() {
+		return this.currentProxyUrl || this.proxy || null;
+	}
+	
+	
+	_getBuildErrorMessage() {
+		return "Failed to build visualization";
+	}
+	
+	_getBuildErrorLogKey() {
+		return "build failed";
+	}
+	
+	_buildVisualization() {
+		throw new Error("_buildVisualization must be implemented by subclass");
+	}
+	
+	_setDataFromBuildResult() {
+		throw new Error("_setDataFromBuildResult must be implemented by subclass");
+	}
+	
+	// _populateDomains() {
+	// 	throw new Error("_populateDomains must be implemented by subclass");
+	// }
+	
+	_hasData() {
+		throw new Error("_hasData must be implemented by subclass");
+	}
+	
+	_getRenderPayload() {
+		throw new Error("_getRenderPayload must be implemented by subclass");
+	}
+	
+	_getLegendDatasets() {
+		throw new Error("_getLegendDatasets must be implemented by subclass");
+	}
+	
+	_getArtifactPayload() {
+		throw new Error("_getArtifactPayload must be implemented by subclass");
+	}
+	
+	_renderBaseDOM({ containerClass = "vis-container", extraStyles = "" } = {}) {
+		this._containerClassName = containerClass;
+		this.shadowRoot.innerHTML = `
       <style>
         :host { display: block; font-family: Arial, sans-serif; }
         .${containerClass} {
@@ -636,100 +636,100 @@ export class VenusBase extends HTMLElement {
         </div>
       </div>
     `;
-    this._applyDimensions();
-  }
-
-  _getContainerElement() {
-    const className = this._containerClassName || "vis-container";
-    return this.shadowRoot?.querySelector(`.${className}`);
-  }
-
-  _normalizeDimensionValue(nextValue, fallbackValue) {
-    if (nextValue == null) return fallbackValue;
-    const normalized = String(nextValue).trim();
-    return normalized || fallbackValue;
-  }
-
-  _toCssDimension(value, fallbackPx) {
-    if (typeof value === "number" && Number.isFinite(value) && value > 0) {
-      return `${value}px`;
-    }
-
-    const text = String(value ?? "").trim();
-    if (!text) return `${fallbackPx}px`;
-    if (/^\d+(\.\d+)?$/.test(text)) return `${text}px`;
-    return text;
-  }
-
-  _applyDimensions() {
-    const cssWidth = this._toCssDimension(this.width, 800);
-    const cssHeight = this._toCssDimension(this.height, 600);
-
-    this.style.width = cssWidth;
-    this.style.height = cssHeight;
-  }
-
-  _parseBooleanAttributeValue(value, defaultValue = true) {
-    if (value == null) return defaultValue;
-    const normalized = String(value).trim().toLowerCase();
-    if (!normalized) return true;
-    if (["false", "0", "no", "off"].includes(normalized)) return false;
-    return true;
-  }
-
-  _applyResizeBehavior() {
-    if (this.resizeEnabled) {
-      this._startResizeObserver();
-      return;
-    }
-    this._stopResizeObserver();
-  }
-
-  _syncRendererSizeFromContainer(container) {
-    if (!container || !this.renderer) return;
-    const surface = container.querySelector(".vis-surface") || container;
-    const svg = surface.querySelector("svg");
-    const bounds = (svg || surface).getBoundingClientRect();
-    const width = Math.max(1, Math.round(bounds.width));
-    const height = Math.max(1, Math.round(bounds.height));
-
-    this.renderer.width = width;
-    this.renderer.height = height;
-  }
-
-  _startResizeObserver() {
-    if (typeof ResizeObserver === "undefined" || this.resizeObserver) return;
-
-    this.resizeObserver = new ResizeObserver((entries) => {
-      const entry = entries?.[0];
-      if (!entry) return;
-
-      const box = entry.contentRect;
-      const width = Math.round(box.width || 0);
-      const height = Math.round(box.height || 0);
-
-      if (width <= 0 || height <= 0) return;
-      if (width === this._lastObservedSize.width && height === this._lastObservedSize.height) return;
-
-      this._lastObservedSize = { width, height };
-
-      if (this.resizeRaf) cancelAnimationFrame(this.resizeRaf);
-      this.resizeRaf = requestAnimationFrame(() => {
-        this.resizeRaf = null;
-        this.render();
-      });
-    });
-
-    this.resizeObserver.observe(this);
-  }
-
-  _stopResizeObserver() {
-    if (this.resizeRaf) {
-      cancelAnimationFrame(this.resizeRaf);
-      this.resizeRaf = null;
-    }
-    if (!this.resizeObserver) return;
-    this.resizeObserver.disconnect();
-    this.resizeObserver = null;
-  }
+		this._applyDimensions();
+	}
+	
+	_getContainerElement() {
+		const className = this._containerClassName || "vis-container";
+		return this.shadowRoot?.querySelector(`.${className}`);
+	}
+	
+	_normalizeDimensionValue(nextValue, fallbackValue) {
+		if (nextValue == null) return fallbackValue;
+		const normalized = String(nextValue).trim();
+		return normalized || fallbackValue;
+	}
+	
+	_toCssDimension(value, fallbackPx) {
+		if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+			return `${value}px`;
+		}
+		
+		const text = String(value ?? "").trim();
+		if (!text) return `${fallbackPx}px`;
+		if (/^\d+(\.\d+)?$/.test(text)) return `${text}px`;
+		return text;
+	}
+	
+	_applyDimensions() {
+		const cssWidth = this._toCssDimension(this.width, 800);
+		const cssHeight = this._toCssDimension(this.height, 600);
+		
+		this.style.width = cssWidth;
+		this.style.height = cssHeight;
+	}
+	
+	_parseBooleanAttributeValue(value, defaultValue = true) {
+		if (value == null) return defaultValue;
+		const normalized = String(value).trim().toLowerCase();
+		if (!normalized) return true;
+		if (["false", "0", "no", "off"].includes(normalized)) return false;
+		return true;
+	}
+	
+	_applyResizeBehavior() {
+		if (this.resizeEnabled) {
+			this._startResizeObserver();
+			return;
+		}
+		this._stopResizeObserver();
+	}
+	
+	_syncRendererSizeFromContainer(container) {
+		if (!container || !this.renderer) return;
+		const surface = container.querySelector(".vis-surface") || container;
+		const svg = surface.querySelector("svg");
+		const bounds = (svg || surface).getBoundingClientRect();
+		const width = Math.max(1, Math.round(bounds.width));
+		const height = Math.max(1, Math.round(bounds.height));
+		
+		this.renderer.width = width;
+		this.renderer.height = height;
+	}
+	
+	_startResizeObserver() {
+		if (typeof ResizeObserver === "undefined" || this.resizeObserver) return;
+		
+		this.resizeObserver = new ResizeObserver((entries) => {
+			const entry = entries?.[0];
+			if (!entry) return;
+			
+			const box = entry.contentRect;
+			const width = Math.round(box.width || 0);
+			const height = Math.round(box.height || 0);
+			
+			if (width <= 0 || height <= 0) return;
+			if (width === this._lastObservedSize.width && height === this._lastObservedSize.height) return;
+			
+			this._lastObservedSize = { width, height };
+			
+			if (this.resizeRaf) cancelAnimationFrame(this.resizeRaf);
+			this.resizeRaf = requestAnimationFrame(() => {
+				this.resizeRaf = null;
+				this.render();
+			});
+		});
+		
+		this.resizeObserver.observe(this);
+	}
+	
+	_stopResizeObserver() {
+		if (this.resizeRaf) {
+			cancelAnimationFrame(this.resizeRaf);
+			this.resizeRaf = null;
+		}
+		if (!this.resizeObserver) return;
+		this.resizeObserver.disconnect();
+		this.resizeObserver = null;
+	}
 }

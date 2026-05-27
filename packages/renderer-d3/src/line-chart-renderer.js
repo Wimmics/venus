@@ -36,29 +36,26 @@ export default class LineChartRenderer extends CartesianChartRenderer {
     const xScaleConfig = mapping?.x?.scale || {};
     const yScaleConfig = mapping?.y?.scale || {};
 
-    const artifactChannels = Array.isArray(visualArtifacts?.channels) ? visualArtifacts.channels : [];
-    const artifactScales = visualArtifacts?.scales instanceof Map ? visualArtifacts.scales : new Map();
-    const lineColorChannel =
-      artifactChannels.find((item) => item?.mark === "lines" && item?.channel === "color") || null;
-    const lineSizeChannel =
-      artifactChannels.find((item) => item?.mark === "lines" && item?.channel === "size") || null;
-    const pointColorChannel =
-      artifactChannels.find((item) => item?.mark === "points" && item?.channel === "color") || null;
-    const pointSizeChannel =
-      artifactChannels.find((item) => item?.mark === "points" && item?.channel === "size") || null;
+    const lineColorChannel = this._getArtifactChannel(visualArtifacts, "lines", "color");
+    const lineSizeChannel = this._getArtifactChannel(visualArtifacts, "lines", "size");
+    const pointColorChannel = this._getArtifactChannel(visualArtifacts, "points", "color");
+    const pointSizeChannel = this._getArtifactChannel(visualArtifacts, "points", "size");
 
-    const colorScale = lineColorChannel?.scaleId ? artifactScales.get(lineColorChannel.scaleId) || null : null;
-    const sizeScale = lineSizeChannel?.scaleId ? artifactScales.get(lineSizeChannel.scaleId) || null : null;
-    const pointColorScale =
-      pointColorChannel?.scaleId ? artifactScales.get(pointColorChannel.scaleId) || null : null;
-    const pointSizeScale =
-      pointSizeChannel?.scaleId ? artifactScales.get(pointSizeChannel.scaleId) || null : null;
+    const colorScale = this._getArtifactScale(visualArtifacts, lineColorChannel);
+    const sizeScale = this._getArtifactScale(visualArtifacts, lineSizeChannel);
+    const pointColorScale = this._getArtifactScale(visualArtifacts, pointColorChannel);
+    const pointSizeScale = this._getArtifactScale(visualArtifacts, pointSizeChannel);
+    
+    
     const defaultLineColor = lineColorChannel?.defaultValue || lineColorConfig?.value || "#4e79a7";
     const defaultLineSize = lineSizeChannel?.defaultValue || lineSizeConfig?.value || 2;
-    const pointColorField = pointsConfig?.color?.field;
-    const pointSizeField = pointsConfig?.size?.field;
+    const pointColorField = pointColorChannel?.field || pointsConfig?.color?.field;
+    const pointSizeField = pointSizeChannel?.field || pointsConfig?.size?.field;
     const defaultPointColor = pointColorChannel?.defaultValue || pointsConfig?.color?.value || defaultLineColor;
     const defaultPointSize = pointSizeChannel?.defaultValue || pointsConfig?.size?.value || 3;
+
+    const lineColorField = lineColorChannel?.field || lineColorConfig?.field;
+    const lineSizeField = lineSizeChannel?.field || lineSizeConfig?.field;
 
     const yScaleType = String(yScaleConfig.type || "linear").toLowerCase();
 

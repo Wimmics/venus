@@ -5,10 +5,10 @@
  * Follows the same pattern as mapper-factory.js for consistency.
  * Allows dynamic registration of new visualization types.
  */
-import { DomainCalculator } from "./utils/compute-domain.js";
-import { ColorScaleCalculator } from "./utils/build-color-range.js";
-import { SizeRangeCalculator } from "./utils/build-size-range.js";
-import { BinBreaksCalculator } from "./utils/build-bin-breaks.js";
+import { DomainCalculator } from "../../../scales/src/domain-calculator.js";
+import { ColorScaleCalculator } from "../../../scales/src/color-scale-calculator.js";
+import { SizeRangeCalculator } from "../../../scales/src/size-range-calculator.js";
+import { BinBreaksCalculator } from "../../../scales/src/bin-breaks-calculator.js";
 
 const registry = new Map();
 

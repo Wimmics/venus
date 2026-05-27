@@ -27,7 +27,8 @@
         "title": "Co-star Count",
         "position": "top-left"
       }
-    }
+    }, 
+    "labels": { "display": false}
   },
   "links": {
     "type": "cooccurrence",

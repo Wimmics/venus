@@ -29,11 +29,11 @@ export class VenusLineChart extends VenusBase {
     this.rows = chart?.rows || [];
   }
 
-  _populateDomains() {
-    if (!this.rows?.length) return;
-    this.encodingManager.clearScaleCache();
-    this.visualEncoding = this.encodingManager.populateDomainsFromData(this.visualEncoding, this.rows);
-  }
+  // _populateDomains() {
+  //   if (!this.rows?.length) return;
+  //   this.encodingManager.clearScaleCache();
+  //   this.visualEncoding = this.encodingManager.populateDomainsFromData(this.visualEncoding, this.rows);
+  // }
 
   _hasData() {
     return Array.isArray(this.rows) && this.rows.length > 0;

@@ -1,0 +1,1 @@
+export { createVisualArtifactsCompiler } from './src/visual-artifacts-factory.js'

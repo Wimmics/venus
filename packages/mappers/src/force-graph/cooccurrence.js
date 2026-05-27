@@ -13,17 +13,10 @@ const defaultLogger = createLogger("CooccurrenceGraph", { debug: false });
  * @param {string} linkVar - La variable de contexte spécifiée pour les liens
  * @returns {Array} Les liens de co-occurrence calculés
  */
-export function calculateFlexibleCooccurrence(bindings, sourceVar, linkVar, logger=defaultLogger) {
-  // default no-op logger (keeps behavior, avoids crashes)
-
-  logger.debug("Calculating co-occurrence based on specified link variable...");
-  logger.debug(`${bindings.length} bindings to analyze`);
-  logger.debug(`Source variable: "${sourceVar}"`);
-  logger.debug(`Specified link variable: "${linkVar}"`);
+export function calculateFlexibleCooccurrence(bindings, sourceVar, linkVar) {
 
   if (!linkVar) {
-    logger.warn("No link variable specified");
-    return [];
+    throw new Error("No link variable specified");
   }
 
   const cooccurrenceLinks = [];
@@ -49,15 +42,12 @@ export function calculateFlexibleCooccurrence(bindings, sourceVar, linkVar, logg
     }
   });
 
-  logger.debug(`${valueGroups.size} distinct values found for "${linkVar}"`);
-
   // Créer des liens pour chaque groupe de valeurs partagées
   for (const [linkValue, group] of valueGroups.entries()) {
     const entities = Array.from(group.entities.keys());
 
     // Ne créer des liens que si au moins 2 entités partagent cette valeur
     if (entities.length >= 2) {
-      logger.debug(`Value "${linkValue}": ${entities.length} entities to connect`);
 
       // Créer des liens entre toutes les paires d'entités dans ce groupe
       for (let i = 0; i < entities.length; i++) {
@@ -87,19 +77,14 @@ export function calculateFlexibleCooccurrence(bindings, sourceVar, linkVar, logg
           }
         }
       }
+  
     } else {
-      logger.debug(`Value "${linkValue}": ${entities.length} entity (no link created)`);
+      console.warn(`Value "${linkValue}": ${entities.length} entity (no link created)`);
     }
   }
 
   // Optimisation - Fusionner les liens multiples entre les mêmes entités
   const optimizedLinks = _optimizeCooccurrenceLinks(cooccurrenceLinks);
-
-  logger.debug("Co-occurrence completed", {
-    rawLinks: cooccurrenceLinks.length,
-    optimizedLinks: optimizedLinks.length
-  });
-
   return optimizedLinks;
 }
 

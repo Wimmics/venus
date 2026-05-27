@@ -29,11 +29,10 @@ export class VenusBarChart extends VenusBase {
     this.rows = chart?.rows || [];
   }
 
-  _populateDomains() {
-    if (!this.rows?.length) return;
-    this.encodingManager.clearScaleCache();
-    this.visualEncoding = this.encodingManager.populateDomainsFromData(this.visualEncoding, this.rows);
-  }
+  // _populateDomains() {
+  //   if (!this.rows?.length) return;
+  //   this.visualEncoding = this.encodingManager.populateDomainsFromData(this.visualEncoding, this.rows);
+  // }
 
   _hasData() {
     return Array.isArray(this.rows) && this.rows.length > 0;
@@ -78,7 +77,6 @@ export class VenusBarChart extends VenusBase {
     if (container && !this.renderer) {
       this.renderer = createRenderer(VIS_TYPES.VENUS_BARCHART, {
         container,
-        encodingManager: this.encodingManager,
         width: this.width,
         height: this.height,
         logger: this.logger,

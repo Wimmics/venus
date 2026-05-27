@@ -34,6 +34,8 @@
     "@wimmics/venus-sparql": "file:../sparql",
     "@wimmics/venus-datasource": "file:../datasource",
     "@wimmics/venus-legends": "file:../legends",
+    "@wimmics/venus-visual-artifacts": "file:../visual-artifacts",
+    "@wimmics/venus-scales": "file:../scales",
     
     "rollup": "^4.0.0",
     "rollup-plugin-string": "^3.0.0"
