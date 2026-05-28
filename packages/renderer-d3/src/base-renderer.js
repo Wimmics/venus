@@ -13,6 +13,7 @@ export default class BaseRenderer {
 		this.svg = null;
 		this.encoding = null;
 		this._state = null;
+		this.visualArtifacts = null;
 	}
 	
 	/**
@@ -160,24 +161,24 @@ export default class BaseRenderer {
 		.text(message);
 	}
 	
-	_getArtifactChannel(visualArtifacts, mark, channel, role = null) {
-		if (!Array.isArray(visualArtifacts?.channels)) return null;
+	_getArtifactChannel(mark, channel, role = null) {
+		if (!Array.isArray(this.visualArtifacts?.channels)) return null;
 		
-			return visualArtifacts.channels.find((item) =>
+			return this.visualArtifacts.channels.find((item) =>
 				item?.mark === mark && item?.channel === channel && (role == null ? !item?.role : item?.role === role)) || null;
 	}
 
-	_getArtifactScale(visualArtifacts, channel) {
+	_getArtifactScale(channel) {
 		if (!channel?.scaleId) return null;
-		if (!(visualArtifacts?.scales instanceof Map)) return null;
+		if (!(this.visualArtifacts?.scales instanceof Map)) return null;
 		
-		return visualArtifacts.scales.get(channel.scaleId) || null;
+		return this.visualArtifacts.scales.get(channel.scaleId) || null;
 	}
 
-	_getArtifactAttribute(visualArtifacts, mark, attribute, role = null) {
-		if (!Array.isArray(visualArtifacts?.attributes)) return null;
+	_getArtifactAttribute(mark, attribute, role = null) {
+		if (!Array.isArray(this.visualArtifacts?.attributes)) return null;
 		
-		return visualArtifacts.attributes.find((item) =>
+		return this.visualArtifacts.attributes.find((item) =>
 			item?.mark === mark && item?.attribute === attribute && (role == null ? !item?.role : item?.role === role)) || null;
 	}
 }

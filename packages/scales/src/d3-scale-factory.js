@@ -2,7 +2,8 @@ import * as d3 from "d3";
 import {
 	SCALE_TYPES,
 	normalizeScaleType,
-	isQuantitativeScaleType
+	isQuantitativeScaleType,
+	isThresholdScaleType
 } from "../scale-types.js";
 
 import { SCALE_DEFAULTS } from "../scale-defaults.js";
@@ -25,28 +26,29 @@ export class D3ScaleFactory {
 		this.binBreaksCalculator = binBreaksCalculator;
 	}
 	
-	createScale({ scaleConfig, data, field, isColorScale = false } = {}) {
-		console.log("scale config = ", scaleConfig)
-		if (!scaleConfig) return null;
+	createScale({ scaleConfig = {}, data, field, isColorScale = false } = {}) {
 		
 		const type = normalizeScaleType(scaleConfig.type);
-		console.log("scale type = ", type)
 		const isQuant = isQuantitativeScaleType(type);
-		console.log("isQuant = ", isQuant)
+		
+		const scaleTypeForDomain = isColorScale && isQuant ? SCALE_TYPES.THRESHOLD : type;
+		const shouldUseThreshold = isThresholdScaleType(scaleTypeForDomain) || Boolean(scaleConfig.binning);
+		
 		const domain = this.resolveDomain({
 			scaleConfig,
 			data,
 			field,
-			scaleType: isColorScale && isQuant ? SCALE_TYPES.THRESHOLD : type,
+			scaleType: scaleTypeForDomain,
 		});
-
-		console.log("domain = ", domain)
-		if (!Array.isArray(domain) || domain.length === 0) {
-			return null;
-		}
+		
+		// If no domain, then cancel the operation
+		if (!Array.isArray(domain) || domain.length === 0) return null;
+		
+		let scale = null
+		let range = []
 		
 		if (isColorScale) {
-			return this.createColorScale({
+			scale = this.createColorScale({
 				scaleConfig,
 				data,
 				field,
@@ -55,29 +57,92 @@ export class D3ScaleFactory {
 				isQuant
 			});
 		}
-		
-		if (isQuant) {
-			const thresholdScale = this.createThresholdScale({
-				scaleConfig,
-				domain,
-				isColorScale: false
-			});
-			
-			if (thresholdScale) return thresholdScale;
+		else if (isQuant && shouldUseThreshold) {
+			scale = this.createThresholdScale({ scaleConfig, domain, isColorScale: false }) 
+		}
+		else { 
+			scale = this.createNonColorScale({scaleConfig, data, field, domain, scaleType: type });
 		}
 		
-		return this.createNonColorScale({
-			scaleConfig, 
-			data, 
-			field,
+		if (!scale) return null
+		
+		range = typeof scale.range === "function" ? scale.range() : []
+		
+		return {
+			scale,
 			domain,
-			scaleType: type
+			range,
+			scaleType: scaleTypeForDomain,
+			isThreshold: isThresholdScaleType(scaleTypeForDomain) && shouldUseThreshold,
+			samples: this.createLegendSamples({
+				scale,
+				domain,
+				range,
+				scaleType: scaleTypeForDomain,
+				isThreshold: isThresholdScaleType(scaleTypeForDomain) && shouldUseThreshold
+			})
+		};
+	}
+	
+	
+	createLegendSamples({ scale, domain, range, isThreshold, count = SCALE_DEFAULTS.BINNING.BINS }) {
+		if (!scale || typeof scale !== "function") return [];
+		
+		if (isThreshold) {
+			return range.map((visualValue, index) => ({
+				label: this._formatThresholdLabel(domain, index, range.length),
+				value: visualValue
+			}));
+		}
+		
+		if (!Array.isArray(domain) || domain.length < 2) {
+			return domain.map((domainValue) => ({
+				label: String(domainValue),
+				value: scale(domainValue)
+			}));
+		}
+		
+		const min = Number(domain[0]);
+		const max = Number(domain[domain.length - 1]);
+		
+		if (!Number.isFinite(min) || !Number.isFinite(max)) {
+			return domain.map((domainValue) => ({
+				label: String(domainValue),
+				value: scale(domainValue)
+			}));
+		}
+		
+		return Array.from({ length: count }, (_, index) => {
+			const t = count === 1 ? 0 : index / (count - 1);
+			const domainValue = min + (max - min) * t;
+			
+			return {
+				label: String(Math.round(domainValue)),
+				value: scale(domainValue)
+			};
 		});
+	}
+	
+	_formatThresholdLabel(domain, index, rangeLength) {
+		const lower = index === 0 ? null : domain[index - 1];
+		const upper = index === rangeLength - 1 ? null : domain[index];
+		
+		const format = (value) =>
+			value == null
+		? "?"
+		: Number.isFinite(Number(value))
+		? String(Math.round(Number(value)))
+		: String(value);
+		
+		if (lower == null) return `≤ ${format(upper)}`;
+		if (upper == null) return `> ${format(lower)}`;
+		
+		return `[${format(lower)}, ${format(upper)}]`;
 	}
 	
 	resolveDomain({ scaleConfig, data, field, scaleType }) {
 		const userDomain = scaleConfig.domain;
-		console.log("[resolveDomain]", scaleConfig, field, scaleType )
+		
 		if (Array.isArray(data) && data.length > 0 && field) {
 			return this.domainCalculator.getDomain(
 				data,
@@ -96,14 +161,12 @@ export class D3ScaleFactory {
 	}
 	
 	createColorScale({ scaleConfig, data, field, domain, scaleType, isQuant }) {
-		console.log("[createColorScale]")
 		if (isQuant) {
 			const thresholdScale = this.createThresholdScale({
 				scaleConfig,
 				domain,
 				isColorScale: true
 			});
-			console.log("threshold scale = ", thresholdScale)
 			
 			if (thresholdScale) return thresholdScale;
 			

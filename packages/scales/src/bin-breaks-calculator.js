@@ -51,6 +51,8 @@ export class BinBreaksCalculator {
 		const requestedBins = Number.isFinite(bins) ? Math.max(1, Math.floor(bins)) : this.defaultBins;
 		const maxBins = Math.max(1, uniqueValues.length);
 		const finalBins = Math.min(requestedBins, maxBins);
+		const sortedWorkingValues = [...workingValues].sort((a, b) => a - b);
+
 		const normalizedMethod = method === "quartiles" ? "quartiles" : "jenks";
 		
 		const providedThresholds = this._normalizeProvidedNumericBreaks(breaks, extentMin, extentMax);
@@ -75,15 +77,17 @@ export class BinBreaksCalculator {
 		
 		let thresholds;
 		if (normalizedMethod === "quartiles") {
-			thresholds = this._computeQuantileThresholds(uniqueValues, finalBins);
+			thresholds = this._computeQuantileThresholds(sortedWorkingValues, finalBins);
 		} else {
-			thresholds = this._computeJenksThresholds(uniqueValues, finalBins);
+			thresholds = this._computeJenksThresholds(sortedWorkingValues, finalBins);
 		}
 		
 		const dedupedThresholds = [...new Set(thresholds)]
-		.filter((value) => Number.isFinite(value))
-		.sort((a, b) => a - b)
-		.filter((value) => value > extentMin && value < extentMax);
+			.filter((value) => Number.isFinite(value))
+			.sort((a, b) => a - b)
+			.filter((value) => value > extentMin && value < extentMax);
+
+			
 		return {
 			thresholds: dedupedThresholds,
 			bins: dedupedThresholds.length + 1,

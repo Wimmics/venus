@@ -7,7 +7,8 @@ const COMMON_DEFAULTS = {
   },
   legend: {
     display: true,
-    position: "bottom"
+    position: "bottom", 
+    compact: true
   }
 }
 
@@ -41,9 +42,10 @@ export const MARK_DEFAULTS = {
       }
     },
     stroke: {
-      color: { value: "#ffffff"},
-      width: { value: 1.5}, 
-      display: true
+        value: "#ffffff"
+    },
+    strokeWidth: {
+        value: 1.5
     },
     labels: {
       display: true

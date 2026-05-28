@@ -1,4 +1,5 @@
 import { VisualArtifacts } from "./visual-artifacts";
+import { CHANNEL_TYPES } from "../channel-types";
 
 export class GraphVisualArtifacts extends VisualArtifacts {
 	build({ encoding, nodes = [], links = [] } = {}) {
@@ -14,35 +15,38 @@ export class GraphVisualArtifacts extends VisualArtifacts {
 		this._processLinkArtifacts(encoding.links, links);
 		
 		this._processLinkAttributes(encoding.links)
-		console.log("nodesConfig = ", encoding.nodes)
-		this._processNodeAttributes(encoding.nodes)
 		
 		return this.toObject();
 	}
 	
 	_processNodeArtifacts(nodesConfig, nodes) {
 		if (!nodesConfig || typeof nodesConfig !== "object") return;
+
+		for (let channel of [CHANNEL_TYPES.COLOR, CHANNEL_TYPES.STROKE]) {
+			this._processScaleChannel({
+				mark: "nodes",
+				channel: channel,
+				channelConfig: nodesConfig[channel],
+				data: nodes,
+				isColorScale: true
+			});
+		}
 		
-		console.log("[_processNodeArtifacts] nodesConfig = ", nodesConfig)
-		
-		console.log("processing color channel...")
-		this._processScaleChannel({
+		for (let channel of [CHANNEL_TYPES.SIZE, CHANNEL_TYPES.STROKE_WIDTH]) {
+			this._processScaleChannel({
+				mark: "nodes",
+				channel: channel,
+				channelConfig: nodesConfig[channel],
+				data: nodes,
+				isColorScale: false
+			});
+		}
+
+		this._processAttribute({
 			mark: "nodes",
-			channel: "color",
-			channelConfig: nodesConfig.color,
-			data: nodes,
-			isColorScale: true
+			attribute: "labels",
+			attributeConfig: nodesConfig.labels
 		});
-		console.log("process size channel...")
-		this._processScaleChannel({
-			mark: "nodes",
-			channel: "size",
-			channelConfig: nodesConfig.size,
-			data: nodes,
-			isColorScale: false
-		});
-		
-		console.log("processing tooltip ..")
 		
 		this._processTooltip({
 			mark: "nodes",
@@ -72,20 +76,6 @@ export class GraphVisualArtifacts extends VisualArtifacts {
 		this._processTooltip({
 			mark: "links",
 			tooltipConfig: linksConfig.tooltip
-		});
-	}
-	
-	_processNodeAttributes(nodesConfig) {
-		this._processAttribute({
-			mark: "nodes",
-			attribute: "stroke",
-			attributeConfig: nodesConfig.stroke
-		});
-		
-		this._processAttribute({
-			mark: "nodes",
-			attribute: "labels",
-			attributeConfig: nodesConfig.labels
 		});
 	}
 	

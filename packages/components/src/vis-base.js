@@ -1,6 +1,6 @@
 import { createLogger } from "@wimmics/venus-core";
 import { createLegends, positionLegends } from "@wimmics/venus-legends";
-import { createVisualArtifactsCompiler } from "@wimmics/venus-visual-artifacts";
+import { emptyVisualArtifacts, createVisualArtifactsCompiler } from "@wimmics/venus-visual-artifacts";
 
 export class VenusBase extends HTMLElement {
 	static get observedAttributes() {
@@ -26,7 +26,7 @@ export class VenusBase extends HTMLElement {
 		this.visualArtifactsCompiler = createVisualArtifactsCompiler(this.visType);
 		
 		this._legends = [];
-		this._visualArtifacts = { scales: new Map(), channels: [], legends: [] };
+		this._visualArtifacts = emptyVisualArtifacts()
 		this.renderer = null;
 		this.tooltipTimeout = null;
 		this.resizeObserver = null;
@@ -175,10 +175,17 @@ export class VenusBase extends HTMLElement {
 		}
 		
 		if (!this.renderer) return;
+		
 		this._compileVisualArtifacts();
-		this._manageLegends();
 		this._syncRendererSizeFromContainer(container);
-		this.renderer.render(this._getRenderPayload(), this.visualEncoding, this._visualArtifacts);
+		
+		this.renderer.render(
+			this._getRenderPayload(), 
+			this.visualEncoding, 
+			this._visualArtifacts
+		);
+
+		this._manageLegends();
 	}
 	
 	_manageLegends() {
@@ -194,6 +201,7 @@ export class VenusBase extends HTMLElement {
 		};
 		
 		const newLegends = createLegends(legendConfig);
+		console.log("legendConfig = ", legendConfig)
 		const relayoutLegends = () => {
 			const topInset = this._getLegendTopInset(container);
 			positionLegends(container, this._legends, {
@@ -211,6 +219,17 @@ export class VenusBase extends HTMLElement {
 				requestAnimationFrame(() => relayoutLegends());
 			});
 			container.appendChild(legend);
+
+
+console.log("legend element", legend);
+console.log("connected", legend.isConnected);
+console.log("shadow", legend.shadowRoot?.innerHTML);
+console.log("html", legend.innerHTML);
+console.log("display", getComputedStyle(legend).display);
+console.log("box", legend.getBoundingClientRect());
+
+			legend.render()
+
 			this._legends.push(legend);
 		});
 		
@@ -226,12 +245,12 @@ export class VenusBase extends HTMLElement {
 	}
 	
 	_compileVisualArtifacts() {
-		console.log("has data = ", this._hasData())
+
 		if (!this._hasData()) {
-			this._visualArtifacts = { scales: new Map(), channels: [], legends: [] };
+			this._visualArtifacts = emptyVisualArtifacts()
 			return;
 		}
-		console.log("Computing artifacts...")
+		
 		try {
 			this._visualArtifacts = this.visualArtifactsCompiler.build({
 				encoding: this.visualEncoding,
@@ -239,15 +258,16 @@ export class VenusBase extends HTMLElement {
 				...this._getArtifactPayload()
 			});
 
-			console.log("visual artifacts = ", this.visualArtifacts)
 		} catch (error) {
 			this.logger.warn("Failed to compile visual artifacts", {
 				message: error?.message
 			});
 			
-			this._visualArtifacts = { scales: new Map(), channels: [], legends: [] };
+			this._visualArtifacts = emptyVisualArtifacts()
 		}
 	}
+
+	
 	
 	_resolveBackgroundColor() {
 		const background = this.visualEncoding?.background;

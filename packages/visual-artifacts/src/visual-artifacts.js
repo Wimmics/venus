@@ -1,5 +1,6 @@
 import { D3ScaleFactory, SCALE_DEFAULTS } from "@wimmics/venus-scales";
 import { MARK_DEFAULTS } from "../mark-defaults";
+import { SCALE_TYPES } from "@wimmics/venus-scales/scale-types";
 
 export class VisualArtifacts {
 	constructor({ scaleFactory = new D3ScaleFactory() } = {}) {
@@ -34,33 +35,27 @@ export class VisualArtifacts {
 		data,
 		isColorScale
 	}) {
-		console.log("--------------")
-		console.log(mark, channel, "channelConfig = ", channelConfig)
 		
 		const resolvedConfig = this._resolveChannelConfig( mark, channel, channelConfig);
-		console.log("resolvedConfig = ", resolvedConfig)
 		
 		const field = this._resolveChannelDataKey(resolvedConfig);
-		console.log("scale field = ", field)
 		const hasValue = resolvedConfig.value !== undefined && resolvedConfig.value !== null;
 		
 		if (!field && !hasValue) return;
 		
-		const scaleId = role
-		? `${mark}.${role}.${channel}`
-		: `${mark}.${channel}`;
+		const scaleId = role ? `${mark}.${role}.${channel}` : `${mark}.${channel}`;
 		
-		
-		if (field && resolvedConfig.scale) {
-			const scale = this.scaleFactory.createScale({
-				scaleConfig: resolvedConfig.scale,
+		let scaleResult = null
+		if (field) {
+			scaleResult = this.scaleFactory.createScale({
+				scaleConfig: resolvedConfig.scale || {},
 				data,
 				field,
 				isColorScale
 			});
-			console.log("scale = ", scale)
-			if (scale) {
-				this.scales.set(scaleId, scale);
+			
+			if (scaleResult?.scale) {
+				this.scales.set(scaleId, scaleResult.scale);
 			}
 		}
 		
@@ -69,19 +64,28 @@ export class VisualArtifacts {
 			role,
 			channel,
 			field,
-			scaleId: field && resolvedConfig.scale ? scaleId : null,
+			scaleId: field ? scaleId : null,
 			encoding: resolvedConfig,
 			defaultValue: resolvedConfig.value
 		});
 		
-		console.log("channels = ", this.channels)
-		
-		if (field && resolvedConfig.scale && resolvedConfig?.legend?.display === true) {
+		if (field) {
 			this.legends.push({
+				field: field,
 				type: channel,
 				mark,
 				role,
 				scaleId,
+
+				scaleType: scaleResult.scaleType,
+				isThreshold: scaleResult.isThreshold,
+
+				samples: scaleResult.samples,
+
+				domain: scaleResult.domain,
+				range: scaleResult.range,
+
+				...resolvedConfig.legend,
 				title: resolvedConfig.legend.title || field
 			});
 		}

@@ -6,7 +6,7 @@ import { calculateFlexibleCooccurrence } from "./cooccurrence.js"
 import { addDirectionalLink, addSemanticLink } from "./link-builders.js";
 import {
 	collectExplicitNodeFields,
-	copyRelevantNodeFields,
+	copyBindingFieldsToNode,
 	applyNodeLabelField,
 	resolveRoleNodeConfig,
 	addNodeRole,
@@ -60,7 +60,7 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 				
 				for (const { varName, id } of entityEntries) {
 					if (!nodesMap.has(id)) {
-						const node = this._makeNode(binding, vars, varName, id, explicitNodeFieldConfig, mapping?.nodes?.labels);
+						const node = this._makeNode(binding, vars, varName, id, mapping?.nodes?.labels);
 						nodesMap.set(id, node);
 					}
 					if (!cooccurrenceBindings) cooccurrenceBindings = [];
@@ -74,12 +74,12 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 			const sourceId = extractId(binding[sourceVar]);
 			
 			if (!nodesMap.has(sourceId)) {
-				const node = this._makeNode(binding, vars, sourceVar, sourceId, explicitNodeFieldConfig, mapping?.nodes?.labels);
+				const node = this._makeNode(binding, vars, sourceVar, sourceId, mapping?.nodes?.labels);
 				nodesMap.set(sourceId, node);
 			}
 			const sourceNode = nodesMap.get(sourceId);
 			addNodeRole(sourceNode, "source");
-			copyRelevantNodeFields(sourceNode, binding, vars, sourceVar, explicitNodeFieldConfig);
+			copyBindingFieldsToNode(sourceNode, binding, vars);
 			applyNodeLabelField(sourceNode, resolveRoleNodeConfig(mapping, sourceNode, "source", "labels"));
 			
 			if (linkType === "directional" && targetVar && binding[targetVar]) {
@@ -90,8 +90,7 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 					targetVar,
 					nodesMap,
 					linksMap,
-					explicitNodeFieldConfig,
-					copyNodeFields: copyRelevantNodeFields,
+					copyBindingFieldsToNode: copyBindingFieldsToNode,
 					nodeLabel: mapping?.nodes,
 					linkLabel: mapping?.links?.labels
 				});
@@ -107,8 +106,7 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 					semanticVar: relationVar,
 					nodesMap,
 					linksMap,
-					explicitNodeFieldConfig,
-					copyNodeFields: copyRelevantNodeFields,
+					copyBindingFieldsToNode: copyBindingFieldsToNode,
 					nodeLabel: mapping?.nodes,
 					linkLabel: mapping?.links?.labels
 				});
@@ -147,7 +145,7 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 		};
 	}
 	
-	_makeNode(binding, vars, entityVarName, id, explicitNodeFieldConfig, labelConfig) {
+	_makeNode(binding, vars, entityVarName, id, labelConfig) {
 		const bindingValue = binding[entityVarName];
 		
 		const node = {
@@ -158,7 +156,7 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 			originalData: {}
 		};
 		
-		copyRelevantNodeFields(node, binding, vars, entityVarName, explicitNodeFieldConfig);
+		copyBindingFieldsToNode(node, binding, vars);
 		applyNodeLabelField(node, labelConfig);
 		return node;
 	}

@@ -40,12 +40,10 @@ export class DomainCalculator {
 	* @param {string} scaleType - Scale type ('ordinal', 'linear', 'sqrt', 'log')
 	* @returns {Array} Resolved domain for the field
 	*/
-	getDomain(data, field, userDomain = null, 
-		scaleType = SCALE_DEFAULTS.TYPE, 
-		binning = null) {
+	getDomain(data, field, userDomain = null, scaleType = SCALE_DEFAULTS.TYPE, binning = null) {
 			
 			console.log("[getDomain]", field, userDomain, scaleType, binning)
-
+			
 			if (!data || data.length === 0) {
 				console.warn(`No data available for field "${field}"`);
 				return [];
@@ -170,32 +168,33 @@ export class DomainCalculator {
 		}
 		
 		_getThresholdDomain(extractedValues, field, userDomain, scaleType, binning = {}) {
-			if (Array.isArray(userDomain) && userDomain.length > 0) {
-				return userDomain
-				.map((value) => this.convertToNumber(value))
-				.filter((value) => Number.isFinite(value))
-				.sort((a, b) => a - b);
-			}
-			
 			const numericValues = extractedValues
-				.map((value) => this.convertToNumber(value))
-				.filter((value) => Number.isFinite(value));
+			.map((value) => this.convertToNumber(value))
+			.filter((value) => Number.isFinite(value));
 			
-			if (numericValues.length === 0) {
-				console.warn(`No numeric values found in data for threshold domain on field "${field}"`);
-				return [];
-			}
+			if (numericValues.length === 0) return [];
 			
 			const dataMin = Math.min(...numericValues);
 			const dataMax = Math.max(...numericValues);
 			
-			const method = typeof binning?.method === "string" && binning.method.trim() ? binning.method
-				: SCALE_DEFAULTS.BINNING.METHOD;
+			const domainValues = Array.isArray(userDomain)
+			? userDomain.map((v) => this.convertToNumber(v)).filter(Number.isFinite)
+			: [];
 			
-			const bins = Number.isInteger(binning?.bins) && binning.bins > 0 ? binning.bins
-				: SCALE_DEFAULTS.BINNING.BINS;
+			const min = domainValues.length >= 2 ? Math.min(...domainValues) : dataMin;
+			const max = domainValues.length >= 2 ? Math.max(...domainValues) : dataMax;
 			
-			const breaks = Array.isArray(binning?.breaks) ? binning.breaks : null;
+			const method = typeof binning?.method === "string" && binning.method.trim()
+			? binning.method
+			: SCALE_DEFAULTS.BINNING.METHOD;
+			
+			const bins = Number.isInteger(binning?.bins) && binning.bins > 0
+			? binning.bins
+			: SCALE_DEFAULTS.BINNING.BINS;
+			
+			const breaks = Array.isArray(binning?.breaks)
+			? binning.breaks
+			: null;
 			
 			const breakInfo = this.binBreaksCalculator.computeBreaks(numericValues, {
 				method,
@@ -203,11 +202,13 @@ export class DomainCalculator {
 				breaks,
 				label: field,
 				quantitative: true,
-				min: dataMin,
-				max: dataMax
+				min,
+				max
 			});
 			
-			return Array.isArray(breakInfo?.thresholds) ? breakInfo.thresholds : [];
+			return Array.isArray(breakInfo?.thresholds)
+			? breakInfo.thresholds
+			: [];
 		}
 		
 		/**
