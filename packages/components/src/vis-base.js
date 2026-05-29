@@ -1,4 +1,4 @@
-import { createLogger } from "@wimmics/venus-core";
+
 import { createLegends, positionLegends } from "@wimmics/venus-legends";
 import { emptyVisualArtifacts, createVisualArtifactsCompiler } from "@wimmics/venus-visual-artifacts";
 
@@ -12,7 +12,6 @@ export class VenusBase extends HTMLElement {
 		this.attachShadow({ mode: "open" });
 		
 		this.visType = visType;
-		this.logger = createLogger(componentName || "VenusBase", { debug: false });
 		this.width = defaultWidth;
 		this.height = defaultHeight;
 		
@@ -129,24 +128,15 @@ export class VenusBase extends HTMLElement {
 			encodingManager: this.encodingManager
 		})
 		
-		
 		if (result.status !== "success") {
-			this._notify(result.message || this._getBuildErrorMessage(), "error");
-			this.logger.error(this._getBuildErrorLogKey(), result);
-			return;
+			throw new Error(result);
 		}
 		
 		if (result.raw?.head?.vars) {
-			try {
-				this.encodingManager.validateReferencedFields(
-					this.visualEncoding,
-					result.raw.head.vars
-				);
-			} catch (error) {
-					console.error("[VENUS encoding field error]", error);
-					this._notify(error.message, "error");
-				return;
-			}
+			this.encodingManager.validateReferencedFields(
+				this.visualEncoding,
+				result.raw.head.vars
+			);
 		}
 
 		this._setDataFromBuildResult(result);
@@ -156,13 +146,8 @@ export class VenusBase extends HTMLElement {
 	}
 	
 	setEncoding(encoding) {
-		try {
-			this.visualEncoding = this.encodingManager.validateEncoding(encoding)
-		} catch (error) {
-			this._notify(error.message, "error");
-			return;
-		}
-		
+		this.visualEncoding = this.encodingManager.validateEncoding(encoding)
+
 		this.render();
 	}
 	
@@ -176,8 +161,8 @@ export class VenusBase extends HTMLElement {
 		
 		if (!this.renderer) return;
 		
-		this._compileVisualArtifacts();
 		this._syncRendererSizeFromContainer(container);
+		this._compileVisualArtifacts();
 		
 		this.renderer.render(
 			this._getRenderPayload(), 
@@ -201,7 +186,7 @@ export class VenusBase extends HTMLElement {
 		};
 		
 		const newLegends = createLegends(legendConfig);
-		console.log("legendConfig = ", legendConfig)
+		
 		const relayoutLegends = () => {
 			const topInset = this._getLegendTopInset(container);
 			positionLegends(container, this._legends, {
@@ -220,14 +205,6 @@ export class VenusBase extends HTMLElement {
 			});
 			container.appendChild(legend);
 
-
-console.log("legend element", legend);
-console.log("connected", legend.isConnected);
-console.log("shadow", legend.shadowRoot?.innerHTML);
-console.log("html", legend.innerHTML);
-console.log("display", getComputedStyle(legend).display);
-console.log("box", legend.getBoundingClientRect());
-
 			legend.render()
 
 			this._legends.push(legend);
@@ -245,26 +222,27 @@ console.log("box", legend.getBoundingClientRect());
 	}
 	
 	_compileVisualArtifacts() {
-
+		console.log("[compile artifacts]", {
+  hasData: this._hasData(),
+  payload: this._getArtifactPayload(),
+  marks: this.encodingManager.getMarks(),
+  encoding: this.visualEncoding,
+  width: this.renderer?.width,
+  height: this.renderer?.height,
+  compiler: this.visualArtifactsCompiler?.constructor?.name
+});
 		if (!this._hasData()) {
 			this._visualArtifacts = emptyVisualArtifacts()
 			return;
 		}
-		
-		try {
-			this._visualArtifacts = this.visualArtifactsCompiler.build({
-				encoding: this.visualEncoding,
-				marks: this.encodingManager.getMarks(),
-				...this._getArtifactPayload()
-			});
-
-		} catch (error) {
-			this.logger.warn("Failed to compile visual artifacts", {
-				message: error?.message
-			});
-			
-			this._visualArtifacts = emptyVisualArtifacts()
-		}
+	
+		this._visualArtifacts = this.visualArtifactsCompiler.build({
+			encoding: this.visualEncoding,
+			marks: this.encodingManager.getMarks(),
+			width: this.renderer.width,
+			height: this.renderer.height,
+			...this._getArtifactPayload()
+		})
 	}
 
 	
@@ -344,24 +322,6 @@ console.log("box", legend.getBoundingClientRect());
 		}
 		titleElement.textContent = "";
 		titleElement.style.display = "none";
-	}
-	
-	_notify(message, type = "info") {
-		const old = this.shadowRoot.querySelector(".notification");
-		if (old) old.remove();
-		
-		const container = this._getContainerElement();
-		if (!container) return;
-		
-		const n = document.createElement("div");
-		n.className = `notification ${type}`;
-		n.textContent = message;
-		container.appendChild(n);
-		
-		setTimeout(() => {
-			n.classList.add("fade-out");
-			setTimeout(() => n.remove(), 500);
-		}, 2500);
 	}
 	
 	_showTooltip(content, x, y, options = {}) {
@@ -545,15 +505,6 @@ console.log("box", legend.getBoundingClientRect());
 		return this.currentProxyUrl || this.proxy || null;
 	}
 	
-	
-	_getBuildErrorMessage() {
-		return "Failed to build visualization";
-	}
-	
-	_getBuildErrorLogKey() {
-		return "build failed";
-	}
-	
 	_buildVisualization() {
 		throw new Error("_buildVisualization must be implemented by subclass");
 	}
@@ -561,10 +512,6 @@ console.log("box", legend.getBoundingClientRect());
 	_setDataFromBuildResult() {
 		throw new Error("_setDataFromBuildResult must be implemented by subclass");
 	}
-	
-	// _populateDomains() {
-	// 	throw new Error("_populateDomains must be implemented by subclass");
-	// }
 	
 	_hasData() {
 		throw new Error("_hasData must be implemented by subclass");

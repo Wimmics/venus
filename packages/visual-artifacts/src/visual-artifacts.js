@@ -1,6 +1,5 @@
-import { D3ScaleFactory, SCALE_DEFAULTS } from "@wimmics/venus-scales";
-import { MARK_DEFAULTS } from "../mark-defaults";
-import { SCALE_TYPES } from "@wimmics/venus-scales/scale-types";
+import { D3ScaleFactory } from "@wimmics/venus-scales";
+import { SCALE_DEFAULTS, SCALE_TYPES, MARK_DEFAULTS } from "@wimmics/venus-core";
 
 export class VisualArtifacts {
 	constructor({ scaleFactory = new D3ScaleFactory() } = {}) {
@@ -8,7 +7,8 @@ export class VisualArtifacts {
 		this.scales = new Map();
 		this.channels = [];
 		this.legends = [];
-		this.attributes = []
+		this.attributes = [];
+		this.layout = {}
 	}
 	
 	reset() {
@@ -16,6 +16,7 @@ export class VisualArtifacts {
 		this.channels = [];
 		this.legends = [];
 		this.attributes = []
+		this.layout = {}
 	}
 	
 	toObject() {
@@ -23,7 +24,8 @@ export class VisualArtifacts {
 			scales: this.scales,
 			channels: this.channels,
 			legends: this.legends,
-			attributes: this.attributes
+			attributes: this.attributes,
+			layout: this.layout
 		};
 	}
 	
@@ -53,6 +55,8 @@ export class VisualArtifacts {
 				field,
 				isColorScale
 			});
+
+			console.log("[_processScaleChannel] scaleResult = ", scaleResult)
 			
 			if (scaleResult?.scale) {
 				this.scales.set(scaleId, scaleResult.scale);

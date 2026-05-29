@@ -1,7 +1,6 @@
 /**
  * @typedef {Object} MapContext
  * @property {any} encoding - Normalized and validated encoding.
- * @property {{ debug?: Function, info?: Function, warn?: Function, error?: Function }} [logger]
  */
 
 /**

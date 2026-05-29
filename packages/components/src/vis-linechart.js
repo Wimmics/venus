@@ -51,14 +51,6 @@ export class VenusLineChart extends VenusBase {
     return { rows: this.rows };
   }
 
-  _getBuildErrorMessage() {
-    return "Failed to build line chart";
-  }
-
-  _getBuildErrorLogKey() {
-    return "buildLineChart failed";
-  }
-
   _initDOMStructure() {
     this._renderBaseDOM({
       containerClass: "line-chart-container",
@@ -81,7 +73,6 @@ export class VenusLineChart extends VenusBase {
         encodingManager: this.encodingManager,
         width: this.width,
         height: this.height,
-        logger: this.logger,
         callbacks: {
           onHover: (payload) => this._onHover(payload),
           onOut: (payload) => this._onOut(payload),

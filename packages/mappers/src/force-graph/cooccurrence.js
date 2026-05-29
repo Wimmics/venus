@@ -1,12 +1,7 @@
-import { createLogger } from "@wimmics/venus-core";
-
-const defaultLogger = createLogger("CooccurrenceGraph", { debug: false });
-
 /**
  * Calcule la co-occurrence basée sur les valeurs partagées d'un champ de contexte.
  * Crée des liens entre entités qui partagent les mêmes valeurs de contexte.
  *
- * Logging: uses our logger module (no this._log*).
  *
  * @param {Array} bindings - Les bindings collectés avec sourceId, binding et vars
  * @param {string} sourceVar - La variable principale utilisée pour les nœuds

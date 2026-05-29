@@ -3,8 +3,8 @@
 * It derives and validates domains from data and optional user input.
 */
 
-import { isQuantitativeScaleType, isThresholdScaleType, SCALE_TYPES } from "../scale-types";
-import { SCALE_DEFAULTS } from "../scale-defaults";
+import { isQuantitativeScaleType, isThresholdScaleType, SCALE_TYPES } from "@wimmics/venus-core/src/scale-types";
+import { SCALE_DEFAULTS } from "@wimmics/venus-core/src/scale-defaults";
 import { BinBreaksCalculator } from "./bin-breaks-calculator";
 
 export class DomainCalculator {
@@ -46,7 +46,7 @@ export class DomainCalculator {
 			
 			if (!data || data.length === 0) {
 				console.warn(`No data available for field "${field}"`);
-				return [];
+				return {}
 			}
 			
 			// Extract unique values for the requested field.
@@ -54,7 +54,7 @@ export class DomainCalculator {
 			
 			if (extractedValues.length === 0) {
 				console.warn(`No values found in data for field "${field}"`);
-				return [];
+				return {}
 			}
 			
 			if (isThresholdScaleType(scaleType)) {
@@ -72,7 +72,7 @@ export class DomainCalculator {
 				
 				const sortedDomain = this.sortDomainValues(extractedValues, scaleType);
 				
-				return sortedDomain;
+				return { domain: sortedDomain }
 			}
 			
 			// Case 2: invalid user domain -> fix it.
@@ -89,7 +89,7 @@ export class DomainCalculator {
 				];
 				console.warn(warningParts.join(' | '));
 				
-				return fixedDomain;
+				return { domain: fixedDomain }
 			}
 			
 			// Case 3: incomplete user domain -> complete it.
@@ -106,11 +106,11 @@ export class DomainCalculator {
 				];
 				console.warn(warningParts.join(' | '));
 				
-				return completedDomain;
+				return { domain: completedDomain }
 			}
 			
 			// Case 4: valid user domain -> keep as is.
-			return [...userDomain]; // Return a copy to avoid external mutation.
+			return { domain: [...userDomain]} // Return a copy to avoid external mutation.
 		}
 		
 		_isQuantitativeScale(scaleType) {
@@ -118,13 +118,14 @@ export class DomainCalculator {
 		}
 		
 		_getQuantitativeDomain(extractedValues, field, userDomain, scaleType) {
+			
 			const numericValues = extractedValues
 			.map(v => this.convertToNumber(v))
 			.filter(v => !isNaN(v));
 			
 			if (numericValues.length === 0) {
 				console.warn(`No numeric values found in data for field "${field}"`);
-				return [];
+				return {}
 			}
 			
 			const dataMin = Math.min(...numericValues);
@@ -133,7 +134,7 @@ export class DomainCalculator {
 			
 			if (!Array.isArray(userDomain) || userDomain.length < 2) {
 				console.warn(`No valid numeric domain provided by user for field "${field}". Domain automatically generated from data extent: [${this._formatValueList(autoDomain)}].`);
-				return autoDomain;
+				return { domain: autoDomain};
 			}
 			
 			const userNumericValues = userDomain
@@ -142,7 +143,7 @@ export class DomainCalculator {
 			
 			if (userNumericValues.length < 2) {
 				console.warn(`Invalid numeric domain for field "${field}". User provided: [${this._formatValueList(userDomain)}]. Domain automatically generated from data extent: [${this._formatValueList(autoDomain)}].`);
-				return autoDomain;
+				return {domain: autoDomain};
 			}
 			
 			const userMin = Math.min(...userNumericValues);
@@ -153,7 +154,7 @@ export class DomainCalculator {
 				const positiveValues = numericValues.filter(v => v > 0);
 				if (positiveValues.length < 2) {
 					console.warn(`Log scale requires positive values for field "${field}". Falling back to [1, 10].`);
-					return [1, 10];
+					return {domain: [1, 10]};
 				}
 				finalDomain = [Math.min(...positiveValues), Math.max(...positiveValues)];
 				console.warn(`Invalid non-positive user domain for log scale on field "${field}". Domain corrected to positive data extent: [${this._formatValueList(finalDomain)}].`);
@@ -164,7 +165,7 @@ export class DomainCalculator {
 				console.warn(`Degenerate numeric domain for field "${field}" (min=max). Domain expanded to: [${this._formatValueList(finalDomain)}].`);
 			}
 			
-			return finalDomain;
+			return { domain: finalDomain }
 		}
 		
 		_getThresholdDomain(extractedValues, field, userDomain, scaleType, binning = {}) {
@@ -205,10 +206,17 @@ export class DomainCalculator {
 				min,
 				max
 			});
+
+			console.log("[_getThresholdDomain] breakInfo = ", breakInfo)
 			
-			return Array.isArray(breakInfo?.thresholds)
-			? breakInfo.thresholds
-			: [];
+			return {
+				domain: breakInfo.thresholds,
+				bounds: {
+					min: breakInfo.min,
+					max: breakInfo.max
+				},
+				bins: breakInfo.bins
+			};
 		}
 		
 		/**

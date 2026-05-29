@@ -1,8 +1,8 @@
 import { VisualArtifacts } from "./visual-artifacts";
-import { CHANNEL_TYPES } from "../channel-types";
+import { CHANNEL_TYPES } from "@wimmics/venus-core";
 
 export class GraphVisualArtifacts extends VisualArtifacts {
-	build({ encoding, nodes = [], links = [] } = {}) {
+	build({ encoding, nodes = [], links = [], width = null, height = null } = {}) {
 		this.reset();
 		
 		if (!encoding || typeof encoding !== "object") {

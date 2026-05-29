@@ -12,7 +12,6 @@ export async function buildLineChart({
   retryDelayMs = 250,
   encoding = null,
   encodingManager = null,
-  logger = null
 } = {}) {
   const mapper = createSparqlMapper(VIS_TYPES.VENUS_LINECHART);
 
@@ -24,17 +23,14 @@ export async function buildLineChart({
     fetcher,
     retries,
     retryDelayMs,
-    logger,
     visOptions: { mapper, encoding, encodingManager },
-    mapToVis: (raw, { mapper: mapperInstance, encoding: mapping, encodingManager: manager }, log) => {
+    mapToVis: (raw, { mapper: mapperInstance, encoding: mapping, encodingManager: manager }) => {
       if (!mapperInstance?.map) throw new Error('Invalid mapper: expected { map(results, options) }');
       const { chart, meta } = mapperInstance.map(raw, {
         encoding: mapping,
         encodingManager: manager,
-        logger: log
       });
-      if (!chart) throw new Error('Mapper returned no "chart"');
-      log?.debug?.("line-chart mapped", { rowCount: chart.rows?.length || 0 });
+      if (!chart) throw new Error('Mapper returned no "chart"')
       return { chart, meta };
     }
   });

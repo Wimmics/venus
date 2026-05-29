@@ -5,16 +5,13 @@
  *
  * Notes:
  * - Uses GET by default (public endpoints often accept it; avoids POST preflight)
- * - Clean, single-line logs via shared logger factory (createLogger)
  * - Returns consistent result objects for consumers
  */
 
-import { createLogger } from "@wimmics/venus-core"; // adjust if your core package name differs
 
 export class SparqlDataFetcher {
   constructor({ debug = false, timeoutMs = 300000, logLevel = "info" } = {}) {
     this.timeoutMs = Number(timeoutMs) || 300000;
-    this.log = createLogger("SparqlDataFetcher", { debug: Boolean(debug), level: logLevel });
   }
 
   // ---------- Helpers ----------
@@ -97,17 +94,15 @@ export class SparqlDataFetcher {
     // Proxy first (if provided)
     if (px) {
       const proxyFullUrl = this._buildProxyGetUrl(px, ep, q);
-      this.log.debug("Proxy GET request", { url: proxyFullUrl, timeoutMs });
 
       try {
         const data = await this._fetchJson(proxyFullUrl, { timeoutMs });
         return { data, method: "proxy-get" };
       } catch (proxyErr) {
         const proxyMsg = proxyErr?.message || String(proxyErr);
-        this.log.warn("Proxy request failed, falling back to direct", { message: proxyMsg });
+        console.warn("Proxy request failed, falling back to direct endpoint URL", { message: proxyMsg });
 
         const directUrl = this._buildDirectGetUrl(ep, q);
-        this.log.debug("Direct GET fallback request", { url: directUrl, timeoutMs });
 
         try {
           const data = await this._fetchJson(directUrl, { timeoutMs });
@@ -125,7 +120,6 @@ export class SparqlDataFetcher {
 
     // Direct only
     const directUrl = this._buildDirectGetUrl(ep, q);
-    this.log.debug("Direct GET request", { url: directUrl, timeoutMs });
 
     try {
       const data = await this._fetchJson(directUrl, { timeoutMs });
@@ -163,7 +157,7 @@ export class SparqlDataFetcher {
         try { onNotification(msg, "error"); } catch (_) {}
       }
 
-      this.log.error("Failed to load SPARQL data", { message: msg });
+      console.error("Failed to load SPARQL data", { message: msg });
 
       return {
         status: "error",

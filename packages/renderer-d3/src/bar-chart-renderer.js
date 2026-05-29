@@ -1,8 +1,39 @@
 import * as d3 from "d3";
 import CartesianChartRenderer from "./cartesian-chart-renderer.js";
+import { CHANNEL_TYPES, MARK_TYPES } from "@wimmics/venus-core/index.js";
 
 export default class BarChartRenderer extends CartesianChartRenderer {
+
+	_resolveScaleValue(d, channel) {
+		const fallback = channel?.defaultValue;
+		
+		const field = channel?.field
+		const scale = this._getArtifactScale(channel)
+		
+		if (!field || d[field] == null || !scale) {
+			return fallback;
+		}
+		
+		const value = scale(d[field]);
+		
+		return validate(value) ? value : fallback;
+	}
+
+	_getBarColor(d) {	
+		return this._resolveScaleValue(d, CHANNEL_TYPES.COLOR)
+	}
+
+	_getBarStroke(d) {
+		return this._resolveScaleValue(d, CHANNEL_TYPES.STROKE)
+	}
+
+	_getBarStrokeWidth(d) {
+		return this._resolveScaleValue(d, CHANNEL_TYPES.STROKE_WIDTH)
+	}
+
 	_renderVis() {
+		console.log("[BarChart] artifacts = ", this.visualArtifacts)
+		
 		const {
 			mapping,
 			xAxisConfig,
@@ -10,8 +41,8 @@ export default class BarChartRenderer extends CartesianChartRenderer {
 			xLabelAngle,
 			xLabelOffset,
 			yLabelOffset,
-			innerWidth,
-			innerHeight,
+			// innerWidth,
+			// innerHeight,
 			xField,
 			yField,
 			plot,
@@ -28,24 +59,38 @@ export default class BarChartRenderer extends CartesianChartRenderer {
 		const groupField = typeof barsEncoding?.groups?.field === "string" ? barsEncoding.groups.field.trim() : "";
 		const colorEncoding = barsEncoding?.color || {};
 		const sizeEncoding = barsEncoding?.size || {};
+
+		// Channels: object helper keeping previously computed channel features
+		this.channels = { } 		
+		for (let channel of Object.values(CHANNEL_TYPES)) {
+			if (!this.channels[channel]) this.channels[channel] = {}
+			for (let mark of [MARK_TYPES.NODES, MARK_TYPES.LINKS]) {
+				this.channels[channel][mark] = this._getArtifactChannel(mark, channel)
+			}
+		}
+		console.log("[BarChart] channels = ", this.channels)
+
+		// TODO: test the scales and revise their computation according to encoding (grouped/stacked/simple)
+		const { x, y, innerWidth, innerHeight, margin } = this.visualArtifacts.layout;
+		console.log(x, y)
 		
-		const barColorChannel = this._getArtifactChannel(visualArtifacts, "bars", "color");
-		const barSizeChannel = this._getArtifactChannel(visualArtifacts, "bars", "size");
+		// const barColorChannel = this._getArtifactChannel(visualArtifacts, "bars", "color");
+		// const barSizeChannel = this._getArtifactChannel(visualArtifacts, "bars", "size");
 		
-		const barColorScale = this._getArtifactScale(visualArtifacts, barColorChannel);
-		const barSizeScale = this._getArtifactScale(visualArtifacts, barSizeChannel);
+		// const barColorScale = this._getArtifactScale(visualArtifacts, barColorChannel);
+		// const barSizeScale = this._getArtifactScale(visualArtifacts, barSizeChannel);
 		
 		
-		const colorField = barColorChannel?.field || colorEncoding?.field;
-		const sizeField = barSizeChannel?.field || sizeEncoding?.field;
+		// const colorField = barColorChannel?.field || colorEncoding?.field;
+		// const sizeField = barSizeChannel?.field || sizeEncoding?.field;
 		const layoutMode = this._resolveLayoutMode(stackMode, groupField);
 		const splitField = layoutMode === "grouped" ? groupField
 		: (layoutMode === "stacked" || layoutMode === "normalize") ? (colorField || groupField || "")
 		: "";
 		
 		
-		const defaultBarColor = barColorChannel?.defaultValue || colorEncoding?.value || "#69b3a2";
-		const defaultBarStrokeWidth = barSizeChannel?.defaultValue ?? sizeEncoding?.value ?? 0;
+		// const defaultBarColor = barColorChannel?.defaultValue || colorEncoding?.value || "#69b3a2";
+		// const defaultBarStrokeWidth = barSizeChannel?.defaultValue ?? sizeEncoding?.value ?? 0;
 		
 		const toNumeric = (value) => {
 			const num = Number(value);
@@ -118,9 +163,7 @@ export default class BarChartRenderer extends CartesianChartRenderer {
 			(requestedTickFormat === "percent" || requestedTickFormat === "percentage") &&
 			stackMode !== "normalize"
 		) {
-			this.logger.warn(
-				'BarChartRenderer: `y.axis.tickFormat: "percent"` is usually meaningful with `bars.stack: "normalize"`. Current stack mode is non-normalized.'
-			);
+			console.warn('BarChartRenderer: `y.axis.tickFormat: "percent"` is usually meaningful with `bars.stack: "normalize"`. Current stack mode is non-normalized.');
 		}
 		const yTickFormatter = this._buildTickFormatter(
 			yAxisConfig.tickFormat || (stackMode === "normalize" ? "percent" : (yScaleType === "count" ? "integer" : "raw"))

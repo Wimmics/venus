@@ -29,15 +29,11 @@ export class VenusBarChart extends VenusBase {
     this.rows = chart?.rows || [];
   }
 
-  // _populateDomains() {
-  //   if (!this.rows?.length) return;
-  //   this.visualEncoding = this.encodingManager.populateDomainsFromData(this.visualEncoding, this.rows);
-  // }
-
   _hasData() {
     return Array.isArray(this.rows) && this.rows.length > 0;
   }
 
+  // TODO: merge the following methods
   _getRenderPayload() {
     return { rows: this.rows };
   }
@@ -48,14 +44,6 @@ export class VenusBarChart extends VenusBase {
 
   _getArtifactPayload() {
     return { rows: this.rows };
-  }
-
-  _getBuildErrorMessage() {
-    return "Failed to build bar chart";
-  }
-
-  _getBuildErrorLogKey() {
-    return "buildBarChart failed";
   }
 
   _initDOMStructure() {
@@ -79,7 +67,6 @@ export class VenusBarChart extends VenusBase {
         container,
         width: this.width,
         height: this.height,
-        logger: this.logger,
         callbacks: {
           onHover: (payload) => this._onHover(payload),
           onOut: (payload) => this._onOut(payload),

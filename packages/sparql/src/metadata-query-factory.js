@@ -51,9 +51,7 @@ export function createMetadataSparqlQuery(name, params) {
   assertNonEmptyString("name", name);
 
   if (!params || typeof params !== "object") {
-    throw new TypeError(
-      `createMetadataSparqlQuery(name, params): params must be an object like { uri: "..." }, got ${params}`
-    );
+    throw new Error(`Expected an object like { uri: "..." }, got ${params}`);
   }
 
   const { uri } = params;

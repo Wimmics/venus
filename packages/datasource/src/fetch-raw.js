@@ -5,20 +5,11 @@ function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-function defaultLogger() {
-  return { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} };
-}
-
-function toErrorPayload(e) {
-  if (!e) return { message: "Unknown error" };
-  return { name: e.name, message: e.message || String(e) };
-}
-
 /**
  * Fetch raw SPARQL JSON, with retry.
  *
  * Contract:
- *   fetchRawWithRetry({ endpoint, query, jsonData, proxyUrl, fetcher, retries, retryDelayMs, logger })
+ *   fetchRawWithRetry({ endpoint, query, jsonData, proxyUrl, fetcher, retries, retryDelayMs })
  *
  * Returns:
  *   { status, message, method?, raw?, error? }
@@ -31,9 +22,7 @@ export async function fetchRawWithRetry({
   fetcher = null,
   retries = 0,
   retryDelayMs = 250,
-  logger = null
 } = {}) {
-  const log = logger || defaultLogger();
   const effectiveFetcher = fetcher || new SparqlDataFetcher();
 
   const attemptMax = Math.max(0, retries) + 1;
@@ -41,7 +30,6 @@ export async function fetchRawWithRetry({
 
   for (let attempt = 1; attempt <= attemptMax; attempt++) {
     try {
-      log.debug?.("fetchRaw attempt", { attempt, attemptMax, hasJsonData: !!jsonData });
 
       if (jsonData) {
         return {
@@ -72,10 +60,8 @@ export async function fetchRawWithRetry({
         message: res.message || "SPARQL fetch success"
       };
     } catch (e) {
-      lastErr = e;
-      const payload = toErrorPayload(e);
-      log.warn?.("fetchRaw failed attempt", { attempt, attemptMax, ...payload });
-
+      throw new Error(e)
+    
       if (attempt < attemptMax) {
         await sleep(retryDelayMs);
         continue;
@@ -86,6 +72,6 @@ export async function fetchRawWithRetry({
   return {
     status: "error",
     message: lastErr?.message || "Failed to fetch raw data",
-    error: toErrorPayload(lastErr)
+    error: lastErr
   };
 }

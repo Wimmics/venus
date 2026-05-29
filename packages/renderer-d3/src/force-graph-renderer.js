@@ -1,7 +1,7 @@
 import * as d3 from "d3";
 import BaseRenderer from "./base-renderer.js";
 
-import { CHANNEL_TYPES, MARK_TYPES } from "@wimmics/venus-visual-artifacts";
+import { CHANNEL_TYPES, MARK_TYPES } from "@wimmics/venus-core";
 
 export default class ForceGraphRenderer extends BaseRenderer {
 	constructor(opts = {}) {

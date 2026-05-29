@@ -21,7 +21,7 @@ NPM published package:
 - `packages/components`: defines the [`@wimmics/venus-elements`](https://www.npmjs.com/package/@wimmics/venus-elements) package, which provides custom elements (`venus-graph`, `venus-barchart`) and the integration layer.
 
 Internal packages:
-- `packages/core`: shared low-level utilities (`createLogger`, `VIS_TYPES`).
+- `packages/core`: shared low-level utilities (`VIS_TYPES`).
 - `packages/datasource`: fetch + retry + map orchestration for visualization data (`buildForceGraph`, `buildBarChart`).
 - `packages/encoding`: domain and scale computation, visualization-specific encoding managers, and visual-artifact compilers.
 - `packages/legends`: color/size legend web components and factory helpers used by graph and bar chart.

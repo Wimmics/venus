@@ -1,15 +1,11 @@
-import { createLogger } from "@wimmics/venus-core";
+import { SCALE_DEFAULTS } from "@wimmics/venus-core/src/scale-defaults";
 
 export class BinBreaksCalculator {
-	constructor() {
-		this.logger = createLogger("BinBreaksCalculator", { debug: false, level: "warn" });
-		this.defaultMethod = "jenks";
-		this.defaultBins = 5;
-	}
+	constructor() {}
 	
 	computeBreaks(values, {
-		method = this.defaultMethod,
-		bins = this.defaultBins,
+		method = SCALE_DEFAULTS.BINNING.METHOD,
+		bins = SCALE_DEFAULTS.BINNING.BINS,
 		label = "Breaks",
 		breaks = null,
 		quantitative = true,
@@ -21,12 +17,12 @@ export class BinBreaksCalculator {
 		}
 		
 		const numericValues = (Array.isArray(values) ? values : [])
-		.map((value) => Number(value))
-		.filter((value) => Number.isFinite(value))
-		.sort((a, b) => a - b);
+			.map((value) => Number(value))
+			.filter((value) => Number.isFinite(value))
+			.sort((a, b) => a - b);
 		
 		if (numericValues.length === 0) {
-			this.logger.warn(`No numeric values available to compute bins (${label}).`);
+			console.warn(`No numeric values available to compute bins (${label}).`);
 			return { thresholds: [], bins: 1, method, min: null, max: null };
 		}
 		
@@ -48,16 +44,16 @@ export class BinBreaksCalculator {
 		const clippedHighCount = numericValues.filter((value) => value > extentMax).length;
 		
 		const uniqueValues = [...new Set(workingValues)];
-		const requestedBins = Number.isFinite(bins) ? Math.max(1, Math.floor(bins)) : this.defaultBins;
+		const requestedBins = Number.isFinite(bins) ? Math.max(1, Math.floor(bins)) : SCALE_DEFAULTS.BINNING.BINS;
 		const maxBins = Math.max(1, uniqueValues.length);
 		const finalBins = Math.min(requestedBins, maxBins);
 		const sortedWorkingValues = [...workingValues].sort((a, b) => a - b);
-
+		
 		const normalizedMethod = method === "quartiles" ? "quartiles" : "jenks";
 		
 		const providedThresholds = this._normalizeProvidedNumericBreaks(breaks, extentMin, extentMax);
 		if (usingManualSettings && clippedOutCount > 0) {
-			this.logger.warn(
+			console.warn(
 				`Manual breaks clipping (${label}): ${clippedOutCount} values are outside the effective extent [${extentMin}, ${extentMax}] and will be assigned to edge bins (${clippedLowCount} below min, ${clippedHighCount} above max).`
 			);
 		}
@@ -65,6 +61,7 @@ export class BinBreaksCalculator {
 			return {
 				thresholds: providedThresholds,
 				bins: providedThresholds.length + 1,
+				effectiveBins: providedThresholds.length + 1,
 				method: normalizedMethod,
 				min: extentMin,
 				max: extentMax
@@ -82,26 +79,35 @@ export class BinBreaksCalculator {
 			thresholds = this._computeJenksThresholds(sortedWorkingValues, finalBins);
 		}
 		
-		const dedupedThresholds = [...new Set(thresholds)]
+		const cleanedThresholds = thresholds
 			.filter((value) => Number.isFinite(value))
 			.sort((a, b) => a - b)
 			.filter((value) => value > extentMin && value < extentMax);
-
-			
+		
+		const uniqueCount = new Set(cleanedThresholds).size;
+		if (uniqueCount < cleanedThresholds.length) {
+			console.warn(
+				`[BinBreaksCalculator] Duplicate thresholds detected for "${label}". ` +
+				`Requested ${finalBins} bins, produced ${cleanedThresholds.length + 1} bins with repeated break values: ` +
+				`[${cleanedThresholds.join(", ")}].`
+			);
+		}
+		
 		return {
-			thresholds: dedupedThresholds,
-			bins: dedupedThresholds.length + 1,
+			thresholds: cleanedThresholds,
+			bins: finalBins,
+			effectiveBins: cleanedThresholds.length + 1,
 			method: normalizedMethod,
 			min: extentMin,
 			max: extentMax
 		};
 	}
 	
-	_computeOrdinalBreaks(values, { breaks = null, bins = this.defaultBins, method = this.defaultMethod } = {}) {
+	_computeOrdinalBreaks(values, { breaks = null, bins = SCALE_DEFAULTS.BINNING.BINS, method = SCALE_DEFAULTS.BINNING.METHOD } = {}) {
 		const rawValues = Array.isArray(values) ? values : [];
 		const uniqueValues = [...new Set(rawValues)];
 		const uniqueBreaks = Array.isArray(breaks) ? [...new Set(breaks)] : [];
-		const requestedBins = Number.isFinite(bins) ? Math.max(1, Math.floor(bins)) : this.defaultBins;
+		const requestedBins = Number.isFinite(bins) ? Math.max(1, Math.floor(bins)) : SCALE_DEFAULTS.BINNING.BINS;
 		
 		if (uniqueBreaks.length > 0) {
 			return {
@@ -138,7 +144,7 @@ export class BinBreaksCalculator {
 		
 		const numericBreaks = numericInput.filter((value) => value > min && value < max);
 		if (numericInput.length > numericBreaks.length) {
-			this.logger.warn(
+			console.warn(
 				`Manual breaks were clipped to the effective extent [${min}, ${max}]. Ignored ${numericInput.length - numericBreaks.length} break(s).`
 			);
 		}

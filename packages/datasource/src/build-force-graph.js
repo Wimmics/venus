@@ -20,8 +20,6 @@ export async function buildForceGraph({
 	// vis-specific encoding options
 	encoding = null,
 	encodingManager = null,
-	
-	logger = null
 } = {}) {
 	const mapper = createSparqlMapper(VIS_TYPES.VENUS_GRAPH);
 	
@@ -33,19 +31,16 @@ export async function buildForceGraph({
 		fetcher,
 		retries,
 		retryDelayMs,
-		logger,
 		
 		visOptions: { mapper, encoding, encodingManager },
 		
-		mapToVis: (raw, { mapper, encoding, encodingManager }, log) => {
+		mapToVis: (raw, { mapper, encoding, encodingManager }) => {
 			if (!mapper?.map) throw new Error('Invalid mapper: expected { map(results, options) }');
 			const { graph, meta } = mapper.map(raw, {
 				encoding,
 				encodingManager,
-				logger: log
 			});
 			if (!graph) throw new Error('Mapper returned no "graph"');
-			log?.debug?.("force-graph mapped", { nodeCount: graph.nodes?.length, linkCount: graph.links?.length });
 			return { graph, meta };
 		}
 	});

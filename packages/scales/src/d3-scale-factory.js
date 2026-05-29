@@ -4,9 +4,9 @@ import {
 	normalizeScaleType,
 	isQuantitativeScaleType,
 	isThresholdScaleType
-} from "../scale-types.js";
+} from "@wimmics/venus-core/src/scale-types.js";
 
-import { SCALE_DEFAULTS } from "../scale-defaults.js";
+import { SCALE_DEFAULTS } from "@wimmics/venus-core/src/scale-defaults.js";
 
 import { DomainCalculator } from "./domain-calculator.js";
 import { ColorScaleCalculator } from "./color-scale-calculator.js";
@@ -30,16 +30,20 @@ export class D3ScaleFactory {
 		
 		const type = normalizeScaleType(scaleConfig.type);
 		const isQuant = isQuantitativeScaleType(type);
+		console.log("[createScale] type = ", type)
 		
 		const scaleTypeForDomain = isColorScale && isQuant ? SCALE_TYPES.THRESHOLD : type;
 		const shouldUseThreshold = isThresholdScaleType(scaleTypeForDomain) || Boolean(scaleConfig.binning);
+		const isThreshold = isThresholdScaleType(scaleTypeForDomain) && shouldUseThreshold
 		
-		const domain = this.resolveDomain({
+		const { domain, bounds, bins } = this.resolveDomain({
 			scaleConfig,
 			data,
 			field,
 			scaleType: scaleTypeForDomain,
 		});
+		
+		console.log(domain, bounds, bins)
 		
 		// If no domain, then cancel the operation
 		if (!Array.isArray(domain) || domain.length === 0) return null;
@@ -68,37 +72,108 @@ export class D3ScaleFactory {
 		
 		range = typeof scale.range === "function" ? scale.range() : []
 		
+		
 		return {
 			scale,
 			domain,
 			range,
 			scaleType: scaleTypeForDomain,
-			isThreshold: isThresholdScaleType(scaleTypeForDomain) && shouldUseThreshold,
+			isThreshold,
 			samples: this.createLegendSamples({
 				scale,
 				domain,
 				range,
 				scaleType: scaleTypeForDomain,
-				isThreshold: isThresholdScaleType(scaleTypeForDomain) && shouldUseThreshold
+				isThreshold,
+				bounds
 			})
 		};
 	}
 	
 	
-	createLegendSamples({ scale, domain, range, isThreshold, count = SCALE_DEFAULTS.BINNING.BINS }) {
+	createLegendSamples({
+		scale,
+		domain,
+		range,
+		isThreshold,
+		count = SCALE_DEFAULTS.BINNING.BINS,
+		bounds = null
+	}) {
+		console.log("[createLegendSamples]", domain, range, isThreshold, count)
 		if (!scale || typeof scale !== "function") return [];
 		
 		if (isThreshold) {
-			return range.map((visualValue, index) => ({
-				label: this._formatThresholdLabel(domain, index, range.length),
-				value: visualValue
-			}));
+			return this.createThresholdLegendSamples({
+				domain,
+				range,
+				bounds
+			});
 		}
 		
+		return this.createContinuousLegendSamples({
+			scale,
+			domain,
+			count
+		});
+	}
+	
+	createThresholdLegendSamples({ domain, range, bounds = null }) {
+		if (!Array.isArray(domain)) return [];
+		
+		const binCount = domain.length + 1;
+		const visualRange = this._expandRangeToBins(range, binCount);
+		
+		const min = bounds?.min ?? null;
+		const max = bounds?.max ?? null;
+		
+		return visualRange.map((visualValue, index) => {
+			const lower = index === 0 ? min : domain[index - 1];
+			const upper = index === visualRange.length - 1 ? max : domain[index];
+			
+			return {
+				label: this._formatThresholdLabel(lower, upper, {
+					includeLower: true,
+					includeUpper: index === visualRange.length - 1
+				}),
+				value: visualValue,
+				lower,
+				upper,
+				isThreshold: true,
+				isFirst: index === 0,
+				isLast: index === visualRange.length - 1
+			};
+		});
+	}
+	
+	_expandRangeToBins(range, binCount) {
+		if (!Array.isArray(range) || range.length === 0 || binCount <= 0) {
+			return [];
+		}
+		
+		if (range.length === binCount) {
+			return range;
+		}
+		
+		const min = Number(range[0]);
+		const max = Number(range[range.length - 1]);
+		
+		if (!Number.isFinite(min) || !Number.isFinite(max)) {
+			return range.slice(0, binCount);
+		}
+		
+		return Array.from({ length: binCount }, (_, index) => {
+			const t = binCount === 1 ? 0 : index / (binCount - 1);
+			return min + (max - min) * t;
+		});
+	}
+	
+	createContinuousLegendSamples({ scale, domain, count }) {
 		if (!Array.isArray(domain) || domain.length < 2) {
 			return domain.map((domainValue) => ({
 				label: String(domainValue),
-				value: scale(domainValue)
+				value: scale(domainValue),
+				domainValue,
+				isThreshold: false
 			}));
 		}
 		
@@ -108,7 +183,9 @@ export class D3ScaleFactory {
 		if (!Number.isFinite(min) || !Number.isFinite(max)) {
 			return domain.map((domainValue) => ({
 				label: String(domainValue),
-				value: scale(domainValue)
+				value: scale(domainValue),
+				domainValue,
+				isThreshold: false
 			}));
 		}
 		
@@ -118,47 +195,26 @@ export class D3ScaleFactory {
 			
 			return {
 				label: String(Math.round(domainValue)),
-				value: scale(domainValue)
+				value: scale(domainValue),
+				domainValue,
+				isThreshold: false
 			};
 		});
 	}
 	
-	_formatThresholdLabel(domain, index, rangeLength) {
-		const lower = index === 0 ? null : domain[index - 1];
-		const upper = index === rangeLength - 1 ? null : domain[index];
+	_formatThresholdLabel(lower, upper, { includeLower = true, includeUpper = false } = {}) {
+		const format = (value) => {
+			if (value === null || value === undefined) return "?";
+			const number = Number(value);
+			return Number.isFinite(number) ? String(Math.round(number)) : String(value);
+		};
 		
-		const format = (value) =>
-			value == null
-		? "?"
-		: Number.isFinite(Number(value))
-		? String(Math.round(Number(value)))
-		: String(value);
+		const left = includeLower ? "[" : "(";
+		const right = includeUpper ? "]" : ")";
 		
-		if (lower == null) return `≤ ${format(upper)}`;
-		if (upper == null) return `> ${format(lower)}`;
-		
-		return `[${format(lower)}, ${format(upper)}]`;
+		return `${left}${format(lower)}, ${format(upper)}${right}`;
 	}
 	
-	resolveDomain({ scaleConfig, data, field, scaleType }) {
-		const userDomain = scaleConfig.domain;
-		
-		if (Array.isArray(data) && data.length > 0 && field) {
-			return this.domainCalculator.getDomain(
-				data,
-				field,
-				userDomain,
-				scaleType, 
-				scaleConfig.binning
-			);
-		}
-		
-		if (Array.isArray(userDomain)) {
-			return userDomain;
-		}
-		
-		return [];
-	}
 	
 	createColorScale({ scaleConfig, data, field, domain, scaleType, isQuant }) {
 		if (isQuant) {
@@ -241,19 +297,102 @@ export class D3ScaleFactory {
 		.range(sizeRange);
 	}
 	
-	resolveRange({ scaleConfig, data, field, scaleType }) {
-		const userRange = scaleConfig.range;
+	createLayoutScale({
+		scaleConfig = {},
+		data,
+		field,
+		range,
+		fallbackType = SCALE_TYPES.ORDINAL
+	} = {}) {
+		const type = normalizeScaleType(scaleConfig.type, fallbackType);
 		
-		if (!isQuantitativeScaleType(scaleType)) {
-			return Array.isArray(userRange) ? userRange : [];
-		}
-		
-		return this.sizeRangeCalculator.createSizeRange({
+		const { domain, bounds, bins } = this.resolveDomain({
+			scaleConfig,
 			data,
 			field,
-			scaleType,
-			range: userRange,
-			label: `Size[${field}]`
+			scaleType: type
 		});
+		
+		if (!Array.isArray(domain) || domain.length === 0) return null;
+		
+		let scale;
+		
+		if (type === SCALE_TYPES.LINEAR || type === SCALE_TYPES.COUNT) {
+			scale = d3.scaleLinear().domain(domain).nice().range(range);
+		} else if (type === SCALE_TYPES.SQRT) {
+			scale = d3.scaleSqrt().domain(domain).nice().range(range);
+		} else if (type === SCALE_TYPES.LOG) {
+			scale = d3.scaleLog().domain(domain).range(range);
+		} else if (type === SCALE_TYPES.POW) {
+			scale = d3.scalePow()
+			.exponent(Number.isFinite(scaleConfig.exponent) ? Number(scaleConfig.exponent) : 1)
+			.domain(domain)
+			.range(range);
+		} else if (type === SCALE_TYPES.BAND) {
+			scale = d3.scaleBand()
+			.domain(domain)
+			.range(range)
+			.padding(scaleConfig.padding ?? 0.1);
+		} else {
+			scale = d3.scalePoint()
+			.domain(domain)
+			.range(range)
+			.padding(scaleConfig.padding ?? 0.5);
+		}
+		
+		return {
+			scale,
+			domain,
+			range,
+			bounds,
+			bins,
+			scaleType: type
+		};
 	}
-}
+	
+	
+	resolveDomain({ scaleConfig, data, field, scaleType }) {
+		const userDomain = scaleConfig.domain;
+		
+		let domainResult = null
+		if (Array.isArray(data) && data.length > 0 && field) {
+			domainResult = this.domainCalculator.getDomain(
+				data,
+				field,
+				userDomain,
+				scaleType, 
+				scaleConfig.binning
+			);
+			
+			console.log("domainResult = ", domainResult)
+		}
+		
+		else if (Array.isArray(userDomain)) {
+			domainResult = { 
+				domain: userDomain, 
+				bounds: { 
+					min: Math.min(...userDomain), 
+					max: Math.max(...userDomain) }, 
+					bins: null
+				}
+			}
+			
+			return domainResult;
+		}
+		
+		resolveRange({ scaleConfig, data, field, scaleType }) {
+			const userRange = scaleConfig.range;
+			
+			if (!isQuantitativeScaleType(scaleType)) {
+				return Array.isArray(userRange) ? userRange : [];
+			}
+			
+			return this.sizeRangeCalculator.createSizeRange({
+				data,
+				field,
+				scaleType,
+				range: userRange,
+				label: `Size[${field}]`
+			});
+		}
+	}

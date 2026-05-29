@@ -7,7 +7,9 @@ export const SCALE_TYPES = {
   POW: "pow",
   QUANTITATIVE: "quantitative",
   SEQUENTIAL: "sequential",
-  THRESHOLD: "threshold"
+  THRESHOLD: "threshold",
+  BAND: "band",
+  POINT: "point"
 };
 
 const QUANTITATIVE_TYPES = new Set([

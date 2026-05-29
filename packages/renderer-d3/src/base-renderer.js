@@ -8,7 +8,6 @@ export default class BaseRenderer {
 		this.container = opts.container || null;
 		this.width = opts.width || 800;
 		this.height = opts.height || 600;
-		this.logger = opts.logger || console;
 		this.callbacks = opts.callbacks || {};
 		this.svg = null;
 		this.encoding = null;

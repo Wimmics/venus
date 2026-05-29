@@ -56,8 +56,7 @@ export class VenusGraph extends VenusBase {
 	
 	requestNodeDetails(node) {
 		if (!node?.uri) {
-			this._notify("This node has no associated URI", "error");
-			this.logger.warn("requestNodeDetails called without node.uri", { node });
+			console.warn("This node has no associated URI")
 			return;
 		}
 		
@@ -81,7 +80,7 @@ export class VenusGraph extends VenusBase {
 				panel.node = node;
 				panel.open = true;
 			} catch (error) {
-				this.logger.warn("Failed to drive nodeDetailsPanel", { message: error?.message });
+				console.warn("Failed to create nodeDetailsPanel", { message: error?.message });
 			}
 		}
 	}
@@ -101,23 +100,6 @@ export class VenusGraph extends VenusBase {
 		this.links = graph?.links || [];
 	}
 	
-	// _populateDomains() {
-	// 	if (!this.nodes?.length) return;
-		
-	// 	this.visualEncoding = this.encodingManager.populateDomainsFromData(
-	// 		this.visualEncoding,
-	// 		this.nodes,
-	// 		this.links
-	// 	);
-		
-	// 	this.dispatchEvent(
-	// 		new CustomEvent("domainsCalculated", {
-	// 			detail: { encoding: this.getEncoding(), timestamp: new Date().toISOString() },
-	// 			bubbles: true
-	// 		})
-	// 	);
-	// }
-	
 	_hasData() {
 		return Array.isArray(this.nodes) && this.nodes.length > 0;
 	}
@@ -133,15 +115,7 @@ export class VenusGraph extends VenusBase {
 	_getArtifactPayload() {
 		return { nodes: this.nodes, links: this.links };
 	}
-	
-	_getBuildErrorMessage() {
-		return "Failed to build force graph";
-	}
-	
-	_getBuildErrorLogKey() {
-		return "buildForceGraph failed";
-	}
-	
+
 	_initDOMStructure() {
 		this._renderBaseDOM({
 			containerClass: "graph-container",
@@ -184,7 +158,6 @@ export class VenusGraph extends VenusBase {
 				container,
 				width: this.width,
 				height: this.height,
-				logger: this.logger,
 				callbacks: {
 					onHover: (payload) => this._onHover(payload),
 					onOut: (payload) => this._onOut(payload),
@@ -212,7 +185,6 @@ export class VenusGraph extends VenusBase {
 		if (!container) return;
 		
 		const panel = document.createElement("venus-uri-meta");
-		panel.logger = this.logger;
 		panel.proxy = this._resolveProxyUrl();
 		panel.sparqlEndpoint = this._resolveEndpoint();
 		container.appendChild(panel);

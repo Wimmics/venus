@@ -1,3 +1,5 @@
+import * as d3 from "d3";
+
 /**
 * SizeLegend - Displays a legend for size-encoded data
 * Properties:
@@ -164,123 +166,161 @@ export class SizeLegend extends HTMLElement {
 		if (Number.isInteger(value)) return String(value);
 		return String(Math.round(value));
 	}
+
+	_getTemplate() {
+		return `
+		<style>
+			:host {
+				display: inline-block;
+				font-family: Arial, sans-serif;
+				font-size: 12px;
+				max-width: 260px;
+			}
+			.legend-container {
+				background: white;
+				border: 1px solid #ddd;
+				border-radius: 4px;
+				box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+				min-width: 180px;
+				max-width: 260px;
+				overflow: hidden;
+				width: max-content;
+				box-sizing: border-box;
+			}
+			.legend-header {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				gap: 8px;
+				background: #f5f5f5;
+				border-bottom: 1px solid #e6e6e6;
+				padding: 6px 8px;
+				box-sizing: border-box;
+				max-width: 260px;
+			}
+			.legend-title {
+				font-weight: bold;
+				color: #333;
+				font-size: 13px;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+			}
+			.legend-toggle {
+				width: 20px;
+				height: 20px;
+				border: 1px solid #ccc;
+				background: #fff;
+				border-radius: 3px;
+				cursor: pointer;
+				font-size: 12px;
+				line-height: 1;
+				color: #333;
+				flex-shrink: 0;
+			}
+			.legend-toggle:hover {
+				background: #f0f0f0;
+			}
+			.legend-content {
+				padding: 10px 12px;
+				box-sizing: border-box;
+				max-width: 260px;
+				overflow: hidden
+			}
+			.legend-item {
+				display: grid;
+				grid-template-columns: 56px 1fr;
+				align-items: center;
+				margin-bottom: 6px;
+				gap: 10px;
+			}
+			.legend-content svg {
+				max-width: 100%;
+				display: block;
+			}
+		</style>
+		<div class="legend-container">
+			<div class="legend-header">
+			<div class="legend-title"></div>
+			
+			</div>
+			<div class="legend-content"></div>
+		</div>
+		`
+	}
 	
 	render() {
 		if (!this._encoding?.field || !this._d3Scale) return;
+		
+		this.shadowRoot.innerHTML = this._getTemplate()
+
 		const isCompact = this._encoding?.legend?.compact !== false;
 		if (!isCompact) this._minimized = false;
 		
-		const samples = this._encoding?.legend?.samples || [];
+		const root = d3.select(this.shadowRoot)
+		
+		root.select(".legend-title").html(this._getLegendTitle())
 
-		const items = samples.map((sample) => {
-		const radius = sample.value;
+		if (isCompact) {
+			let toogleButton = root.select(".legend-header")
+				.append("button")
+				.classed("legend-toggle", true)
+				.attr("aria-label", this._minimized ? "Expand legend" : "Minimize legend")
+				.text(this._minimized ? '+' : '-')
+				.on('click', () => this._toggleMinimized())
+		}
+
+		const samples = this._encoding?.legend?.samples || []; 
+		console.log("[samples]", samples)
+		const width = 150;
+
+		const content = root.select(".legend-content")
+			.style("display", this._minimized ? "none" : "block");
+
+		const gap = 10;
+
+		let y = 0;
+		const positionedSamples = samples.map((sample) => {
+			const radius = sample.value;
+			const rowHeight = radius * 2 + gap;
+			const item = {
+				...sample,
+				radius,
+				rowHeight,
+				y,
+				cy: y + radius + gap / 2
+			};
+			y += rowHeight;
+			return item;
+		});
+
+		const svg = content.append("svg")
+			.attr("width", width)
+			.attr("height", y);
+
+		const rows = svg.selectAll("g.legend-item")
+			.data(positionedSamples)
+			.enter()
+			.append("g")
+			.classed("legend-item", true)
+
+		const cx = 60
+		rows.append("circle")
+			.attr("cx", cx)
+			.attr("cy", d => d.cy)
+			.attr("r", (d) => d.radius)
+			.attr("fill", "none")
+			.attr("stroke", "#666")
+			.attr("stroke-width", 2);
+
+		rows.append("text")
+			.attr("x", d => cx + d.radius + 10 )
+			.attr("y", d => d.cy)
+			.attr("dominant-baseline", "middle")
+			.attr("fill", "#666")
+			.text((d) => d.label);
 		
-		const diameter = radius * 2;
-		const padding = 2;
-		return `
-			<div class="legend-item">
-			<svg width="${diameter + padding * 2}" height="${diameter + padding * 2}">
-				<circle cx="${radius + padding}" cy="${radius + padding}" r="${radius}"
-				fill="none" stroke="#666" stroke-width="2"></circle>
-			</svg>
-			<span class="label">${sample.label}</span>
-			</div>
-		`;
-		}).join("");
-		
-		this.shadowRoot.innerHTML = `
-      <style>
-        :host {
-          display: inline-block;
-          font-family: Arial, sans-serif;
-          font-size: 12px;
-        }
-        .legend-container {
-          background: white;
-          border: 1px solid #ddd;
-          border-radius: 4px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-          min-width: 180px;
-          max-width: 260px;
-          overflow: hidden;
-        }
-        .legend-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 8px;
-          background: #f5f5f5;
-          border-bottom: 1px solid #e6e6e6;
-          padding: 6px 8px;
-        }
-        .legend-title {
-          font-weight: bold;
-          color: #333;
-          font-size: 13px;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-        .legend-toggle {
-          width: 20px;
-          height: 20px;
-          border: 1px solid #ccc;
-          background: #fff;
-          border-radius: 3px;
-          cursor: pointer;
-          font-size: 12px;
-          line-height: 1;
-          color: #333;
-          flex-shrink: 0;
-        }
-        .legend-toggle:hover {
-          background: #f0f0f0;
-        }
-        .legend-content {
-          padding: 10px 12px;
-        }
-        .legend-item {
-          display: grid;
-          grid-template-columns: 56px 1fr;
-          align-items: center;
-          margin-bottom: 6px;
-          gap: 10px;
-        }
-        .size-circle {
-          background: transparent;
-          border: 1.5px solid #666;
-          border-radius: 50%;
-          box-sizing: border-box;
-          justify-self: center;
-        }
-        .label {
-          color: #666;
-          text-align: left;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-      </style>
-      <div class="legend-container">
-        <div class="legend-header">
-          <div class="legend-title">${this._getLegendTitle()}</div>
-          ${
-		isCompact
-		? `<button class="legend-toggle" type="button" aria-label="${this._minimized ? 'Expand legend' : 'Minimize legend'}">${this._minimized ? '+' : '-'}</button>`
-		: ""
 	}
-        </div>
-        <div class="legend-content" style="display: ${this._minimized ? 'none' : 'block'};">
-          ${items}
-        </div>
-      </div>
-    `;
-	
-	const toggleButton = isCompact ? this.shadowRoot.querySelector('.legend-toggle') : null;
-	if (toggleButton) {
-		toggleButton.addEventListener('click', () => this._toggleMinimized());
-	}
-}
 }
 
 customElements.define('legend-size', SizeLegend);

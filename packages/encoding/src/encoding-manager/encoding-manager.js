@@ -176,7 +176,7 @@ export class EncodingManager {
 		if (!Array.isArray(vars) || vars.length === 0) return;
 		
 		const fields = this._collectFieldReferences(encoding);
-		console.log("user encoding = ", encoding)
+		
 		for (const { path, value } of fields) {
 			if (!vars.includes(value)) {
 				throw new Error(

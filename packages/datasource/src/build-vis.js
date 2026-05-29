@@ -1,15 +1,6 @@
 // build-vis.js
 import { fetchRawWithRetry } from "./fetch-raw.js";
 
-function defaultLogger() {
-  return { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} };
-}
-
-function toErrorPayload(e) {
-  if (!e) return { message: "Unknown error" };
-  return { name: e.name, message: e.message || String(e) };
-}
-
 /**
  * Template method:
  * - fetch raw SPARQL JSON (shared)
@@ -32,12 +23,7 @@ export async function buildVis({
 
   // optional per-vis params
   visOptions = null,
-
-  // logging
-  logger = null
 } = {}) {
-  const log = logger || defaultLogger();
-
   if (typeof mapToVis !== "function") {
     return {
       status: "error",
@@ -52,29 +38,19 @@ export async function buildVis({
     proxyUrl,
     fetcher,
     retries,
-    retryDelayMs,
-    logger: log
+    retryDelayMs
   });
 
   if (fetched.status !== "success") {
     return fetched;
   }
 
-  try {
-    const out = await mapToVis(fetched.raw, visOptions, log);
-    return {
-      status: "success",
-      message: "Visualization data built successfully",
-      method: fetched.method,
-      raw: fetched.raw,
-      ...out
-    };
-  } catch (e) {
-    log.error?.("mapToVis failed", { message: e?.message });
-    return {
-      status: "error",
-      message: e?.message || "Failed to map raw data to visualization format",
-      error: toErrorPayload(e)
-    };
-  }
+  const out = await mapToVis(fetched.raw, visOptions);
+  return {
+    status: "success",
+    message: "Visualization data built successfully",
+    method: fetched.method,
+    raw: fetched.raw,
+    ...out
+  };
 }
