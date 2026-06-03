@@ -31,7 +31,7 @@ export default class ForceGraphRenderer extends BaseRenderer {
 	}
 	
 	_renderVis() {
-		console.log("visual artifacts = ", this.visualArtifacts)
+		console.log("[ForceGraph Renderer] visual artifacts = ", this.visualArtifacts)
 		
 		const defs = this.svg.append("defs")
 			.append("marker")
@@ -67,6 +67,8 @@ export default class ForceGraphRenderer extends BaseRenderer {
 				this.channels[channel][mark] = this._getArtifactChannel(mark, channel)
 			}
 		}
+
+		console.log("channels = ", this.channels)
 
 		// this.channels.color.nodes = this._getArtifactChannel(MARK_TYPES.NODES, CHANNEL_TYPES.COLOR);
 		this.channels.color.source = this._getArtifactChannel(MARK_TYPES.NODES, CHANNEL_TYPES.COLOR, "source");
@@ -112,7 +114,7 @@ export default class ForceGraphRenderer extends BaseRenderer {
 		this.nodeGroup
 			.append("circle")
 			.attr("r", (d) => this._getNodeRadius(d))
-			.attr("fill", (d) => this._getNodeColor(d))
+			.attr("fill", (d) => this._getNodeColor(d) )
 			.attr("stroke", (d) => this._getNodeStroke(d))
 			.attr("stroke-width", (d) => this._getNodeStrokeWidth(d));
 
@@ -171,16 +173,12 @@ export default class ForceGraphRenderer extends BaseRenderer {
 	
 
 	_resolveNodeChannel(d, channel) {
-		const roles = Array.isArray(d?.roles) ? d.roles : [];
+		const role = Array.isArray(d?.roles) ? d.roles[0] : null;
 
-		if (roles.length === 1 && roles[0] === "source" && this.channels?.[channel]?.source) {
-			return this.channels?.[channel]?.source
-		}
-		if (roles.length === 1 && roles[0] === "target" && this.channels?.[channel]?.target) {
-			return this.channels?.[channel]?.target
-		}
+		if (role && this.channels?.[channel]?.[role])
+			return this.channels?.[channel]?.[role]
+
 		return this.channels?.[channel]?.nodes
-
 	}
 		
 	_resolveScaleValue(d, channel, validate = (value) => value) {
@@ -189,12 +187,13 @@ export default class ForceGraphRenderer extends BaseRenderer {
 		const field = channel?.field
 		const scale = this._getArtifactScale(channel)
 		
+		
 		if (!field || d[field] == null || !scale) {
 			return fallback;
 		}
 		
 		const value = scale(d[field]);
-		
+
 		return validate(value) ? value : fallback;
 	}
 		

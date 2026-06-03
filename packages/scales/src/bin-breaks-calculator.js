@@ -1,4 +1,4 @@
-import { SCALE_DEFAULTS } from "@wimmics/venus-core/src/scale-defaults";
+import { SCALE_DEFAULTS } from "@wimmics/venus-core";
 
 export class BinBreaksCalculator {
 	constructor() {}

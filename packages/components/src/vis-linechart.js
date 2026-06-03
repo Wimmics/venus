@@ -1,7 +1,8 @@
 import { createRenderer } from "@wimmics/venus-d3renderer";
 import { createEncodingManager } from "@wimmics/venus-encoding";
 import { VIS_TYPES } from "@wimmics/venus-core";
-import { buildLineChart } from "@wimmics/venus-datasource";
+import { createSparqlMapper } from "@wimmics/venus-mappers";
+
 import { VenusBase } from "./vis-base.js";
 
 export class VenusLineChart extends VenusBase {
@@ -16,24 +17,15 @@ export class VenusLineChart extends VenusBase {
     this.rows = [];
     this.encodingManager = createEncodingManager(VIS_TYPES.VENUS_LINECHART);
     this.visualEncoding = this.encodingManager.getDefaultEncoding();
+    this.mapper = createSparqlMapper(VIS_TYPES.VENUS_LINECHART)
 
     this._initDOMStructure();
-  }
-
-  _buildVisualization(params) {
-    return buildLineChart(params);
   }
 
   _setDataFromBuildResult(result) {
     const { chart } = result;
     this.rows = chart?.rows || [];
   }
-
-  // _populateDomains() {
-  //   if (!this.rows?.length) return;
-  //   this.encodingManager.clearScaleCache();
-  //   this.visualEncoding = this.encodingManager.populateDomainsFromData(this.visualEncoding, this.rows);
-  // }
 
   _hasData() {
     return Array.isArray(this.rows) && this.rows.length > 0;

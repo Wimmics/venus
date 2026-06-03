@@ -25,8 +25,6 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 		const vars = results.head.vars;
 		const bindings = results.results.bindings;
 		const mapping = ctx.encoding;
-
-		console.log("[graph map] mapping", mapping)
 		
 		const linkType = mapping?.links?.type;
 		const sourceVar =
@@ -37,8 +35,6 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 		const contextVar = mapping?.links?.context?.field || null;
 		const relationVar = mapping?.links?.relation?.field || null;
 
-		console.log("fields", sourceVar, targetVar)
-		
 		// Transform in array to treat below
 		const cooccurrenceNodeVars = Array.isArray(sourceVar) ? sourceVar : [sourceVar] 
 		
@@ -90,7 +86,7 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 					targetVar,
 					nodesMap,
 					linksMap,
-					copyBindingFieldsToNode: copyBindingFieldsToNode,
+					copyNodeFields: copyBindingFieldsToNode,
 					nodeLabel: mapping?.nodes,
 					linkLabel: mapping?.links?.labels
 				});
@@ -106,7 +102,7 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 					semanticVar: relationVar,
 					nodesMap,
 					linksMap,
-					copyBindingFieldsToNode: copyBindingFieldsToNode,
+					copyNodeFields: copyBindingFieldsToNode,
 					nodeLabel: mapping?.nodes,
 					linkLabel: mapping?.links?.labels
 				});

@@ -1,12 +1,11 @@
 import * as d3 from "d3";
 import {
+	SCALE_DEFAULTS,
 	SCALE_TYPES,
 	normalizeScaleType,
 	isQuantitativeScaleType,
 	isThresholdScaleType
-} from "@wimmics/venus-core/src/scale-types.js";
-
-import { SCALE_DEFAULTS } from "@wimmics/venus-core/src/scale-defaults.js";
+} from "@wimmics/venus-core";
 
 import { DomainCalculator } from "./domain-calculator.js";
 import { ColorScaleCalculator } from "./color-scale-calculator.js";
@@ -30,7 +29,6 @@ export class D3ScaleFactory {
 		
 		const type = normalizeScaleType(scaleConfig.type);
 		const isQuant = isQuantitativeScaleType(type);
-		console.log("[createScale] type = ", type)
 		
 		const scaleTypeForDomain = isColorScale && isQuant ? SCALE_TYPES.THRESHOLD : type;
 		const shouldUseThreshold = isThresholdScaleType(scaleTypeForDomain) || Boolean(scaleConfig.binning);
@@ -42,8 +40,6 @@ export class D3ScaleFactory {
 			field,
 			scaleType: scaleTypeForDomain,
 		});
-		
-		console.log(domain, bounds, bins)
 		
 		// If no domain, then cancel the operation
 		if (!Array.isArray(domain) || domain.length === 0) return null;
@@ -99,7 +95,6 @@ export class D3ScaleFactory {
 		count = SCALE_DEFAULTS.BINNING.BINS,
 		bounds = null
 	}) {
-		console.log("[createLegendSamples]", domain, range, isThreshold, count)
 		if (!scale || typeof scale !== "function") return [];
 		
 		if (isThreshold) {
@@ -363,8 +358,6 @@ export class D3ScaleFactory {
 				scaleType, 
 				scaleConfig.binning
 			);
-			
-			console.log("domainResult = ", domainResult)
 		}
 		
 		else if (Array.isArray(userDomain)) {

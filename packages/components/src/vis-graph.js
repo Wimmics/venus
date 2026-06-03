@@ -13,7 +13,8 @@
 import { createRenderer } from "@wimmics/venus-d3renderer";
 import { createEncodingManager } from "@wimmics/venus-encoding";
 import { VIS_TYPES } from "@wimmics/venus-core";
-import { buildForceGraph } from "@wimmics/venus-datasource";
+import { createSparqlMapper } from "@wimmics/venus-mappers";
+
 import { VenusBase } from "./vis-base.js";
 import "./vis-uri-metadata.js";
 
@@ -36,6 +37,8 @@ export class VenusGraph extends VenusBase {
 		this.encodingManager = createEncodingManager(VIS_TYPES.VENUS_GRAPH);
 		this.visualEncoding = this.encodingManager.getDefaultEncoding();
 		
+		this.mapper = createSparqlMapper(VIS_TYPES.VENUS_GRAPH)
+
 		this._initDOMStructure();
 	}
 	
@@ -90,10 +93,6 @@ export class VenusGraph extends VenusBase {
 		super.disconnectedCallback();
 	}
 	
-	_buildVisualization(params) {
-		return buildForceGraph(params);
-	}
-	
 	_setDataFromBuildResult(result) {
 		const { graph } = result;
 		this.nodes = graph?.nodes || [];
@@ -104,6 +103,7 @@ export class VenusGraph extends VenusBase {
 		return Array.isArray(this.nodes) && this.nodes.length > 0;
 	}
 	
+	// TODO: check if these methods are useful and whether we can merge them
 	_getRenderPayload() {
 		return { nodes: this.nodes, links: this.links };
 	}
@@ -111,9 +111,14 @@ export class VenusGraph extends VenusBase {
 	_getLegendDatasets() {
 		return { nodes: this.nodes, links: this.links };
 	}
-	
-	_getArtifactPayload() {
+
+	_getData() {
 		return { nodes: this.nodes, links: this.links };
+	}
+
+	_resetDataState() {
+		this.nodes = []
+		this.links = []
 	}
 
 	_initDOMStructure() {

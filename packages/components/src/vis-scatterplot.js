@@ -1,7 +1,8 @@
 import { createRenderer } from "@wimmics/venus-d3renderer";
 import { createEncodingManager } from "@wimmics/venus-encoding";
 import { VIS_TYPES } from "@wimmics/venus-core";
-import { buildScatterPlot } from "@wimmics/venus-datasource";
+import { createSparqlMapper } from "@wimmics/venus-mappers";
+
 import { VenusBase } from "./vis-base.js";
 
 export class VenusScatterPlot extends VenusBase {
@@ -16,6 +17,7 @@ export class VenusScatterPlot extends VenusBase {
     this.rows = [];
     this.encodingManager = createEncodingManager(VIS_TYPES.VENUS_SCATTERPLOT);
     this.visualEncoding = this.encodingManager.getDefaultEncoding();
+    this.mapper = createSparqlMapper(VIS_TYPES.VENUS_SCATTERPLOT)
 
     this._initDOMStructure();
   }

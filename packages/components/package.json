@@ -31,7 +31,6 @@
     "@wimmics/venus-d3renderer": "file:../renderer-d3",
     "@wimmics/venus-encoding": "file:../encoding",
     "@wimmics/venus-mappers": "file:../mappers",
-    "@wimmics/venus-sparql": "file:../sparql",
     "@wimmics/venus-datasource": "file:../datasource",
     "@wimmics/venus-legends": "file:../legends",
     "@wimmics/venus-visual-artifacts": "file:../visual-artifacts",

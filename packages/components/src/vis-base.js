@@ -1,4 +1,5 @@
 
+import { fetchVisData } from "@wimmics/venus-datasource";
 import { createLegends, positionLegends } from "@wimmics/venus-legends";
 import { emptyVisualArtifacts, createVisualArtifactsCompiler } from "@wimmics/venus-visual-artifacts";
 
@@ -32,6 +33,8 @@ export class VenusBase extends HTMLElement {
 		this.resizeRaf = null;
 		this._lastObservedSize = { width: 0, height: 0 };
 		this.resizeEnabled = true;
+
+		this.mapper = null
 	}
 	
 	connectedCallback() {
@@ -69,9 +72,14 @@ export class VenusBase extends HTMLElement {
 	
 	set sparqlQuery(query) {
 		const data = this.internalData.get(this) || {};
+
+		if (data.sparqlQuery !== query) 
+			this._invalidateMappedData({ clearRaw: true });
+		
 		data.sparqlQuery = query;
 		this.internalData.set(this, data);
 	}
+
 	get sparqlQuery() {
 		return this.internalData.get(this)?.sparqlQuery;
 	}
@@ -87,9 +95,14 @@ export class VenusBase extends HTMLElement {
 	
 	set sparqlResult(jsonData) {
 		const data = this.internalData.get(this) || {};
+
+		if (data.sparqlResult !== jsonData)
+			this._invalidateMappedData({ clearRaw: true });
+
 		data.sparqlResult = jsonData;
 		this.internalData.set(this, data);
 	}
+
 	get sparqlResult() {
 		return this.internalData.get(this)?.sparqlResult;
 	}
@@ -118,35 +131,56 @@ export class VenusBase extends HTMLElement {
 	}
 	
 	async launch() {
+		this._resetVisualizationState({ keepEncoding: true });
 
-		const result = await this._buildVisualization({
+		const fetchResult = await fetchVisData({
 			endpoint: this._resolveEndpoint(),
 			query: this.sparqlQuery,
 			jsonData: this.sparqlResult,
-			proxyUrl: this._resolveProxyUrl(),
-			encoding: this.visualEncoding,
-			encodingManager: this.encodingManager
-		})
-		
-		if (result.status !== "success") {
-			throw new Error(result);
+			proxyUrl: this._resolveProxyUrl()
+		});
+
+		console.log("fetched result = ", fetchResult)
+		if (fetchResult.status !== "success") {
+			throw new Error(fetchResult.message || "Failed to fetch visualization data");
 		}
-		
-		if (result.raw?.head?.vars) {
+
+		const raw = fetchResult.raw;
+
+		if (raw?.head?.vars) {
 			this.encodingManager.validateReferencedFields(
-				this.visualEncoding,
-				result.raw.head.vars
+			this.visualEncoding,
+			raw.head.vars
 			);
 		}
 
-		this._setDataFromBuildResult(result);
-		this.sparqlData = result.raw;
+		const mapped = this.mapper.map(raw, {
+			encoding: this.visualEncoding,
+			encodingManager: this.encodingManager
+		});
+
+		console.log("mapped data = ", mapped)
+
+		this._setDataFromBuildResult(mapped);
+		this.sparqlData = raw;
 
 		this.render();
 	}
 	
 	setEncoding(encoding) {
 		this.visualEncoding = this.encodingManager.validateEncoding(encoding)
+		
+		this._visualArtifacts = emptyVisualArtifacts()
+		this._destroyLegends()
+
+		if (this.sparqlData) {
+			const mapped = this.mapper.map(this.sparqlData, { 
+				encoding: this.visualEncoding,
+				encodingManager: this.encodingManager
+			})
+
+			this._setDataFromBuildResult(mapped)
+		}
 
 		this.render();
 	}
@@ -171,6 +205,55 @@ export class VenusBase extends HTMLElement {
 		);
 
 		this._manageLegends();
+	}
+
+	_remapFromRawResult() {
+		if (!this.sparqlData) return false;
+
+		const result = this._mapRawResult({
+			raw: this.sparqlData,
+			encoding: this.visualEncoding,
+			encodingManager: this.encodingManager
+		});
+
+		this._setDataFromBuildResult(result);
+		return true;
+	}
+
+	_mapRawResult() {
+  		throw new Error("_mapRawResult must be implemented by subclass");
+	}
+
+	_invalidateMappedData(options = {}) {
+		const clearRaw = options.clearRaw === true;
+
+		if (clearRaw) {
+			this.sparqlData = null;
+		}
+
+		this._visualArtifacts = emptyVisualArtifacts();
+		this._destroyLegends();
+		this._resetDataState();
+	}
+
+	_resetVisualizationState(options) {
+		const keepEncoding = options && options.keepEncoding !== undefined
+			? options.keepEncoding
+			: true;
+
+		this.sparqlData = null;
+		this._visualArtifacts = emptyVisualArtifacts();
+
+		this._destroyLegends();
+		this._hideTooltip();
+
+		this.renderer.destroy()
+
+		if (!keepEncoding) {
+			this.visualEncoding = null;
+		}
+
+		this._resetDataState();
 	}
 	
 	_manageLegends() {
@@ -222,15 +305,7 @@ export class VenusBase extends HTMLElement {
 	}
 	
 	_compileVisualArtifacts() {
-		console.log("[compile artifacts]", {
-  hasData: this._hasData(),
-  payload: this._getArtifactPayload(),
-  marks: this.encodingManager.getMarks(),
-  encoding: this.visualEncoding,
-  width: this.renderer?.width,
-  height: this.renderer?.height,
-  compiler: this.visualArtifactsCompiler?.constructor?.name
-});
+		
 		if (!this._hasData()) {
 			this._visualArtifacts = emptyVisualArtifacts()
 			return;
@@ -241,7 +316,8 @@ export class VenusBase extends HTMLElement {
 			marks: this.encodingManager.getMarks(),
 			width: this.renderer.width,
 			height: this.renderer.height,
-			...this._getArtifactPayload()
+			data: this._getData(),
+			chart: this._getChart()
 		})
 	}
 
@@ -488,6 +564,8 @@ export class VenusBase extends HTMLElement {
 		if (typeof tooltipConfig === "boolean") return tooltipConfig;
 		return true;
 	}
+
+	_getChart() { return null }
 	
 	_onHover() {}
 	
@@ -513,8 +591,16 @@ export class VenusBase extends HTMLElement {
 		throw new Error("_setDataFromBuildResult must be implemented by subclass");
 	}
 	
+	_resetDataState() {
+		throw new Error ("_resetDataState must be implemented by subclass")
+	}
+
 	_hasData() {
 		throw new Error("_hasData must be implemented by subclass");
+	}
+
+	_getData() {
+		throw new Error("_getData must be implemented by subclass");
 	}
 	
 	_getRenderPayload() {
@@ -523,10 +609,6 @@ export class VenusBase extends HTMLElement {
 	
 	_getLegendDatasets() {
 		throw new Error("_getLegendDatasets must be implemented by subclass");
-	}
-	
-	_getArtifactPayload() {
-		throw new Error("_getArtifactPayload must be implemented by subclass");
 	}
 	
 	_renderBaseDOM({ containerClass = "vis-container", extraStyles = "" } = {}) {

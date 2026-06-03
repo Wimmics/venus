@@ -1,5 +1,4 @@
-import { createMetadataSparqlQuery } from "./metadata-query-factory.js"
-import { SparqlDataFetcher } from "./sparql-fetcher.js"
+import { SparqlDataFetcher, createMetadataSparqlQuery } from "@wimmics/venus-datasource"
 
 const DEFAULT_QUERY_NAMES = ["descriptive", "technical", "relationships"];
 

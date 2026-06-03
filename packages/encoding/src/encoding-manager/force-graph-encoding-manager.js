@@ -12,6 +12,10 @@ import { EncodingManager } from "./encoding-manager.js";
 import { getDefaultEncodingTemplate } from "../default-encodings.js";
 
 export class ForceGraphEncodingManager extends EncodingManager {
+
+	getMarks() {
+		return [ "nodes", "links" ]
+	}
 	/**
 	* Get the default encoding template for force-graph visualization.
 	* @returns {Object} Default force-graph encoding config

@@ -3,8 +3,7 @@
 * It derives and validates domains from data and optional user input.
 */
 
-import { isQuantitativeScaleType, isThresholdScaleType, SCALE_TYPES } from "@wimmics/venus-core/src/scale-types";
-import { SCALE_DEFAULTS } from "@wimmics/venus-core/src/scale-defaults";
+import { isQuantitativeScaleType, isThresholdScaleType, SCALE_TYPES, SCALE_DEFAULTS } from "@wimmics/venus-core";
 import { BinBreaksCalculator } from "./bin-breaks-calculator";
 
 export class DomainCalculator {
@@ -41,8 +40,6 @@ export class DomainCalculator {
 	* @returns {Array} Resolved domain for the field
 	*/
 	getDomain(data, field, userDomain = null, scaleType = SCALE_DEFAULTS.TYPE, binning = null) {
-			
-			console.log("[getDomain]", field, userDomain, scaleType, binning)
 			
 			if (!data || data.length === 0) {
 				console.warn(`No data available for field "${field}"`);
@@ -205,9 +202,7 @@ export class DomainCalculator {
 				quantitative: true,
 				min,
 				max
-			});
-
-			console.log("[_getThresholdDomain] breakInfo = ", breakInfo)
+			})
 			
 			return {
 				domain: breakInfo.thresholds,

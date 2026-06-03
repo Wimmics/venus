@@ -1,5 +1,11 @@
 import { D3ScaleFactory } from "@wimmics/venus-scales";
-import { SCALE_DEFAULTS, SCALE_TYPES, MARK_DEFAULTS } from "@wimmics/venus-core";
+import { SCALE_DEFAULTS, 
+	SCALE_TYPES, 
+	MARK_DEFAULTS, 
+	CHANNEL_TYPES, 
+	MARK_CHANNELS, 
+	isColorScale, 
+	MARK_ATTRIBUTES} from "@wimmics/venus-core";
 
 export class VisualArtifacts {
 	constructor({ scaleFactory = new D3ScaleFactory() } = {}) {
@@ -9,6 +15,41 @@ export class VisualArtifacts {
 		this.legends = [];
 		this.attributes = [];
 		this.layout = {}
+
+		this._payload = {}
+	}
+
+	build(options = {}) {
+		this.reset();
+
+		this._payload = { ...options };
+
+		const {
+			encoding,
+			data = [],
+			marks = [],
+			width = null,
+			height = null,
+			chart = null
+		} = options;
+
+		if (!encoding || typeof encoding !== "object") {
+			return this.toObject();
+		}
+
+		for (let mark of marks) {
+			this._processMarkArtifacts({ 
+				mark: mark, 
+				config: encoding?.[mark], 
+				data: data?.[mark]
+			})
+		}
+
+		this._processChartSpecificArtifacts()
+
+		this._resolveActiveArtifacts()
+
+		return this.toObject();
 	}
 	
 	reset() {
@@ -28,7 +69,43 @@ export class VisualArtifacts {
 			layout: this.layout
 		};
 	}
+
+	_resolveActiveArtifacts() {
+		// to be implemented by subclass that need it
+	}
 	
+	_processChartSpecificArtifacts() {
+		throw new Error ("_processChartSpecificArtifacts() should be implemented by child class.")
+	}
+
+	_processMarkArtifacts({ mark, config, data, role = null }) {
+
+		for (let channel of (MARK_CHANNELS[mark] || [])) {
+			this._processScaleChannel({
+				mark: mark,
+				role: role,
+				channel: channel,
+				channelConfig: this._resolveChannelConfig( mark, channel, config?.[channel] || {}),
+				data: data,
+				isColorScale: isColorScale(channel)
+			});
+		}
+
+		
+		for (let attribute of (MARK_ATTRIBUTES[mark] || [])) {
+			this._processAttribute({
+				mark: mark,
+				attribute: attribute,
+				attributeConfig: config?.[attribute]
+			})
+		}
+		
+		this._processTooltip({
+			mark,
+			tooltipConfig: config?.tooltip
+		});
+	}
+
 	_processScaleChannel({
 		mark,
 		role = null,
@@ -38,10 +115,8 @@ export class VisualArtifacts {
 		isColorScale
 	}) {
 		
-		const resolvedConfig = this._resolveChannelConfig( mark, channel, channelConfig);
-		
-		const field = this._resolveChannelDataKey(resolvedConfig);
-		const hasValue = resolvedConfig.value !== undefined && resolvedConfig.value !== null;
+		const field = this._resolveChannelDataKey(channelConfig);
+		const hasValue = channelConfig.value !== undefined && channelConfig.value !== null;
 		
 		if (!field && !hasValue) return;
 		
@@ -50,13 +125,11 @@ export class VisualArtifacts {
 		let scaleResult = null
 		if (field) {
 			scaleResult = this.scaleFactory.createScale({
-				scaleConfig: resolvedConfig.scale || {},
+				scaleConfig: channelConfig.scale || {},
 				data,
 				field,
 				isColorScale
 			});
-
-			console.log("[_processScaleChannel] scaleResult = ", scaleResult)
 			
 			if (scaleResult?.scale) {
 				this.scales.set(scaleId, scaleResult.scale);
@@ -69,11 +142,11 @@ export class VisualArtifacts {
 			channel,
 			field,
 			scaleId: field ? scaleId : null,
-			encoding: resolvedConfig,
-			defaultValue: resolvedConfig.value
+			encoding: channelConfig,
+			defaultValue: channelConfig.value
 		});
 		
-		if (field) {
+		if (field && scaleResult.scale) {
 			this.legends.push({
 				field: field,
 				type: channel,
@@ -89,8 +162,8 @@ export class VisualArtifacts {
 				domain: scaleResult.domain,
 				range: scaleResult.range,
 
-				...resolvedConfig.legend,
-				title: resolvedConfig.legend.title || field
+				...channelConfig.legend,
+				title: channelConfig.legend.title || field
 			});
 		}
 	}
@@ -157,13 +230,12 @@ export class VisualArtifacts {
 		attributeConfig,
 		role = null
 	}) {
-		console.log("original config = ", attributeConfig)
 		const resolvedConfig = this._resolveAttributeConfig(
 			mark,
 			attribute,
 			attributeConfig
 		);
-		console.log(mark, attribute, "resolvedConfig = ", resolvedConfig)
+		
 		if (!resolvedConfig || typeof resolvedConfig !== "object") return;
 		
 		this.attributes.push({

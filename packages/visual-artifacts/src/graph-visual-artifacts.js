@@ -1,92 +1,77 @@
 import { VisualArtifacts } from "./visual-artifacts";
-import { CHANNEL_TYPES } from "@wimmics/venus-core";
+import { CHANNEL_TYPES, MARK_TYPES } from "@wimmics/venus-core";
 
 export class GraphVisualArtifacts extends VisualArtifacts {
-	build({ encoding, nodes = [], links = [], width = null, height = null } = {}) {
-		this.reset();
+	
+	_processChartSpecificArtifacts() {
+		const { encoding, marks, data } = this._payload
 		
-		if (!encoding || typeof encoding !== "object") {
-			return this.toObject();
+		for (let role of ["target", "source"]) {
+			if (!encoding?.nodes?.[role]) continue
+			
+			this._processMarkArtifacts({
+				mark: MARK_TYPES.NODES,
+				config: encoding?.nodes?.[role],
+				data: data?.nodes,
+				role: role
+			})
 		}
-		
-		this._processNodeArtifacts(encoding.nodes, nodes);
-		this._processNodeArtifacts(encoding.source, nodes)
-		this._processNodeArtifacts(encoding.target, nodes)
-		this._processLinkArtifacts(encoding.links, links);
-		
-		this._processLinkAttributes(encoding.links)
-		
-		return this.toObject();
 	}
 	
-	_processNodeArtifacts(nodesConfig, nodes) {
-		if (!nodesConfig || typeof nodesConfig !== "object") return;
+	_resolveActiveArtifacts() {
+		const { encoding } = this._payload || {};
+		const nodeEncoding = encoding?.nodes || {};
 
-		for (let channel of [CHANNEL_TYPES.COLOR, CHANNEL_TYPES.STROKE]) {
-			this._processScaleChannel({
-				mark: "nodes",
-				channel: channel,
-				channelConfig: nodesConfig[channel],
-				data: nodes,
-				isColorScale: true
-			});
-		}
-		
-		for (let channel of [CHANNEL_TYPES.SIZE, CHANNEL_TYPES.STROKE_WIDTH]) {
-			this._processScaleChannel({
-				mark: "nodes",
-				channel: channel,
-				channelConfig: nodesConfig[channel],
-				data: nodes,
-				isColorScale: false
-			});
-		}
+		const hasOwn = (obj, key) => Object.prototype.hasOwnProperty.call(obj || {}, key);
 
-		this._processAttribute({
-			mark: "nodes",
-			attribute: "labels",
-			attributeConfig: nodesConfig.labels
+		const hasBaseConfig = (name) => hasOwn(nodeEncoding, name);
+
+		const hasRoleConfig = (role, name) => hasOwn(nodeEncoding?.[role], name);
+
+		const shouldRemoveNodeItem = (item, nameKey) => {
+			if (item?.mark !== "nodes") return false;
+
+			const role = item.role || null;
+			const name = item[nameKey];
+
+			if (!name) return false;
+
+			const baseExplicit = hasBaseConfig(name);
+			const sourceExplicit = hasRoleConfig("source", name);
+			const targetExplicit = hasRoleConfig("target", name);
+			const roleExplicit = role ? hasRoleConfig(role, name) : false;
+			const anyRoleExplicit = sourceExplicit || targetExplicit;
+
+			// Keep explicitly configured source/target artifact.
+			if (role && roleExplicit) return false;
+
+			// Remove inherited source/target default only when base nodes.channel exists.
+			if (role && baseExplicit) return true;
+
+			// Remove base nodes.channel only when source/target explicitly overrides it.
+			if (!role && anyRoleExplicit) return true;
+
+			return false;
+		};
+
+		this.channels = this.channels.filter(
+			(channel) => !shouldRemoveNodeItem(channel, "channel")
+		);
+
+		const activeScaleIds = new Set(this.channels.map((channel) => channel.scaleId).filter(Boolean))
+
+		this.legends = this.legends.filter((legend) => {
+			if (legend?.mark !== "nodes") return true;
+			if (!legend?.scaleId) return true;
+			return activeScaleIds.has(legend.scaleId);
 		});
-		
-		this._processTooltip({
-			mark: "nodes",
-			tooltipConfig: nodesConfig.tooltip
-		});
+
+		for (const scaleId of [...this.scales.keys()]) {
+			if (!scaleId.startsWith("nodes.")) continue;
+			if (!activeScaleIds.has(scaleId)) { this.scales.delete(scaleId) }
+		}
 	}
-	
-	_processLinkArtifacts(linksConfig, links) {
-		if (!linksConfig || typeof linksConfig !== "object") return;
-		
-		this._processScaleChannel({
-			mark: "links",
-			channel: "color",
-			channelConfig: linksConfig.color,
-			data: links,
-			isColorScale: true
-		});
-		
-		this._processScaleChannel({
-			mark: "links",
-			channel: "size",
-			channelConfig: linksConfig.size,
-			data: links,
-			isColorScale: false
-		});
-		
-		this._processTooltip({
-			mark: "links",
-			tooltipConfig: linksConfig.tooltip
-		});
-	}
-	
-	_processLinkAttributes(linksConfig) {
-		this._processAttribute({
-			mark: "links",
-			attribute: "distance",
-			attributeConfig: { value: linksConfig.distance }
-		});
-	}
-	
+
 	_parseStrokeWidth(value) {
 		if (Number.isFinite(value) && Number(value) >= 0) return Number(value);
 		
