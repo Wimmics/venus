@@ -59,16 +59,7 @@ export default class ForceGraphRenderer extends BaseRenderer {
 		this.interactions.drag = this.interactions.enabled && this.interactions.drag !== false;
 		this.interactions.zoom = this.interactions.enabled && this.interactions.zoom !== false;
 
-		// Channels: object helper keeping previously computed channel features
-		this.channels = { } 		
-		for (let channel of Object.values(CHANNEL_TYPES)) {
-			if (!this.channels[channel]) this.channels[channel] = {}
-			for (let mark of [MARK_TYPES.NODES, MARK_TYPES.LINKS]) {
-				this.channels[channel][mark] = this._getArtifactChannel(mark, channel)
-			}
-		}
-
-		console.log("channels = ", this.channels)
+		this._retrieveMarkChannels({ marks: [MARK_TYPES.NODES, MARK_TYPES.LINKS] })
 
 		// this.channels.color.nodes = this._getArtifactChannel(MARK_TYPES.NODES, CHANNEL_TYPES.COLOR);
 		this.channels.color.source = this._getArtifactChannel(MARK_TYPES.NODES, CHANNEL_TYPES.COLOR, "source");
@@ -98,8 +89,8 @@ export default class ForceGraphRenderer extends BaseRenderer {
 			.enter()
 				.append("line")
 				.attr("class", (d) => d.type || "directional")
-				.attr("stroke", (d) => this._getLinkColor(d))
-				.attr("stroke-width", (d) => this._getLinkWidth(d))
+				.attr("stroke", (d) => this._getMarkColor(d, MARK_TYPES.LINKS))
+				.attr("stroke-width", (d) => this._getMarkSize(d, MARK_TYPES.LINKS))
 		
 		// Create nodes group
 		this.nodeGroup = this.viewportGroup
@@ -113,10 +104,10 @@ export default class ForceGraphRenderer extends BaseRenderer {
 		// Draw nodes
 		this.nodeGroup
 			.append("circle")
-			.attr("r", (d) => this._getNodeRadius(d))
-			.attr("fill", (d) => this._getNodeColor(d) )
-			.attr("stroke", (d) => this._getNodeStroke(d))
-			.attr("stroke-width", (d) => this._getNodeStrokeWidth(d));
+			.attr("r", (d) => this._getMarkSize(d, MARK_TYPES.NODES))
+			.attr("fill", (d) => this._getMarkColor(d, MARK_TYPES.NODES) )
+			.attr("stroke", (d) => this._getMarkStroke(d, MARK_TYPES.NODES))
+			.attr("stroke-width", (d) => this._getMarkStrokeWidth(d, MARK_TYPES.NODES));
 
 		// Handle labels display based on zoom and user-provided encoding
 		labelSel = this.nodeGroup
@@ -149,7 +140,7 @@ export default class ForceGraphRenderer extends BaseRenderer {
 		
 		if (!this._showNodeLabels(d)) return 0;
 		const zoomOpacity = interpolate(zoomK, 0.45, 0.95);
-		const renderedRadius = this._getNodeRadius(d) * zoomK;
+		const renderedRadius = this._getMarkSize(d, MARK_TYPES.NODES) * zoomK;
 		const sizeOpacity = interpolate(renderedRadius, 3, 7);
 		return Math.max(0, Math.min(1, Math.min(zoomOpacity, sizeOpacity)));
 	}
@@ -170,8 +161,6 @@ export default class ForceGraphRenderer extends BaseRenderer {
 
 	_linkDistance() { return this.attributes.links.distance?.value }
 		
-	
-
 	_resolveNodeChannel(d, channel) {
 		const role = Array.isArray(d?.roles) ? d.roles[0] : null;
 
@@ -179,49 +168,7 @@ export default class ForceGraphRenderer extends BaseRenderer {
 			return this.channels?.[channel]?.[role]
 
 		return this.channels?.[channel]?.nodes
-	}
-		
-	_resolveScaleValue(d, channel, validate = (value) => value) {
-		const fallback = channel?.defaultValue;
-		
-		const field = channel?.field
-		const scale = this._getArtifactScale(channel)
-		
-		
-		if (!field || d[field] == null || !scale) {
-			return fallback;
-		}
-		
-		const value = scale(d[field]);
-
-		return validate(value) ? value : fallback;
-	}
-		
-	_isPositiveNumber(value) { return Number.isFinite(value) && value > 0 }
-		
-	_getNodeColor(d) {
-		return this._resolveScaleValue(d, this._resolveNodeChannel(d, "color"))
-	};
-		
-	_getNodeRadius(d) {
-		return this._resolveScaleValue(d, this._resolveNodeChannel(d, "size"), this._isPositiveNumber)
-	};
-		
-	_getLinkColor(d) {
-		return this._resolveScaleValue(d, this.channels.color.links)
-	};
-		
-	_getLinkWidth = (d) => {
-		return this._resolveScaleValue(d, this.channels.size.links, this._isPositiveNumber)
-	}
-
-	_getNodeStroke (d) {
-		return this._resolveScaleValue(d, this.channels.stroke.nodes)
-	}
-	
-	_getNodeStrokeWidth (d) {
-		return this._resolveScaleValue(d, this.channels.strokeWidth.nodes, this._isPositiveNumber)
-	}
+	}	
 
 	// Event helpers
 	_setZoomBehavior(labelSel) {
@@ -342,7 +289,7 @@ export default class ForceGraphRenderer extends BaseRenderer {
 			.force("link", d3.forceLink(this.links).id((d) => d.id).distance(() => this._linkDistance()))
 			.force("charge", d3.forceManyBody().strength(-200))
 			.force("center", d3.forceCenter(this._state.width / 2, this._state.height / 2))
-			.force("collision", d3.forceCollide().radius((d) => this._getNodeRadius(d) + 5))
+			.force("collision", d3.forceCollide().radius((d) => this._getMarkSize(d, MARK_TYPES.NODES) + 5))
 			.force("x", d3.forceX(this._state.width / 2).strength(0.1))
 			.force("y", d3.forceY(this._state.height / 2).strength(0.1));
 
@@ -353,7 +300,7 @@ export default class ForceGraphRenderer extends BaseRenderer {
 			const nodeY = Number.isNaN(d?.y) ? centerY : d.y;
 			const dx = nodeX - centerX;
 			const dy = nodeY - centerY;
-			const offset = this._getNodeRadius(d) + 8;
+			const offset = this._getMarkSize(d, MARK_TYPES.NODES) + 8;
 			
 			if (Math.abs(dx) >= Math.abs(dy)) {
 				if (dx >= 0) {
@@ -380,8 +327,8 @@ export default class ForceGraphRenderer extends BaseRenderer {
 			const dist = Math.sqrt(dx * dx + dy * dy);
 			if (dist === 0) return { x1: source.x, y1: source.y, x2: target.x, y2: target.y };
 			
-			const sr = this._getNodeRadius(source);
-			const tr = this._getNodeRadius(target);
+			const sr = this._getMarkSize(source, MARK_TYPES.NODES);
+			const tr = this._getMarkSize(target, MARK_TYPES.NODES);
 			
 			const ux = dx / dist;
 			const uy = dy / dist;
@@ -396,7 +343,7 @@ export default class ForceGraphRenderer extends BaseRenderer {
 		
 
 		const constrainNode = (d) => {
-			const r = this._getNodeRadius(d);
+			const r = this._getMarkSize(d, MARK_TYPES.NODES);
 			d.x = Math.max(r, Math.min(this._state.width - r, d.x));
 			d.y = Math.max(r, Math.min(this._state.height - r, d.y));
 		};
@@ -406,6 +353,8 @@ export default class ForceGraphRenderer extends BaseRenderer {
 			if (!this.interactions.zoom) {
 				this.nodeGroup.each(constrainNode);
 			}
+
+			if (!this.linkSel) return
 			
 			this.linkSel.each(function (d) {
 				const p = calculateLinkPosition(d);
@@ -455,7 +404,7 @@ export default class ForceGraphRenderer extends BaseRenderer {
 			for (const node of this.nodes) {
 				const x = Number.isNaN(node?.x) ? this._state.width / 2 : node.x;
 				const y = Number.isNaN(node?.y) ? this._state.height / 2 : node.y;
-				const r = this._getNodeRadius(node);
+				const r = this._getMarkSize(node, MARK_TYPES.NODES);
 				minX = Math.min(minX, x - r);
 				minY = Math.min(minY, y - r);
 				maxX = Math.max(maxX, x + r);

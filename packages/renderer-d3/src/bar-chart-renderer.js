@@ -14,15 +14,14 @@ export default class BarChartRenderer extends CartesianChartRenderer {
 			return false;
 		}
 		
-		this._barColorChannel = this._getArtifactChannel(MARK_TYPES.BARS, CHANNEL_TYPES.COLOR);
-		this._barSizeChannel = this._getArtifactChannel(MARK_TYPES.BARS, CHANNEL_TYPES.SIZE);
+		this._retrieveMarkChannels({marks: [ MARK_TYPES.BARS ]})
 		
 		this._renderAxes({ plot, layout });
 		
 		if (layout.direction === "horizontal") {
-			this._renderHorizontalBars({ plot, layout, chart });
+			this._renderHorizontalBars({ plot, layout, bars: chart.bars });
 		} else {
-			this._renderVerticalBars({ plot, layout, chart });
+			this._renderVerticalBars({ plot, layout, bars: chart.bars });
 		}
 		
 		this._applyBarInteractions(plot);
@@ -99,87 +98,110 @@ export default class BarChartRenderer extends CartesianChartRenderer {
 		});
 	}
 	
-	_renderVerticalBars({ plot, layout, chart }) {
-		if (layout.mode === "grouped") {
-			return this._renderVerticalGroupedBars({ plot, layout, bars: chart.bars });
-		}
-		
-		if (layout.mode === "stacked" || layout.mode === "normalize") {
-			return this._renderVerticalStackedBars({ plot, layout, bars: chart.bars });
-		}
-		
-		return this._renderVerticalSimpleBars({ plot, layout, bars: chart.bars });
-	}
-	
-	_renderHorizontalBars({ plot, layout, chart }) {
-		if (layout.mode === "grouped") {
-			return this._renderHorizontalGroupedBars({ plot, layout, bars: chart.bars });
-		}
-		
-		if (layout.mode === "stacked" || layout.mode === "normalize") {
-			return this._renderHorizontalStackedBars({ plot, layout, bars: chart.bars });
-		}
-		
-		return this._renderHorizontalSimpleBars({ plot, layout, bars: chart.bars });
-	}
-	
-	_renderVerticalSimpleBars({ plot, layout, bars }) {
-		const { x, y, innerHeight } = layout;
-		
-		const barGroup = plot
-			.append("g")
-			.attr("class", "bars")
-			
-		barGroup.selectAll("rect")
-			.data(bars || [])
-			.enter()
-			.append("rect")
-			.attr("x", (d) => x.scale(d.x))
-			.attr("y", (d) => y.scale(d.value))
-			.attr("width", x.scale.bandwidth())
-			.attr("height", (d) => Math.max(0, innerHeight - y.scale(d.value)))
-			.attr("fill", (d) => this._getBarColor(d.datum))
-			.attr("stroke", "#ffffff")
-			.attr("stroke-width", (d) => this._getBarStrokeWidth(d.datum));
-	}
-	
-	_renderVerticalGroupedBars({ plot, layout, bars }) {
-		const { x, y, group, innerHeight } = layout;
-		const observed = (bars || []).filter((d) => d.observed !== false);
-		
-		plot
-		.append("g")
-		.attr("class", "bars")
-		.selectAll("rect")
-		.data(observed)
-		.enter()
-		.append("rect")
-		.attr("x", (d) => x.scale(d.x) + (group?.scale?.(d.sub) || 0))
-		.attr("y", (d) => y.scale(d.value))
-		.attr("width", group?.scale?.bandwidth?.() || x.scale.bandwidth())
-		.attr("height", (d) => Math.max(0, innerHeight - y.scale(d.value)))
-		.attr("fill", (d) => this._getBarColor(d.datum))
-		.attr("stroke", "#ffffff")
-		.attr("stroke-width", (d) => this._getBarStrokeWidth(d.datum));
-	}
-	
-	_renderVerticalStackedBars({ plot, layout, bars }) {
-		const { x, y } = layout;
+
+	_renderVerticalBars({ plot, layout, bars = [] }){
+		const { x, y, group, innerHeight, mode } = layout
+
+		const visibleBars = bars.filter(d => d.observed !== false)
+
+		const isGrouped = mode === "grouped";
+		const isStacked = mode === "stacked" || mode === "normalize";
+
+		const getX = (d) => {
+			const baseX = x.scale(d.x) ?? 0;
+			if (isGrouped) return baseX + (group?.scale?.(d.sub) || 0);
+			return baseX;
+		};
+
+		const getY = (d) => {
+			if (isStacked) return y.scale(d.y1);
+			return y.scale(d.value);
+		};
+
+		const getWidth = () => {
+			if (isGrouped) return group?.scale?.bandwidth?.() || x.scale.bandwidth();
+			return x.scale.bandwidth();
+		};
+
+		const getHeight = (d) => {
+			if (isStacked) {
+				return Math.max(0, y.scale(d.y0) - y.scale(d.y1));
+			}
+
+			return Math.max(0, innerHeight - y.scale(d.value));
+		};
 
 		plot
 			.append("g")
 			.attr("class", "bars")
 			.selectAll("rect")
-			.data((bars || []).filter((d) => d.observed !== false))
+			.data(visibleBars)
 			.enter()
 			.append("rect")
-			.attr("x", (d) => x.scale(d.x))
-			.attr("y", (d) => y.scale(d.y1))
-			.attr("width", x.scale.bandwidth())
-			.attr("height", (d) => Math.max(0, y.scale(d.y0) - y.scale(d.y1)))
-			.attr("fill", (d) => this._getBarColor(d.datum))
+			.attr("x", getX)
+			.attr("y", getY)
+			.attr("width", getWidth)
+			.attr("height", getHeight)
+			.attr("fill", (d) => this._getMarkColor(d.datum, MARK_TYPES.BARS) )
 			.attr("stroke", "#ffffff")
-			.attr("stroke-width", (d) => this._getBarStrokeWidth(d.datum));
+			.attr("stroke-width", (d) => this._getMarkStrokeWidth(d.datum, MARK_TYPES.BARS));
+
+	}
+
+	_renderHorizontalBars({ plot, layout, bars }) {
+		const { x, y, group, innerHeight, mode } = layout
+
+		const visibleBars = bars.filter(d => d.observed !== false)
+
+		const isGrouped = mode === "grouped";
+		const isStacked = mode === "stacked" || mode === "normalize";
+
+		const getX = (d) => {
+			if (isStacked) return x.scale(d.y0);
+			return 0;
+		};
+
+		const getY = (d) => {
+			const baseY = y.scale(d.x);
+			if (baseY == null) return 0;
+
+			if (isGrouped) {
+			return baseY + (group?.scale?.(d.sub) || 0);
+			}
+
+			return baseY;
+		};
+
+		const getWidth = (d) => {
+			if (isStacked) {
+			return Math.max(0, x.scale(d.y1) - x.scale(d.y0));
+			}
+
+			return Math.max(0, x.scale(d.value));
+		};
+
+		const getHeight = () => {
+			if (isGrouped) {
+			return group?.scale?.bandwidth?.() || y.scale.bandwidth();
+			}
+
+			return y.scale.bandwidth();
+		};
+
+		plot
+			.append("g")
+			.attr("class", "bars")
+			.selectAll("rect")
+			.data(visibleBars)
+			.enter()
+			.append("rect")
+			.attr("x", getX)
+			.attr("y", getY)
+			.attr("width", getWidth)
+			.attr("height", getHeight)
+			.attr("fill", (d) => this._getMarkColor(d.datum, MARK_TYPES.BARS))
+			.attr("stroke", "#ffffff")
+			.attr("stroke-width", (d) => this._getMarkStrokeWidth(d.datum, MARK_TYPES.BARS));
 	}
 
 	_renderHorizontalSimpleBars({ plot, layout, bars }) {
@@ -197,9 +219,9 @@ export default class BarChartRenderer extends CartesianChartRenderer {
 			.attr("y", (d) => y.scale(d.x))
 			.attr("width", (d) => Math.max(0, x.scale(d.value)))
 			.attr("height", y.scale.bandwidth())
-			.attr("fill", (d) => this._getBarColor(d.datum))
+			.attr("fill", (d) => this._getMarkColor(d.datum, MARK_TYPES.BARS))
 			.attr("stroke", "#ffffff")
-			.attr("stroke-width", (d) => this._getBarStrokeWidth(d.datum));
+			.attr("stroke-width", (d) => this._getMarkStrokeWidth(d.datum, MARK_TYPES.BARS));
 	}
 
 	_renderHorizontalGroupedBars({ plot, layout, bars }) {
@@ -218,9 +240,9 @@ export default class BarChartRenderer extends CartesianChartRenderer {
 			.attr("y", (d) => y.scale(d.x) + (group?.scale?.(d.sub) || 0))
 			.attr("width", (d) => Math.max(0, x.scale(d.value)))
 			.attr("height", group?.scale?.bandwidth?.() || y.scale.bandwidth())
-			.attr("fill", (d) => this._getBarColor(d.datum))
+			.attr("fill", (d) => this._getMarkColor(d.datum, MARK_TYPES.BARS))
 			.attr("stroke", "#ffffff")
-			.attr("stroke-width", (d) => this._getBarStrokeWidth(d.datum));
+			.attr("stroke-width", (d) => this._getMarkStrokeWidth(d.datum, MARK_TYPES.BARS));
 	}
 
 	_renderHorizontalStackedBars({ plot, layout, bars }) {
@@ -237,39 +259,9 @@ export default class BarChartRenderer extends CartesianChartRenderer {
 			.attr("y", (d) => y.scale(d.x))
 			.attr("width", (d) => Math.max(0, x.scale(d.y1) - x.scale(d.y0)))
 			.attr("height", y.scale.bandwidth())
-			.attr("fill", (d) => this._getBarColor(d.datum))
+			.attr("fill", (d) => this._getMarkColor(d.datum, MARK_TYPES.BARS))
 			.attr("stroke", "#ffffff")
-			.attr("stroke-width", (d) => this._getBarStrokeWidth(d.datum));
-	}
-
-	_resolveScaledValue(datum, channel, validate = (value) => value != null) {
-		const fallback = channel?.defaultValue;
-		const field = channel?.field;
-		const scale = channel?.scale || this._getArtifactScale(channel);
-		
-		if (!field || datum?.[field] == null || !scale) {
-			return fallback;
-		}
-		
-		const value = scale(datum[field]);
-		
-		return validate(value) ? value : fallback;
-	}
-
-	_getBarColor(datum) {
-		return this._resolveScaledValue(
-			datum,
-			this._barColorChannel,
-			(value) => typeof value === "string" && value.trim()
-		);
-	}
-
-	_getBarStrokeWidth(datum) {
-		return this._resolveScaledValue(
-			datum,
-			this._barSizeChannel,
-			(value) => Number.isFinite(value) && value >= 0
-		);
+			.attr("stroke-width", (d) => this._getMarkStrokeWidth(d.datum, MARK_TYPES.BARS));
 	}
 
 	_applyBarInteractions(plot) {

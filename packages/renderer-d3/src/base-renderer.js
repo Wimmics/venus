@@ -1,5 +1,7 @@
 import * as d3 from "d3";
 
+import { CHANNEL_TYPES, MARK_TYPES } from "@wimmics/venus-core";
+
 export default class BaseRenderer {
 	/**
 	* Initialize renderer-level shared dependencies and mutable rendering state.
@@ -180,4 +182,61 @@ export default class BaseRenderer {
 		return this.visualArtifacts.attributes.find((item) =>
 			item?.mark === mark && item?.attribute === attribute && (role == null ? !item?.role : item?.role === role)) || null;
 	}
+
+	_resolveScaleValue(d, channel, validate = (value) => value) {
+		const fallback = channel?.defaultValue;
+		
+		const field = channel?.field
+		const scale = this._getArtifactScale(channel)
+		
+		
+		if (!field || d[field] == null || !scale) {
+			return fallback;
+		}
+		
+		const value = scale(d[field]);
+
+		return validate(value) ? value : fallback;
+	}
+
+	// Helper method to centralize channel information per mark
+	_retrieveMarkChannels({ marks = [] }) {
+		this.channels = {} 		
+		for (let channel of Object.values(CHANNEL_TYPES)) {
+			if (!this.channels[channel]) this.channels[channel] = {}
+			for (let mark of marks) {
+				this.channels[channel][mark] = this._getArtifactChannel(mark, channel)
+			}
+		}
+
+		console.log("channels = ", this.channels)
+	}
+
+	_isMarkNodes(mark) { return mark === MARK_TYPES.NODES }
+
+	_resolveChannel(d, mark, channel) {
+		return this._isMarkNodes(mark) ? this._resolveNodeChannel(d, channel) : this.channels?.[channel]?.[mark]
+	}
+
+	// Color scale helpers
+	_getMarkColor(d, mark) {
+		return this._resolveScaleValue(d, this._resolveChannel(d, mark, CHANNEL_TYPES.COLOR), this._isValidString)
+	}
+
+	_getMarkStroke(d, mark) {
+		return this._resolveScaleValue(d, this._resolveChannel(d, mark, CHANNEL_TYPES.STROKE), this._isValidString)
+	}
+
+	// Size scale helpers
+	_getMarkSize(d, mark) {
+		return this._resolveScaleValue(d, this._resolveChannel(d, mark, CHANNEL_TYPES.SIZE), this._isPositiveNumber)
+	}
+
+	_getMarkStrokeWidth(d, mark) {
+		return this._resolveScaleValue(d, this._resolveChannel(d, mark, CHANNEL_TYPES.STROKE_WIDTH), this._isPositiveNumber)
+	}
+
+	_isPositiveNumber(value) { return Number.isFinite(value) && value > 0 }
+
+	_isValidString(value) { return typeof value === "string" && value.trim() }
 }

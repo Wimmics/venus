@@ -7,6 +7,8 @@ export class CartesianVisualArtifacts extends VisualArtifacts {
 	_processChartSpecificArtifacts() {
 		const { encoding, data, chart, width, height } = this._payload;
 
+		console.log("bars encoding = ", encoding)
+		
 		const rows = Object.values(data)[0];
 		
 		this._processLayoutArtifacts({ 
