@@ -41,74 +41,74 @@ export class DomainCalculator {
 	*/
 	getDomain(data, field, userDomain = null, scaleType = SCALE_DEFAULTS.TYPE, binning = null) {
 			
-			if (!data || data.length === 0) {
-				console.warn(`No data available for field "${field}"`);
-				return {}
-			}
-			
-			// Extract unique values for the requested field.
-			const extractedValues = this.getVal(data, field);
-			
-			if (extractedValues.length === 0) {
-				console.warn(`No values found in data for field "${field}"`);
-				return {}
-			}
-			
-			if (isThresholdScaleType(scaleType)) {
-				return this._getThresholdDomain(extractedValues, field, userDomain, scaleType, binning) 
-			}
-			
-			// Quantitative scales use continuous numeric domains (min/max), not categorical membership checks.
-			if (isQuantitativeScaleType(scaleType)) {
-				return this._getQuantitativeDomain(extractedValues, field, userDomain, scaleType);
-			}
-			
-			// Case 1: no user domain provided -> use extracted values.
-			if (!userDomain || userDomain.length === 0) {
-				const reason = !userDomain ? "user domain not defined (null/undefined)" : "user domain empty (empty array)";
-				
-				const sortedDomain = this.sortDomainValues(extractedValues, scaleType);
-				
-				return { domain: sortedDomain }
-			}
-			
-			// Case 2: invalid user domain -> fix it.
-			const invalidityReport = this.analyzeDomainInvalidity(userDomain, extractedValues);
-			if (invalidityReport.isInvalid) {
-				const fixedDomain = this.fixDomain(userDomain, extractedValues, scaleType);
-				
-				// Emit a single consolidated warning with context.
-				const warningParts = [
-					`Invalid domain for field "${field}": ${invalidityReport.reason}`,
-					`User provided: [${this._formatValueList(userDomain)}]`,
-					`Data contains: [${this._formatValueList(extractedValues)}]`,
-					`Domain corrected to: [${this._formatValueList(fixedDomain)}]`
-				];
-				console.warn(warningParts.join(' | '));
-				
-				return { domain: fixedDomain }
-			}
-			
-			// Case 3: incomplete user domain -> complete it.
-			const incompletenessReport = this.analyzeDomainIncompleteness(userDomain, extractedValues);
-			if (incompletenessReport.isIncomplete) {
-				const completedDomain = this.completeDomain(userDomain, extractedValues, scaleType);
-				
-				// Emit a single consolidated warning with context.
-				const warningParts = [
-					`Incomplete domain for field "${field}": Missing ${incompletenessReport.missingValues.length} values (coverage: ${Math.round(incompletenessReport.coverage * 100)}%)`,
-					`User provided: [${this._formatValueList(userDomain)}]`,
-					`Missing values: [${this._formatValueList(incompletenessReport.missingValues)}]`,
-					`Domain completed to: [${this._formatValueList(completedDomain)}]`
-				];
-				console.warn(warningParts.join(' | '));
-				
-				return { domain: completedDomain }
-			}
-			
-			// Case 4: valid user domain -> keep as is.
-			return { domain: [...userDomain]} // Return a copy to avoid external mutation.
+		if (!data || data.length === 0) {
+			console.warn(`No data available for field "${field}"`);
+			return {}
 		}
+		
+		// Extract unique values for the requested field.
+		const extractedValues = this.getVal(data, field);
+		
+		if (extractedValues.length === 0) {
+			console.warn(`No values found in data for field "${field}"`);
+			return {}
+		}
+		
+		if (isThresholdScaleType(scaleType)) {
+			return this._getThresholdDomain(extractedValues, field, userDomain, scaleType, binning) 
+		}
+		
+		// Quantitative scales use continuous numeric domains (min/max), not categorical membership checks.
+		if (isQuantitativeScaleType(scaleType)) {
+			return this._getQuantitativeDomain(extractedValues, field, userDomain, scaleType);
+		}
+		
+		// Case 1: no user domain provided -> use extracted values.
+		if (!userDomain || userDomain.length === 0) {
+			const reason = !userDomain ? "user domain not defined (null/undefined)" : "user domain empty (empty array)";
+			
+			const sortedDomain = this.sortDomainValues(extractedValues, scaleType);
+			
+			return { domain: sortedDomain }
+		}
+		
+		// Case 2: invalid user domain -> fix it.
+		const invalidityReport = this.analyzeDomainInvalidity(userDomain, extractedValues);
+		if (invalidityReport.isInvalid) {
+			const fixedDomain = this.fixDomain(userDomain, extractedValues, scaleType);
+			
+			// Emit a single consolidated warning with context.
+			const warningParts = [
+				`Invalid domain for field "${field}": ${invalidityReport.reason}`,
+				`User provided: [${this._formatValueList(userDomain)}]`,
+				`Data contains: [${this._formatValueList(extractedValues)}]`,
+				`Domain corrected to: [${this._formatValueList(fixedDomain)}]`
+			];
+			console.warn(warningParts.join(' | '));
+			
+			return { domain: fixedDomain }
+		}
+		
+		// Case 3: incomplete user domain -> complete it.
+		const incompletenessReport = this.analyzeDomainIncompleteness(userDomain, extractedValues);
+		if (incompletenessReport.isIncomplete) {
+			const completedDomain = this.completeDomain(userDomain, extractedValues, scaleType);
+			
+			// Emit a single consolidated warning with context.
+			const warningParts = [
+				`Incomplete domain for field "${field}": Missing ${incompletenessReport.missingValues.length} values (coverage: ${Math.round(incompletenessReport.coverage * 100)}%)`,
+				`User provided: [${this._formatValueList(userDomain)}]`,
+				`Missing values: [${this._formatValueList(incompletenessReport.missingValues)}]`,
+				`Domain completed to: [${this._formatValueList(completedDomain)}]`
+			];
+			console.warn(warningParts.join(' | '));
+			
+			return { domain: completedDomain }
+		}
+		
+		// Case 4: valid user domain -> keep as is.
+		return { domain: [...userDomain]} // Return a copy to avoid external mutation.
+	}
 		
 		_isQuantitativeScale(scaleType) {
 			return scaleType === 'linear' || scaleType === 'sqrt' || scaleType === 'log' || scaleType === 'quantitative' || scaleType === 'sequential' || scaleType === 'count';

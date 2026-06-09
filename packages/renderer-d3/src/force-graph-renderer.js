@@ -9,7 +9,7 @@ export default class ForceGraphRenderer extends BaseRenderer {
 		this.simulation = null;
 		this.nodeGroup = null;
 		this.linkSel = null;
-		this.viewportGroup = null;
+		
 		this.zoomBehavior = null;
 		
 		this.nodes = [];
@@ -77,11 +77,10 @@ export default class ForceGraphRenderer extends BaseRenderer {
 
 		this.attributes.links.distance = this._getArtifactAttribute("links", "distance")
 		
-		this.viewportGroup = this.svg.append("g").attr("class", "viewport");
 		let labelSel = null;
 		
 		// Draw links
-		this.linkSel = this.viewportGroup
+		this.linkSel = this.chartGroup
 			.append("g")
 			.attr("class", "links")
 			.selectAll("line")
@@ -93,7 +92,7 @@ export default class ForceGraphRenderer extends BaseRenderer {
 				.attr("stroke-width", (d) => this._getMarkSize(d, MARK_TYPES.LINKS))
 		
 		// Create nodes group
-		this.nodeGroup = this.viewportGroup
+		this.nodeGroup = this.chartGroup
 			.append("g")
 			.attr("class", "nodes")
 			.selectAll("g")
@@ -177,7 +176,7 @@ export default class ForceGraphRenderer extends BaseRenderer {
 				.zoom()
 				.scaleExtent([0.1, 8])
 				.on("zoom", (event) => {
-					this.viewportGroup.attr("transform", event.transform);
+					this.chartGroup.attr("transform", event.transform);
 					if (labelSel) {
 						labelSel.style("opacity", (d) => this._computeLabelOpacity(d, event.transform.k));
 					}
@@ -186,7 +185,7 @@ export default class ForceGraphRenderer extends BaseRenderer {
 		} else {
 			this.svg.on(".zoom", null);
 			this.zoomBehavior = null;
-			this.viewportGroup.attr("transform", null);
+			this.chartGroup.attr("transform", null);
 		}
 	}
 
@@ -440,16 +439,6 @@ export default class ForceGraphRenderer extends BaseRenderer {
 		this.svg.call(this.zoomBehavior.transform, transform);
 	};
 
-	updateData(payload = null, encoding = null, visualArtifacts = null) {
-		this.destroy();
-		this.render(payload || this._defaultPayload(), encoding || this.encoding, visualArtifacts);
-	}
-	
-	updateEncoding(encoding, payload = null, visualArtifacts = null) {
-		this.encoding = encoding;
-		this.updateData(payload || this._defaultPayload(), encoding, visualArtifacts);
-	}
-
 	resize(width, height) {
 		this.width = width || this.width;
 		this.height = height || this.height;
@@ -475,7 +464,7 @@ export default class ForceGraphRenderer extends BaseRenderer {
 		
 		this.nodeGroup = null;
 		this.linkSel = null;
-		this.viewportGroup = null;
+		this.chartGroup = null;
 		this.zoomBehavior = null;
 		
 		super.destroy();

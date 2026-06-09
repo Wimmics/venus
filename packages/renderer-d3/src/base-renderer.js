@@ -12,65 +12,47 @@ export default class BaseRenderer {
 		this.height = opts.height || 600;
 		this.callbacks = opts.callbacks || {};
 		this.svg = null;
-		this.encoding = null;
+		
 		this._state = null;
 		this.visualArtifacts = null;
+		this.chartGroup = null;
 	}
 	
 	/**
 	* Main render lifecycle: ingest payload, validate, prepare state, render, then finalize.
 	*/
-	render(payload = {}, encoding = null, visualArtifacts = null) {
+	render(payload = {}, visualArtifacts = null) {
 		this._ingestRenderPayload(payload);
-		this.encoding = encoding || this.encoding;
-		this.visualArtifacts = visualArtifacts || {
-			scales: new Map(),
-			channels: [],
-			legends: []
-		};
-		
+		this.visualArtifacts = visualArtifacts || this.visualArtifacts || {}
 		
 		if (!this.container) throw new Error(`${this.constructor.name} requires a container element`);
 		
 		this.svg = d3.select(this.container.querySelector("svg"));
 		this.svg.selectAll("*").remove();
+
+		// group container for chart elements
+		this.chartGroup = this.svg.append('g').classed('chart-group', true) 
 		
-		this._state = this._createBaseState(payload, this.visualArtifacts);
+		this._state = this._createBaseState(payload)
 		const validationMessage = this._validateState();
+		
 		if (validationMessage) {
 			this._renderCenteredMessage(this._state.width, this._state.height, validationMessage);
 			this._onValidationFailed();
 			return;
 		}
 		
-		this._prepareRenderState();
-		const renderResult = this._renderVis();
-		if (renderResult === false) return;
-		
-		return this._afterRender();
-	}
-	
-	/**
-	* Refresh visualization data while optionally overriding encoding/artifacts.
-	*/
-	updateData(payload = null, encoding = null, visualArtifacts = null) {
-		this.render(payload || this._defaultPayload(), encoding || this.encoding, visualArtifacts);
-	}
-	
-	/**
-	* Refresh visualization encoding while optionally overriding payload/artifacts.
-	*/
-	updateEncoding(encoding, payload = null, visualArtifacts = null) {
-		this.render(payload || this._defaultPayload(), encoding, visualArtifacts);
+		this._prepareRenderState(); 
+		return this._renderVis();
 	}
 	
 	/**
 	* Update container dimensions and trigger a full render pass.
 	*/
-	resize(width, height, payload = null, encoding = null, visualArtifacts = null) {
+	resize(width, height, payload = null, visualArtifacts = null) {
 		this.width = width || this.width;
 		this.height = height || this.height;
-		this.render(payload || this._defaultPayload(), encoding || this.encoding, visualArtifacts);
+		this.render(payload || this._defaultPayload(), visualArtifacts);
 	}
 	
 	/**
@@ -100,9 +82,6 @@ export default class BaseRenderer {
 	_createBaseState(payload, visualArtifacts) {
 		return {
 			payload,
-			visualArtifacts,
-			encoding: this.encoding,
-			mapping: this.encoding || {},
 			width: this.width,
 			height: this.height
 		};

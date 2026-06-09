@@ -200,7 +200,6 @@ export class VenusBase extends HTMLElement {
 		
 		this.renderer.render(
 			this._getRenderPayload(), 
-			this.visualEncoding, 
 			this._visualArtifacts
 		);
 
@@ -611,12 +610,11 @@ export class VenusBase extends HTMLElement {
 		throw new Error("_getLegendDatasets must be implemented by subclass");
 	}
 	
-	_renderBaseDOM({ containerClass = "vis-container", extraStyles = "" } = {}) {
-		this._containerClassName = containerClass;
+	_renderBaseDOM({ extraStyles = "" } = {}) {
 		this.shadowRoot.innerHTML = `
       <style>
         :host { display: block; font-family: Arial, sans-serif; }
-        .${containerClass} {
+        .vis-container {
           width: 100%;
           height: 100%;
           background: #ffffff;
@@ -676,9 +674,18 @@ export class VenusBase extends HTMLElement {
           color: #fff;
           box-shadow: none;
         }
+
+		.chart-group text {
+          fill: #333;
+          font-size: 11px;
+        }
+        .chart-group .domain,
+        .chart-group .tick line {
+          stroke: #cfcfcf;
+        }
         ${extraStyles}
       </style>
-      <div class="${containerClass}">
+      <div class="vis-container">
         <div class="vis-title"></div>
         <div class="vis-surface">
           <svg></svg>
@@ -689,8 +696,7 @@ export class VenusBase extends HTMLElement {
 	}
 	
 	_getContainerElement() {
-		const className = this._containerClassName || "vis-container";
-		return this.shadowRoot?.querySelector(`.${className}`);
+		return this.shadowRoot?.querySelector('.vis-container');
 	}
 	
 	_normalizeDimensionValue(nextValue, fallbackValue) {

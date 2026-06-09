@@ -68,19 +68,7 @@ export class VenusBarChart extends VenusBase {
 	
 	
 	_initDOMStructure() {
-		this._renderBaseDOM({
-			containerClass: "chart-container",
-			extraStyles: `
-        .plot-area text {
-          fill: #333;
-          font-size: 11px;
-        }
-        .plot-area .domain,
-        .plot-area .tick line {
-          stroke: #cfcfcf;
-        }
-      `
-		});
+		this._renderBaseDOM()
 		
 		const container = this._getContainerElement();
 		if (container && !this.renderer) {

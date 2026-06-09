@@ -4,7 +4,9 @@ import {
 	SCALE_TYPES,
 	normalizeScaleType,
 	isQuantitativeScaleType,
-	isThresholdScaleType
+	isThresholdScaleType,
+	isOrdinalScaleType,
+	isCountScaleType
 } from "@wimmics/venus-core";
 
 import { DomainCalculator } from "./domain-calculator.js";
@@ -297,11 +299,12 @@ export class D3ScaleFactory {
 		data,
 		field,
 		range,
-		fallbackType = SCALE_TYPES.ORDINAL
+		fallbackType = SCALE_TYPES.ORDINAL,
+		domainResult = null
 	} = {}) {
 		const type = normalizeScaleType(scaleConfig.type, fallbackType);
 		
-		const { domain, bounds, bins } = this.resolveDomain({
+		const { domain, bounds, bins } = domainResult || this.resolveDomain({
 			scaleConfig,
 			data,
 			field,
@@ -334,7 +337,7 @@ export class D3ScaleFactory {
 			.range(range)
 			.padding(scaleConfig.padding ?? 0.5);
 		}
-		
+
 		return {
 			scale,
 			domain,
@@ -345,6 +348,127 @@ export class D3ScaleFactory {
 		};
 	}
 	
+	createAxis({ scale, orientation, axisConfig = {}, field, scaleType, tickValues = null }) {
+		if (!scale || !orientation) return null;
+		console.log("orientation = ", orientation)
+
+		const generator =
+			orientation === "left"
+			? d3.axisLeft(scale)
+			: d3.axisBottom(scale);
+
+		if (Array.isArray(tickValues) && tickValues.length) {
+			generator.tickValues(tickValues);
+		}
+		
+		generator.tickFormat(this._buildTickFormatter({ tickFormat: axisConfig?.tickFormat, scaleType }))
+
+		return {
+			orientation,
+			generator,
+			field,
+			scaleType
+		};
+	}
+
+	_normalizeTickFormatName(formatName) {
+		return typeof formatName === "string" ? formatName.toLowerCase().trim() : "";
+	}
+	
+	_buildTickFormatter({ tickFormat = "raw", scaleType = SCALE_TYPES.LINEAR }) {
+		const format = this._normalizeTickFormatName(tickFormat);
+		console.log(format, scaleType)
+
+		const asNumber = (value) => {
+			const number = Number(value);
+			return Number.isFinite(number) ? number : null;
+		};
+
+		if (isOrdinalScaleType(scaleType)) {
+			return (value) => String(value);
+		}
+
+		if (isCountScaleType(scaleType) && (!format || format === "raw")) {
+			return (value) => {
+				const number = asNumber(value);
+				return number === null ? String(value) : d3.format(",d")(Math.round(number));
+			};
+		}
+
+		if (!format || format === "raw") {
+			return (value) => {
+			const number = asNumber(value);
+			return number === null ? String(value) : d3.format(",")(number);
+			};
+		}
+
+		if (format === "integer" || format === "int") {
+			return (value) => {
+			const number = asNumber(value);
+			return number === null ? String(value) : d3.format(",d")(Math.round(number));
+			};
+		}
+
+		if (format === "percent" || format === "percentage") {
+			return (value) => {
+			const number = asNumber(value);
+			return number === null ? String(value) : d3.format(".0%")(number);
+			};
+		}
+
+		if (format === "compact") {
+			const compact = new Intl.NumberFormat("en", {
+			notation: "compact",
+			maximumFractionDigits: 1
+			});
+
+			return (value) => {
+			const number = asNumber(value);
+			return number === null ? String(value) : compact.format(number);
+			};
+		}
+
+		if (format === "kmb") {
+			return (value) => {
+			const number = asNumber(value);
+			if (number === null) return String(value);
+
+			const abs = Math.abs(number);
+			if (abs >= 1e12) return `${d3.format(".2~f")(number / 1e12)}T`;
+			if (abs >= 1e9) return `${d3.format(".2~f")(number / 1e9)}B`;
+			if (abs >= 1e6) return `${d3.format(".2~f")(number / 1e6)}M`;
+			if (abs >= 1e3) return `${d3.format(".2~f")(number / 1e3)}k`;
+			return d3.format(".2~f")(number);
+			};
+		}
+
+		if (format === "k" || format === "thousands") {
+			return (value) => {
+			const number = asNumber(value);
+			return number === null ? String(value) : `${d3.format(".2~f")(number / 1e3)}k`;
+			};
+		}
+
+		if (format === "m" || format === "millions") {
+			return (value) => {
+			const number = asNumber(value);
+			return number === null ? String(value) : `${d3.format(".2~f")(number / 1e6)}M`;
+			};
+		}
+
+		if (format === "b" || format === "billions") {
+			return (value) => {
+			const number = asNumber(value);
+			return number === null ? String(value) : `${d3.format(".2~f")(number / 1e9)}B`;
+			};
+		}
+
+		return (value) => {
+			const number = asNumber(value);
+			return number === null ? String(value) : d3.format(",")(number);
+		};
+	}
+
 	
 	resolveDomain({ scaleConfig, data, field, scaleType }) {
 		const userDomain = scaleConfig.domain;

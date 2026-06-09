@@ -123,7 +123,6 @@ export class VenusGraph extends VenusBase {
 
 	_initDOMStructure() {
 		this._renderBaseDOM({
-			containerClass: "graph-container",
 			extraStyles: `
         .links line { stroke-opacity: 0.6; }
         .links .directional { marker-end: url(#arrowhead); }

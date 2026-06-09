@@ -4,102 +4,32 @@ import { CHANNEL_TYPES, MARK_TYPES } from "@wimmics/venus-core";
 
 export default class BarChartRenderer extends CartesianChartRenderer {
 	_renderVis() {
-		const plot = this._state?.plot;
+		//const plot = this._state?.plot;
 		const layout = this.visualArtifacts?.layout;
-		const chart = this._state?.payload?.chart || this._state?.chart || this.chart;
+		const chart = this._state?.payload?.chart || this.chart;
 
 		console.log("[BarChart] artifacts = ", this.visualArtifacts)
 		
-		if (!plot || !layout?.x?.scale || !layout?.y?.scale || !chart) {
+		if (!layout?.x?.scale || !layout?.y?.scale || !chart) {
 			return false;
 		}
 		
 		this._retrieveMarkChannels({marks: [ MARK_TYPES.BARS ]})
 		
-		this._renderAxes({ plot, layout });
+		this._renderAxes({ layout }) // implemented in parent class
 		
-		if (layout.direction === "horizontal") {
-			this._renderHorizontalBars({ plot, layout, bars: chart.bars });
+		if (layout.isHorizontal) {
+			this._renderHorizontalBars({ layout, bars: chart.bars });
 		} else {
-			this._renderVerticalBars({ plot, layout, bars: chart.bars });
+			this._renderVerticalBars({ layout, bars: chart.bars });
 		}
 		
-		this._applyBarInteractions(plot);
+		this._applyBarInteractions();
 		
 		return true;
 	}
 	
-	_renderAxes({ plot, layout }) {
-		const { x, y, innerWidth, innerHeight } = layout;
-		
-		const {
-			mapping,
-			xAxisConfig,
-			yAxisConfig,
-			xLabelAngle,
-			xLabelOffset,
-			yLabelOffset
-		} = this._state || {};
-		
-		const yTickFormatter = this._buildTickFormatter(
-			yAxisConfig?.tickFormat || (layout.stack?.normalized ? "percent" : "raw")
-		);
-		
-		if (layout.direction === "horizontal") {
-			plot
-			.append("g")
-			.attr("class", "x-axis")
-			.attr("transform", `translate(0,${innerHeight})`)
-			.call(this._buildValueAxis("bottom", x.scale, yTickFormatter, yAxisConfig, x.scaleType));
-			
-			plot
-			.append("g")
-			.attr("class", "y-axis")
-			.call(d3.axisLeft(y.scale));
-			
-			this._renderAxisTitles({
-				plot,
-				innerWidth,
-				innerHeight,
-				bottomTitle: this._resolveAxisTitle(mapping?.y?.axis, y.field),
-				leftTitle: this._resolveAxisTitle(mapping?.x?.axis, x.field)
-			});
-			
-			return;
-		}
-		
-		plot
-		.append("g")
-		.attr("class", "x-axis")
-		.attr("transform", `translate(0,${innerHeight})`)
-		.call(d3.axisBottom(x.scale))
-		.selectAll("text")
-		.style("text-anchor", xLabelAngle ? "end" : "middle")
-		.attr(
-			"transform",
-			xLabelAngle
-			? `translate(${xLabelOffset.x},${xLabelOffset.y}) rotate(${xLabelAngle})`
-			: `translate(${xLabelOffset.x},${xLabelOffset.y})`
-		);
-		
-		plot
-		.append("g")
-		.attr("class", "y-axis")
-		.call(this._buildValueAxis("left", y.scale, yTickFormatter, yAxisConfig, y.scaleType))
-		.selectAll("text")
-		.attr("transform", `translate(${yLabelOffset.x},${yLabelOffset.y})`);
-		
-		this._renderAxisTitles({
-			plot,
-			innerWidth,
-			innerHeight,
-			bottomTitle: this._resolveAxisTitle(mapping?.x?.axis, x.field),
-			leftTitle: this._resolveAxisTitle(mapping?.y?.axis, y.field)
-		});
-	}
-	
-
-	_renderVerticalBars({ plot, layout, bars = [] }){
+	_renderVerticalBars({ layout, bars = [] }){
 		const { x, y, group, innerHeight, mode } = layout
 
 		const visibleBars = bars.filter(d => d.observed !== false)
@@ -131,7 +61,7 @@ export default class BarChartRenderer extends CartesianChartRenderer {
 			return Math.max(0, innerHeight - y.scale(d.value));
 		};
 
-		plot
+		this.chartGroup
 			.append("g")
 			.attr("class", "bars")
 			.selectAll("rect")
@@ -148,7 +78,7 @@ export default class BarChartRenderer extends CartesianChartRenderer {
 
 	}
 
-	_renderHorizontalBars({ plot, layout, bars }) {
+	_renderHorizontalBars({ layout, bars }) {
 		const { x, y, group, innerHeight, mode } = layout
 
 		const visibleBars = bars.filter(d => d.observed !== false)
@@ -188,7 +118,7 @@ export default class BarChartRenderer extends CartesianChartRenderer {
 			return y.scale.bandwidth();
 		};
 
-		plot
+		this.chartGroup
 			.append("g")
 			.attr("class", "bars")
 			.selectAll("rect")
@@ -204,68 +134,68 @@ export default class BarChartRenderer extends CartesianChartRenderer {
 			.attr("stroke-width", (d) => this._getMarkStrokeWidth(d.datum, MARK_TYPES.BARS));
 	}
 
-	_renderHorizontalSimpleBars({ plot, layout, bars }) {
-		const { x, y } = layout;
+	// _renderHorizontalSimpleBars({ plot, layout, bars }) {
+	// 	const { x, y } = layout;
 		
-		const barGroup = plot
-			.append("g")
-			.attr("class", "bars")
+	// 	const barGroup = plot
+	// 		.append("g")
+	// 		.attr("class", "bars")
 		
-		barGroup.selectAll("rect")
-			.data(bars || [])
-			.enter()
-			.append("rect")
-			.attr("x", 0)
-			.attr("y", (d) => y.scale(d.x))
-			.attr("width", (d) => Math.max(0, x.scale(d.value)))
-			.attr("height", y.scale.bandwidth())
-			.attr("fill", (d) => this._getMarkColor(d.datum, MARK_TYPES.BARS))
-			.attr("stroke", "#ffffff")
-			.attr("stroke-width", (d) => this._getMarkStrokeWidth(d.datum, MARK_TYPES.BARS));
-	}
+	// 	barGroup.selectAll("rect")
+	// 		.data(bars || [])
+	// 		.enter()
+	// 		.append("rect")
+	// 		.attr("x", 0)
+	// 		.attr("y", (d) => y.scale(d.x))
+	// 		.attr("width", (d) => Math.max(0, x.scale(d.value)))
+	// 		.attr("height", y.scale.bandwidth())
+	// 		.attr("fill", (d) => this._getMarkColor(d.datum, MARK_TYPES.BARS))
+	// 		.attr("stroke", "#ffffff")
+	// 		.attr("stroke-width", (d) => this._getMarkStrokeWidth(d.datum, MARK_TYPES.BARS));
+	// }
 
-	_renderHorizontalGroupedBars({ plot, layout, bars }) {
-		const { x, y, group } = layout;
-		const observed = (bars || []).filter((d) => d.observed !== false);
+	// _renderHorizontalGroupedBars({ plot, layout, bars }) {
+	// 	const { x, y, group } = layout;
+	// 	const observed = (bars || []).filter((d) => d.observed !== false);
 		
-		const barGroup = plot
-			.append("g")
-			.attr("class", "bars")
+	// 	const barGroup = plot
+	// 		.append("g")
+	// 		.attr("class", "bars")
 		
-		barGroup.selectAll("rect")
-			.data(observed)
-			.enter()
-			.append("rect")
-			.attr("x", 0)
-			.attr("y", (d) => y.scale(d.x) + (group?.scale?.(d.sub) || 0))
-			.attr("width", (d) => Math.max(0, x.scale(d.value)))
-			.attr("height", group?.scale?.bandwidth?.() || y.scale.bandwidth())
-			.attr("fill", (d) => this._getMarkColor(d.datum, MARK_TYPES.BARS))
-			.attr("stroke", "#ffffff")
-			.attr("stroke-width", (d) => this._getMarkStrokeWidth(d.datum, MARK_TYPES.BARS));
-	}
+	// 	barGroup.selectAll("rect")
+	// 		.data(observed)
+	// 		.enter()
+	// 		.append("rect")
+	// 		.attr("x", 0)
+	// 		.attr("y", (d) => y.scale(d.x) + (group?.scale?.(d.sub) || 0))
+	// 		.attr("width", (d) => Math.max(0, x.scale(d.value)))
+	// 		.attr("height", group?.scale?.bandwidth?.() || y.scale.bandwidth())
+	// 		.attr("fill", (d) => this._getMarkColor(d.datum, MARK_TYPES.BARS))
+	// 		.attr("stroke", "#ffffff")
+	// 		.attr("stroke-width", (d) => this._getMarkStrokeWidth(d.datum, MARK_TYPES.BARS));
+	// }
 
-	_renderHorizontalStackedBars({ plot, layout, bars }) {
-		const { x, y } = layout;
+	// _renderHorizontalStackedBars({ plot, layout, bars }) {
+	// 	const { x, y } = layout;
 
-		plot
-			.append("g")
-			.attr("class", "bars")
-			.selectAll("rect")
-			.data((bars || []).filter((d) => d.observed !== false))
-			.enter()
-			.append("rect")
-			.attr("x", (d) => x.scale(d.y0))
-			.attr("y", (d) => y.scale(d.x))
-			.attr("width", (d) => Math.max(0, x.scale(d.y1) - x.scale(d.y0)))
-			.attr("height", y.scale.bandwidth())
-			.attr("fill", (d) => this._getMarkColor(d.datum, MARK_TYPES.BARS))
-			.attr("stroke", "#ffffff")
-			.attr("stroke-width", (d) => this._getMarkStrokeWidth(d.datum, MARK_TYPES.BARS));
-	}
+	// 	plot
+	// 		.append("g")
+	// 		.attr("class", "bars")
+	// 		.selectAll("rect")
+	// 		.data((bars || []).filter((d) => d.observed !== false))
+	// 		.enter()
+	// 		.append("rect")
+	// 		.attr("x", (d) => x.scale(d.y0))
+	// 		.attr("y", (d) => y.scale(d.x))
+	// 		.attr("width", (d) => Math.max(0, x.scale(d.y1) - x.scale(d.y0)))
+	// 		.attr("height", y.scale.bandwidth())
+	// 		.attr("fill", (d) => this._getMarkColor(d.datum, MARK_TYPES.BARS))
+	// 		.attr("stroke", "#ffffff")
+	// 		.attr("stroke-width", (d) => this._getMarkStrokeWidth(d.datum, MARK_TYPES.BARS));
+	// }
 
-	_applyBarInteractions(plot) {
-		const bars = plot.selectAll(".bars rect");
+	_applyBarInteractions() {
+		const bars = this.chartGroup.selectAll(".bars rect");
 		if (!bars.size()) return;
 		
 		bars
@@ -295,10 +225,7 @@ export default class BarChartRenderer extends CartesianChartRenderer {
 	_focusMark({ mark, activeElement } = {}) {
 		if (mark !== "bar" || !activeElement) return;
 		
-		const plot = this._state?.plot;
-		if (!plot) return;
-		
-		plot.selectAll(".bars rect")
+		this.chartGroup.selectAll(".bars rect")
 			.attr("opacity", function () {
 				return this === activeElement ? 1 : 0.2;
 			})
@@ -315,16 +242,12 @@ export default class BarChartRenderer extends CartesianChartRenderer {
 	_resetFocusMark({ mark } = {}) {
 		if (mark && mark !== "bar") return;
 		
-		const plot = this._state?.plot;
-		if (!plot) return;
-		
-		plot
-		.selectAll(".bars rect")
-		.attr("opacity", 1)
-		.attr("stroke", "#ffffff")
-		.attr("stroke-width", function () {
-			const base = Number(this.getAttribute("data-base-stroke-width"));
-			return Number.isFinite(base) && base >= 0 ? base : 0;
-		});
+		this.chartGroup.selectAll(".bars rect")
+			.attr("opacity", 1)
+			.attr("stroke", "#ffffff")
+			.attr("stroke-width", function () {
+				const base = Number(this.getAttribute("data-base-stroke-width"));
+				return Number.isFinite(base) && base >= 0 ? base : 0;
+			});
 	}
 }

@@ -70,6 +70,15 @@ export function normalizeScaleType(type, fallback = SCALE_TYPES.ORDINAL) {
 	: fallback;
 }
 
+export function isCountScaleType(type) {
+	return SCALE_TYPES.COUNT === normalizeScaleType(type)
+}
+
+export function isOrdinalScaleType(type) {
+	let normalizedType = normalizeScaleType(type)
+	return normalizedType === SCALE_TYPES.ORDINAL || normalizedType === SCALE_TYPES.BAND || normalizedType === SCALE_TYPES.POINT
+}
+
 export function isQuantitativeScaleType(type) {
 	return QUANTITATIVE_TYPES.has(normalizeScaleType(type));
 }
