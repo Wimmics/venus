@@ -48,8 +48,6 @@ export class DomainCalculator {
 		
 		// Extract unique values for the requested field.
 		const extractedValues = this.getVal(data, field);
-		console.log(field, extractedValues)
-		console.log("data = ", data)
 		
 		if (extractedValues.length === 0) {
 			console.warn(`No values found in data for field "${field}"`);
@@ -235,12 +233,13 @@ export class DomainCalculator {
 				}
 			});
 			
-			const result = Array.from(values);
+			const result = Array.from(values).flat()
+			const uniqueValues = result.filter((d,i) => result.indexOf(d) === i)
 			
 			// Cache field stats for optional diagnostics.
-			this.cacheFieldStats(field, result, data.length);
+			this.cacheFieldStats(field, uniqueValues, data.length);
 			
-			return result;
+			return uniqueValues;
 		}
 		
 		/**
@@ -251,6 +250,7 @@ export class DomainCalculator {
 		* @returns {Array} Sorted values
 		*/
 		sortDomainValues(values, scaleType) {
+			
 			if (isOrdinalScaleType(scaleType)) {
 				// Alphanumeric sort for ordinal scales.
 				return [ ...values ].sort((a, b) => {

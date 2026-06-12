@@ -123,6 +123,7 @@ export class ColorLegend extends HTMLElement {
 		`;
 		}).join("");
 		
+		
 		const moreInfo = range.length > maxShown ? `<div class="more-info">+${range.length - maxShown} more bins</div>` : "";
 		
 		return { items, moreInfo };

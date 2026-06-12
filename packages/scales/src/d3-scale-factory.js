@@ -42,8 +42,6 @@ export class D3ScaleFactory {
 			field,
 			scaleType: scaleTypeForDomain,
 		});
-
-		console.log('domain =', domain)
 		
 		// If no domain, then cancel the operation
 		if (!Array.isArray(domain) || domain.length === 0) return null;
@@ -486,24 +484,24 @@ export class D3ScaleFactory {
 					max: Math.max(...userDomain) }, 
 					bins: null
 				}
-			}
+		}
 			
-			return domainResult;
+		return domainResult;
+	}
+		
+	resolveRange({ scaleConfig, data, field, scaleType }) {
+		const userRange = scaleConfig.range;
+		
+		if (!isQuantitativeScaleType(scaleType)) {
+			return Array.isArray(userRange) ? userRange : [];
 		}
 		
-		resolveRange({ scaleConfig, data, field, scaleType }) {
-			const userRange = scaleConfig.range;
-			
-			if (!isQuantitativeScaleType(scaleType)) {
-				return Array.isArray(userRange) ? userRange : [];
-			}
-			
-			return this.sizeRangeCalculator.createSizeRange({
-				data,
-				field,
-				scaleType,
-				range: userRange,
-				label: `Size[${field}]`
-			});
-		}
+		return this.sizeRangeCalculator.createSizeRange({
+			data,
+			field,
+			scaleType,
+			range: userRange,
+			label: `Size[${field}]`
+		});
 	}
+}

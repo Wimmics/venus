@@ -271,7 +271,7 @@ export class SizeLegend extends HTMLElement {
 		}
 
 		const samples = this._encoding?.legend?.samples || []; 
-		console.log("[samples]", samples)
+	
 		const width = 150;
 
 		const content = root.select(".legend-content")

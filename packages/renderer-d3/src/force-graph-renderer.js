@@ -349,7 +349,6 @@ export default class ForceGraphRenderer extends BaseRenderer {
 		if (!activeDatum) return;
 
 		if (mark === MARK_TYPES.NODES){
-			console.log("hovered node = ", activeDatum)
 			const activeNodeId = activeDatum.id;
 
 			const relatedLinks = this.links.filter((link) =>

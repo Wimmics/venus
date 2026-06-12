@@ -25,8 +25,8 @@ export function createLegends(config = {}) {
 		const legendEncoding = {
 			field: item.field,
 			scale: {
-				domain: typeof scale.domain === "function" ? scale.domain() : [],
-				range: typeof scale.range === "function" ? scale.range() : []
+				domain: item.domain || scale.domain() || [],
+				range: item.range || scale.range() || []
 			},
 			legend: {
 				title: item.title || item.field || "Legend",
