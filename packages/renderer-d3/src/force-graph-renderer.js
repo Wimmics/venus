@@ -4,6 +4,9 @@ import BaseRenderer from "./base-renderer.js";
 import { ATTRIBUTE_TYPES, CHANNEL_TYPES, MARK_DEFAULTS, MARK_TYPES } from "@wimmics/venus-core";
 
 export default class ForceGraphRenderer extends BaseRenderer {
+	/**
+	 * Initialize graph-specific rendering state and interaction handles.
+	 */
 	constructor(opts = {}) {
 		super(opts);
 		this.simulation = null;
@@ -16,20 +19,54 @@ export default class ForceGraphRenderer extends BaseRenderer {
 		this.links = [];
 	}
 	
+	/**
+	 * Return the renderer payload shape used for rerenders and resize updates.
+	 */
 	_defaultPayload() {
 		return { nodes: this.nodes, links: this.links };
 	}
 	
+	/**
+	 * Store incoming graph data on the renderer instance.
+	 */
 	_ingestRenderPayload(payload = { nodes: [], links: [] }) {
 		this.nodes = payload?.nodes || [];
 		this.links = payload?.links || [];
 	}
 	
+	/**
+	 * Abort rendering when there are no nodes to simulate or draw.
+	 */
 	_validateState() {
 		if (!this.nodes?.length) return "No data to visualize";
 		return null;
 	}
+
+	/**
+	 * Expand multi-valued logical links into independently renderable curved edges.
+	 */
+	_expandLinksForRendering(links = []) {
+		return links.flatMap((link) => {
+			const values =
+			Array.isArray(link.values) && link.values.length
+				? link.values
+				: [{ key: link.label || link.type, label: link.label || link.type, data: link }];
+
+			return values.map((value, index) => ({
+				...link,
+				// Keep a pointer to the simulated link object so geometry uses live node positions.
+				baseLink: link,
+				renderIndex: index,
+				renderCount: values.length,
+				renderValue: value,
+				label: value.label || value.key || link.label || link.type
+			}));
+		});
+	}
 	
+	/**
+	 * Build the full graph scene: defs, marks, interactions, and force simulation.
+	 */
 	_renderVis() {
 		
 		// Define arrow heads for directional links
@@ -49,6 +86,8 @@ export default class ForceGraphRenderer extends BaseRenderer {
 		this.nodes = this.nodes.filter((n) => n && n.id != null);
 		this.links = (this.links || []).filter((l) => l && l.source != null && l.target != null);
 		
+		this.renderedLinks = this._expandLinksForRendering(this.links);
+
 		if (!this.nodes.length) {
 			this._renderCenteredMessage(this._state.width, this._state.height, "No data to visualize");
 			return false;
@@ -75,60 +114,63 @@ export default class ForceGraphRenderer extends BaseRenderer {
 		return true;
 	}
 
-	_drawLinks(){
-		// Draw links
+	/**
+	 * Render link groups, strokes, and labels for every expanded edge.
+	 */
+	_drawLinks() {
 		this.linkGroups = this.chartGroup
 			.append("g")
 			.attr("class", "links")
-			.selectAll("g")
-			.data(this.links)
+			.selectAll("g.link")
+			.data(this.renderedLinks)
 			.enter()
-				.append("g")
-			
-		this.linkGroups
-			.append("line")
-			.attr("class", d => d.type || "directional") // Important for styling according to link type (cf. css)
-			.attr("stroke", (d) => this._getMarkColor(d, MARK_TYPES.LINKS))
-			.attr("stroke-width", (d) => this._getMarkSize(d, MARK_TYPES.LINKS))
+			.append("g")
+			.attr("class", "link");
+
+		this.linkPaths = this.linkGroups
+			.append("path")
+			.attr("id", (d, index) => `venus-link-path-${index}`)
+			.attr("class", (d) => d.type || "directional")
+			.attr("fill", "none")
+			.attr("stroke", (d) =>
+				this._getMarkColor(d.renderValue?.data || d, MARK_TYPES.LINKS)
+			)
+			.attr("stroke-width", (d) =>
+				this._getMarkSize(d.renderValue?.data || d, MARK_TYPES.LINKS)
+			);
 
 		this.linkLabels = this.linkGroups
 			.filter((d) => this._displayLabel(d, "links"))
 			.append("g")
-			.attr("class", "link-label")
+			.attr("class", "link-label");
 
-		this.linkLabels.append("rect")
-			.attr("class", "link-label-bg")
-			.attr("rx", 2)
-			.attr("ry", 2)
-			.attr("fill", "white")
-			.attr("fill-opacity", 0.8)
+			this.linkLabels.append("text")
+				.style("pointer-events", "none")
+				.style("font-size", "10px")
+				.style("fill", "#555")
+				.style("paint-order", "stroke")
+				.style("stroke", "#ffffff")
+				.style("stroke-width", "3px")
+				.style("stroke-linejoin", "round")
+				.append("textPath")
+				.attr("href", function () {
+					// Resolve the sibling path inside the same rendered link group.
+					const linkGroup = this.closest("g.link");
+					const pathId = linkGroup
+						? d3.select(linkGroup).select("path").attr("id")
+						: null;
+					return pathId ? `#${pathId}` : null;
+				})
+				.attr("startOffset", "50%")
+				.attr("text-anchor", "middle")
+				.text((d) => d.label || d.relation || d.type || "");
 
-		this.linkLabels.append("text")
-			.attr("text-anchor", "middle")
-			.attr("dominant-baseline", "middle")
-			.style("pointer-events", "none")
-			.style("font-size", "10px")
-			.style("fill", "#555")
-			.text((d) => d.label || d.relation || d.type || "")
-
-		this.linkLabels.each(function () {
-			const g = d3.select(this);
-			const text = g.select("text").node();
-			if (!text) return;
-
-			const bbox = text.getBBox();
-			const padding = 2;
-
-			g.select("rect")
-				.attr("x", bbox.x - padding)
-				.attr("y", bbox.y - padding)
-				.attr("width", bbox.width + padding * 2)
-				.attr("height", bbox.height + padding * 2);
-		});
-
-		this._setLinkEvents()
+		this._setLinkEvents();
 	}
 
+	/**
+	 * Render node containers, circles, and optional labels.
+	 */
 	_drawNodes() {
 		// Create nodes group
 		this.nodeGroups = this.chartGroup
@@ -157,6 +199,9 @@ export default class ForceGraphRenderer extends BaseRenderer {
 		this._setNodeEvents()
 	}
 
+	/**
+	 * Apply initial label opacity before any zoom interaction occurs.
+	 */
 	_setInitialLabelsOpacity(){
 
 		const initialZoom = this.interactions.zoom ? d3.zoomTransform(this.svg.node()).k : 1;
@@ -166,7 +211,93 @@ export default class ForceGraphRenderer extends BaseRenderer {
 		this.linkLabels.style("opacity", (d) => this._computeLabelOpacity(d, MARK_TYPES.LINKS, initialZoom));
 	}
 
+	// Link helpers
+
+	/**
+	 * Resolve the rendered radius for a node from its size encoding.
+	 */
+	_getNodeRadius(node) {
+		return this._getMarkSize(node, MARK_TYPES.NODES);
+	}
+
+	/**
+	 * Read source/target endpoints from the live simulated link when available.
+	 */
+	_getResolvedLinkEndpoints(link) {
+		const baseLink = link?.baseLink || link;
+
+		return {
+			source: baseLink?.source || link?.source || null,
+			target: baseLink?.target || link?.target || null
+		};
+	}
+
+	/**
+	 * Compute the trimmed and optionally curved geometry for one rendered link.
+	 */
+	_getRenderedLinkGeometry(d) {
+		const { source, target } = this._getResolvedLinkEndpoints(d);
+
+		if (
+			!source || !target ||
+			!Number.isFinite(source.x) || !Number.isFinite(source.y) ||
+			!Number.isFinite(target.x) || !Number.isFinite(target.y)
+		) {
+			return null;
+		}
+
+		const dx = target.x - source.x;
+		const dy = target.y - source.y;
+		const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+
+		const ux = dx / dist;
+		const uy = dy / dist;
+
+		const sr = this._getNodeRadius(source);
+		const tr = this._getNodeRadius(target);
+
+		const x1 = source.x + ux * sr;
+		const y1 = source.y + uy * sr;
+		const x2 = target.x - ux * tr;
+		const y2 = target.y - uy * tr;
+
+		const renderIndex = Number(d.renderIndex || 0);
+		const renderCount = Number(d.renderCount || 1);
+		// Spread parallel links symmetrically around the centerline.
+		const offsetIndex = renderIndex - (renderCount - 1) / 2;
+
+		const curvature = offsetIndex * 18;
+
+		const mx = (x1 + x2) / 2;
+		const my = (y1 + y2) / 2;
+
+		const nx = -uy;
+		const ny = ux;
+
+		const cx = mx + nx * curvature;
+		const cy = my + ny * curvature;
+
+		return { x1, y1, x2, y2, cx, cy, curvature };
+	}
+
+	/**
+	 * Convert computed link geometry into an SVG path string.
+	 */
+	_getRenderedLinkPath(d) {
+		const g = this._getRenderedLinkGeometry(d);
+		if (!g) return "";
+
+		if (Math.abs(g.curvature) < 1e-6) {
+			return `M${g.x1},${g.y1}L${g.x2},${g.y2}`;
+		}
+
+		return `M${g.x1},${g.y1}Q${g.cx},${g.cy} ${g.x2},${g.y2}`;
+	}
+
 	// Visual helpers
+	/**
+	 * Fade labels in or out based on zoom level and local mark size.
+	 */
 	_computeLabelOpacity(d, mark, zoomK) {
 		const interpolate = (value, min, max) => {
 			if (value <= min) return 0;
@@ -194,9 +325,11 @@ export default class ForceGraphRenderer extends BaseRenderer {
 		return zoomOpacity;
 	}
 
+	/**
+	 * Measure the current screen-space length of a link.
+	 */
 	_getLinkLength(link) {
-		const source = link?.source;
-		const target = link?.target;
+		const { source, target } = this._getResolvedLinkEndpoints(link);
 
 		if (
 			!source || !target ||
@@ -214,6 +347,9 @@ export default class ForceGraphRenderer extends BaseRenderer {
 		return Math.sqrt(dx * dx + dy * dy);
 	}
 
+	/**
+	 * Keep the legacy midpoint/angle helper available for straight-label fallbacks.
+	 */
 	_getLinkLabelPosition(link) {
 		const source = link.source;
 		const target = link.target;
@@ -242,11 +378,17 @@ export default class ForceGraphRenderer extends BaseRenderer {
 		return { x, y, angle };
 	}
 
+	/**
+	 * Resolve the configured force-link distance attribute.
+	 */
 	_getLinkDistance() {
 		return this._resolveAttribute({ mark: MARK_TYPES.LINKS, attribute: ATTRIBUTE_TYPES.DISTANCE })?.value
 	}
 		
 	// Event helpers
+	/**
+	 * Enable pan/zoom and keep label opacity synchronized with the zoom factor.
+	 */
 	_setZoomBehavior() {
 		if (this.interactions.zoom) {
 			this.zoomBehavior = d3
@@ -266,6 +408,9 @@ export default class ForceGraphRenderer extends BaseRenderer {
 		}
 	}
 
+	/**
+	 * Bind hover interactions to rendered links.
+	 */
 	_setLinkEvents() {
 		this.linkGroups.on("mouseover", (event, d) => {
 			this._focusMark({ mark: MARK_TYPES.LINKS, activeDatum: d })
@@ -283,6 +428,9 @@ export default class ForceGraphRenderer extends BaseRenderer {
 		})
 	}
 
+	/**
+	 * Bind hover, click, and context-menu interactions to nodes.
+	 */
 	_setNodeEvents() {
 		this.nodeGroups.on("mouseover", (event, d) => {
 			this._focusMark({ mark: MARK_TYPES.NODES, activeDatum: d });
@@ -317,6 +465,9 @@ export default class ForceGraphRenderer extends BaseRenderer {
 		}));
 	}
 
+	/**
+	 * Attach D3 drag behavior to nodes and feed changes back into the simulation.
+	 */
 	_setDragAndDrop() {
 		if (!this.interactions.drag) return
 
@@ -345,6 +496,9 @@ export default class ForceGraphRenderer extends BaseRenderer {
 		}
 	}
 	
+	/**
+	 * Highlight the active node or link while downplaying unrelated marks.
+	 */
 	_focusMark({ mark, activeDatum } = {}) {
 		if (!activeDatum) return;
 
@@ -371,8 +525,10 @@ export default class ForceGraphRenderer extends BaseRenderer {
 		}
 
 		if (mark === MARK_TYPES.LINKS){
-			const sourceId = activeDatum.source?.id ?? activeDatum.source;
-			const targetId = activeDatum.target?.id ?? activeDatum.target;
+			const { source, target } = this._getResolvedLinkEndpoints(activeDatum);
+			const sourceId = source?.id ?? source;
+			const targetId = target?.id ?? target;
+			const activeBaseLink = activeDatum?.baseLink || activeDatum;
 			const relatedNodeIds = new Set([sourceId, targetId]);
 
 			this.nodeGroups?.classed(
@@ -382,13 +538,16 @@ export default class ForceGraphRenderer extends BaseRenderer {
 
 			this.linkGroups?.classed(
 				"link-downplayed",
-				(link) => link !== activeDatum
+				(link) => (link?.baseLink || link) !== activeBaseLink
 			);
 
 			return
 		}
 	}
 	
+	/**
+	 * Remove any focus/downplay classes applied during hover interactions.
+	 */
 	_resetFocusMark() {
 		this.nodeGroups?.classed("node-downplayed", false);
   		this.linkGroups?.classed("link-downplayed", false);
@@ -396,6 +555,9 @@ export default class ForceGraphRenderer extends BaseRenderer {
 
 	// Graph placement helpers
 
+	/**
+	 * Configure and run the force simulation, then update SVG positions on every tick.
+	 */
 	_setSimulation() {
 		this.simulation = d3
 			.forceSimulation(this.nodes)
@@ -428,33 +590,6 @@ export default class ForceGraphRenderer extends BaseRenderer {
 			return { x: 0, y: offset, anchor: "middle", baseline: "hanging" };
 		};
 
-		const calculateLinkPosition = (lnk) => {
-			const source = lnk.source;
-			const target = lnk.target;
-			if (Number.isNaN(source.x) || Number.isNaN(source.y) || Number.isNaN(target.x) || Number.isNaN(target.y)) {
-				return { x1: 0, y1: 0, x2: 0, y2: 0 };
-			}
-			
-			const dx = target.x - source.x;
-			const dy = target.y - source.y;
-			const dist = Math.sqrt(dx * dx + dy * dy);
-			if (dist === 0) return { x1: source.x, y1: source.y, x2: target.x, y2: target.y };
-			
-			const sr = this._getMarkSize(source, MARK_TYPES.NODES);
-			const tr = this._getMarkSize(target, MARK_TYPES.NODES);
-			
-			const ux = dx / dist;
-			const uy = dy / dist;
-			
-			return {
-				x1: source.x + ux * sr,
-				y1: source.y + uy * sr,
-				x2: target.x - ux * tr,
-				y2: target.y - uy * tr
-			};
-		};
-		
-
 		const constrainNode = (d) => {
 			const r = this._getMarkSize(d, MARK_TYPES.NODES);
 			d.x = Math.max(r, Math.min(this._state.width - r, d.x));
@@ -467,32 +602,10 @@ export default class ForceGraphRenderer extends BaseRenderer {
 				this.nodeGroups.each(constrainNode);
 			}
 
-			if (!this.linkGroups) return
-			
-			this.linkGroups.each(function (d) {
-				const p = calculateLinkPosition(d);
-				d3.select(this)
-					.selectAll('line')
-					.attr("x1", p.x1)
-					.attr("y1", p.y1)
-					.attr("x2", p.x2)
-					.attr("y2", p.y2);
-			});
+			this.linkPaths.attr("d", (d) => this._getRenderedLinkPath(d));
 
-			
-			this.linkLabels
-				.attr("x", (d) => this._getLinkLabelPosition(d).x)
-				.attr("y", (d) => this._getLinkLabelPosition(d).y)
-				.attr("transform", (d) => {
-					const p = this._getLinkLabelPosition(d);
-					return `rotate(${p.angle},${p.x},${p.y})`;
-				});
-
-
-			this.linkLabels.attr("transform", (d) => {
-				const p = this._getLinkLabelPosition(d);
-				return `translate(${p.x},${p.y}) rotate(${p.angle})`;
-			});
+			// Labels ride directly on textPath-linked curves, so no extra transform is needed.
+			this.linkLabels.attr("transform", null);
 			
 			
 			this.nodeGroups.attr("transform", (d) => {
@@ -526,6 +639,9 @@ export default class ForceGraphRenderer extends BaseRenderer {
 		});
 	}
 
+	/**
+	 * Fit the current simulated node cloud inside the viewport after stabilization.
+	 */
 	_applyInitialZoomFit() {
 		if (!this.interactions.zoom || !this.zoomBehavior) return;
 
@@ -574,6 +690,9 @@ export default class ForceGraphRenderer extends BaseRenderer {
 		this.svg.call(this.zoomBehavior.transform, transform);
 	};
 
+	/**
+	 * Update viewport size and nudge the simulation toward the new center.
+	 */
 	resize(width, height) {
 		this.width = width || this.width;
 		this.height = height || this.height;
@@ -583,6 +702,9 @@ export default class ForceGraphRenderer extends BaseRenderer {
 		}
 	}
 	
+	/**
+	 * Stop simulation work and release DOM/simulation references.
+	 */
 	destroy() {
 		try {
 			if (this.simulation) {
