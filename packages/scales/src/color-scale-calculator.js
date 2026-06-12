@@ -416,7 +416,7 @@ export class ColorScaleCalculator {
 	}
 	
 	/** Build the final D3 scale object. */
-	_createD3Scale(domain, finalRange, scaleType, originalRange, label) {
+	_createD3Scale(domain, finalRange, scaleType, originalRange) {
 		// Cycle colors if range is shorter than domain.
 		const finalColors = domain.map((_, i) => finalRange[i % finalRange.length]);
 		
@@ -511,16 +511,4 @@ export class ColorScaleCalculator {
 			return d3.schemeCategory10.slice(0, Math.min(size, 10));
 		}
 	}
-}
-
-// Utility wrapper for compatibility with existing call sites.
-export function parseD3ColorScheme(schemeName, scaleType = 'ordinal') {
-	const calculator = new ColorScaleCalculator();
-	return calculator.parseD3ColorScheme(schemeName, scaleType);
-}
-
-// Utility wrapper that returns a ready-to-use D3 color scale.
-export function createColorScale({ domain, range, scaleType = 'ordinal', fallbackInterpolator = null, label = "Color" }) {
-	const calculator = new ColorScaleCalculator();
-	return calculator.createColorScale({ domain, range, scaleType, fallbackInterpolator, label });
 }

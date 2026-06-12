@@ -59,15 +59,15 @@
       "id": "linechart-simple",
       "name": "Simple Line Chart: Harrison Ford Co-Stars per Movie",
       "encodingPath": "./encoding/linechart-simple.json",
-      "queryPath": "./queries/redford-costars-count.rq",
-      "endpoint": "https://dbpedia.org/sparql",
+      "queryPath": "./queries/films-per-year.rq",
+      "endpoint": "https://query.wikidata.org/sparql",
       "component": "venus-linechart"
     },
     {
       "id": "linechart-multilines",
       "name": "Multiline Line Chart: Temporal evolution of birth rate per country",
       "encodingPath": "./encoding/linechart-multilines.json",
-      "queryPath": "./queries/country-population-per-year.rq",
+      "queryPath": "./queries/films-per-year-genre.rq",
       "endpoint": "https://query.wikidata.org/sparql",
       "component": "venus-linechart"
     },

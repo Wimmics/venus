@@ -7,13 +7,12 @@ export class CartesianVisualArtifacts extends VisualArtifacts {
 	_processChartSpecificArtifacts() {
 		const { encoding, data, chart, width, height } = this._payload;
 
-		console.log("bars encoding = ", encoding)
-
-		const rows = Object.values(data)[0];
+		// console.log("cartesian encoding = ", encoding)
+		// console.log("cartesian chart = ", chart)
 		
 		this._processLayoutArtifacts({ 
 			encoding, 
-			rows: rows, 
+			rows: Object.values(data)[0], 
 			chart,
 			width, 
 			height 
@@ -21,14 +20,16 @@ export class CartesianVisualArtifacts extends VisualArtifacts {
 	}
 	
 	_processLayoutArtifacts({ encoding, rows, chart, width, height }) {
-	
+		
 		const isHorizontal = encoding?.direction === "horizontal";
 
+		const layoutEncoding = isHorizontal ? { ...encoding, x: encoding.y, y: encoding.x } : encoding;
+
 		// Resolve domains
-		const domainResult = this._getAxesDomain({ encoding, data: rows, chart, isHorizontal })
+		const domainResult = this._getAxesDomain({ encoding: layoutEncoding, data: rows, chart, isHorizontal })
 
 		// Build axis specs from resolved domains
-		const specsResult = this._getAxesSpecs({ encoding, domainResult })
+		const specsResult = this._getAxesSpecs({ encoding: layoutEncoding, domainResult })
 		
 		// Compute margin from axis specs
 		const finalMargin = this._computeCartesianMargins({
@@ -36,7 +37,7 @@ export class CartesianVisualArtifacts extends VisualArtifacts {
 				bottom: specsResult.x,
 				left: specsResult.y
 			},
-			userMargin: encoding?.margin || {}
+			userMargin: layoutEncoding?.margin || {}
 		});
 
 		// Compute inner size and ranges
@@ -52,70 +53,33 @@ export class CartesianVisualArtifacts extends VisualArtifacts {
 		}
 
 		// Create final scales using precomputed domain
-		const scaleResult = this._getScales({ encoding, range, domainResult, isHorizontal })
+		const scaleResult = this._getScales({ encoding: layoutEncoding, range, domainResult, isHorizontal })
 
 		// Compute tick values according to chart dimensions
-		const tickValuesResult = this._getTickValues({ encoding, scaleResult, dimensions: { x: innerWidth, y: innerHeight }})
+		const tickValuesResult = this._getTickValues({ encoding: layoutEncoding, scaleResult, dimensions: { x: innerWidth, y: innerHeight }})
 
 		// Create axes
-		const axesResult = this._getAxes({ encoding, scaleResult, tickValues: tickValuesResult })
+		const axesResult = this._getAxes({ encoding: layoutEncoding, scaleResult, tickValues: tickValuesResult })
 		
-		const stackMode = chart?.stackMode || "none";
+		// Layout specifics per chart
+		const chartExtras = this._resolveChartLayoutExtras({ encoding: layoutEncoding, chart, scaleResult, isHorizontal });
+
 		this.layout = {
 			margin: finalMargin,
 			innerWidth,
 			innerHeight,
-			mode: this._getChartMode(chart),
-			stackMode,
-			isHorizontal,
-			x: {
-				field: encoding?.x?.field,
-				axis: encoding?.x?.axis || {},
-				...scaleResult.x
-			},
-			y: {
-				field: encoding?.y?.field,
-				axis: encoding?.y?.axis || {},
-				...scaleResult.y
-			},
+			mode: chart?.mode || null,
+			x: { field: layoutEncoding?.x?.field, ...scaleResult.x },
+			y: { field: layoutEncoding?.y?.field, ...scaleResult.y },
 			axes: {
 				bottom: { ...axesResult.x, ...specsResult.x },
 				left: { ...axesResult.y, ...specsResult.y }
 			},
-			group: this._resolveGroups( { chart, bandResult: isHorizontal ? scaleResult.x : scaleResult.y } ),
-			stack: {
-				enabled: this._isStacked(chart),
-				normalized: this._getChartMode(chart) === "normalize",
-				mode: stackMode,
-				groupField: chart?.groupField
-			}
+			...chartExtras
 		};
 	}
 
-	_getChartMode(chart) {
-		return chart?.mode || 'simple'
-	}
-
-	_isStacked(chart) {
-		const mode = this._getChartMode(chart)
-		return mode === "stacked" || mode === "normalize"
-	}
-
-	_resolveFallbackType( { isHorizontal, axis }) {
-		if ( axis === "x" )
-			return isHorizontal ? SCALE_TYPES.LINEAR : SCALE_TYPES.BAND
-		else return isHorizontal ? SCALE_TYPES.BAND : SCALE_TYPES.LINEAR
-	}
-
-	_resolveGroups({ chart, bandResult }) {
-
-		return this._getChartMode(chart) === "grouped" && chart?.groupField && bandResult?.scale?.bandwidth
-			? this._createGroupScaleFromChart({
-				chart,
-				range: [0, bandResult.scale.bandwidth()]
-			})
-			: null;
-	}
+	
 
 	_getAxes( { encoding, scaleResult, tickValues }) {
 		const axes = { x: { orientation: "bottom"}, y: { orientation: "left"} }
@@ -152,13 +116,14 @@ export class CartesianVisualArtifacts extends VisualArtifacts {
 		return tickValues
 	}
 
-	_getScales( { encoding, range, domainResult, isHorizontal = false }) {
+	_getScales( { encoding, range, domainResult, isHorizontal }) {
 		const scales = { x: {}, y: {}}
 		
 		for (let key of Object.keys(scales)) {
 			scales[key] = this.scaleFactory.createLayoutScale({
+				scaleConfig: encoding?.[key]?.scale,
 				range: range[key],
-				fallbackType: this._resolveFallbackType({ isHorizontal, axis: key }),
+				fallbackType: SCALE_TYPES.LINEAR, 
 				domainResult: domainResult[key]
 			})
 		}
@@ -178,38 +143,7 @@ export class CartesianVisualArtifacts extends VisualArtifacts {
 		return specs
 	}
 
-	_getAxesDomain({ encoding, data, chart, isHorizontal = false }) {
-		const xScaleConfig = encoding?.x?.scale || {}
-		const yScaleConfig = encoding?.y?.scale || {}
-
-		const categoryScaleConfig = isHorizontal ? yScaleConfig : xScaleConfig;
-		const valueScaleConfig = isHorizontal ? xScaleConfig : yScaleConfig;
-
-		categoryScaleConfig.domain = chart?.xCategories || [];
-
-		if (this._getChartMode(chart) === "normalize") {
-			valueScaleConfig.domain = [0, 1];
-		} else if (this._isStacked(chart)) {
-			valueScaleConfig.domain = this._computeStackedYDomainFromChart(chart);
-		} else {
-			valueScaleConfig.domain = this._computeBarYDomainFromChart(chart);
-		}
-
-		return {
-			x: this.scaleFactory.resolveDomain({
-				scaleConfig: categoryScaleConfig,
-				data,
-				field: encoding?.x?.field || null,
-				scaleType: encoding?.x?.scale?.type || this._resolveFallbackType( { isHorizontal, axis: "x"})
-			}),
-			y: this.scaleFactory.resolveDomain({
-				scaleConfig: valueScaleConfig,
-				data,
-				field: encoding?.y?.field || null,
-				scaleType: encoding?.y?.scale?.type || this._resolveFallbackType( { isHorizontal, axis: "y" })
-			})
-		}
-	}
+	
 
 	_resolveAxisTickValues({ scale, scaleType, availableSize, axisConfig = {} }) {
 		if (Array.isArray(axisConfig.tickValues)) {
@@ -292,7 +226,6 @@ export class CartesianVisualArtifacts extends VisualArtifacts {
 			32,
 			Math.max(0, ...(axisSpec.tickLabels || []).map((d) => String(d).length))
 		);
-		console.log(side, maxChars)
 
 		const charWidth = 7;
 		const textHeight = 12;
@@ -306,7 +239,7 @@ export class CartesianVisualArtifacts extends VisualArtifacts {
 			labelAngle > 0
 			? labelWidth * Math.sin(radians) + textHeight * Math.cos(radians)
 			: textHeight;
-		console.log(side, projectedHeight)
+
 		if (side === "bottom") {
 			return {
 				x: innerWidth / 2,
@@ -415,34 +348,28 @@ export class CartesianVisualArtifacts extends VisualArtifacts {
 		};
 	}
 	
-	_computeStackedYDomainFromChart(chart) {
-		const bars = chart?.bars || [];
+	_getAxesDomain({ encoding, data }) {
+		const xScaleConfig = { ...(encoding?.x?.scale || {}) };
+		const yScaleConfig = { ...(encoding?.y?.scale || {}) };
 
-		const maxTotal = d3.max(bars, (bar) => Number(bar?.y1) || 0) || 0;
-
-		return [0, Math.max(1, maxTotal)];
-	}
-
-	_computeBarYDomainFromChart(chart) {
-		const bars = chart?.bars || [];
-		const maxValue = d3.max(bars, (bar) => Number(bar?.value) || 0) || 0;
-		return [0, Math.max(1, maxValue)];
-	}
-
-	_createGroupScaleFromChart({ chart, range }) {
-		const domain = chart?.subCategories || [];
-		
-		const scale = d3.scaleBand()
-			.domain(domain)
-			.range(range)
-			.padding(0.05);
-		
 		return {
-			field: chart?.groupField || chart?.splitField || null,
-			scale,
-			domain,
-			range,
-			scaleType: SCALE_TYPES.BAND
+			x: this.scaleFactory.resolveDomain({
+				scaleConfig: xScaleConfig,
+				data,
+				field: encoding?.x?.field || null,
+				scaleType: xScaleConfig?.type || SCALE_TYPES.LINEAR
+			}),
+			y: this.scaleFactory.resolveDomain({
+				scaleConfig: yScaleConfig,
+				data,
+				field: encoding?.y?.field || null,
+				scaleType: yScaleConfig?.type || SCALE_TYPES.LINEAR
+			})
 		};
+	}
+
+	// If necessary, implemented by subclass
+	_resolveChartLayoutExtras() {
+  		return {};
 	}
 }

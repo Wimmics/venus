@@ -1,0 +1,33 @@
+SELECT ?year ?genreLabel ?count
+WHERE {
+  {
+    SELECT ?year ?genre (COUNT(DISTINCT ?film) AS ?count)
+    WHERE {
+      VALUES ?genre {
+        wd:Q130232    # drama
+        wd:Q157443    # comedy
+        wd:Q188473    # action film
+        wd:Q2484376   # thriller
+        wd:Q200092    # horror film
+        wd:Q471839    # science fiction film
+        wd:Q1054574   # romance film
+        wd:Q319221    # adventure film
+        wd:Q2000929   # fantasy film
+        wd:Q959790    # crime film
+      }
+
+      ?film wdt:P136 ?genre ;
+            wdt:P577 ?releaseDate .
+
+      FILTER(?releaseDate >= "1900-01-01"^^xsd:dateTime)
+
+      BIND(YEAR(?releaseDate) AS ?year)
+    }
+    GROUP BY ?year ?genre
+  }
+
+  SERVICE wikibase:label {
+    bd:serviceParam wikibase:language "en" .
+  }
+}
+ORDER BY ?year ?genreLabel

@@ -1,21 +1,22 @@
 import { VIS_TYPES } from "@wimmics/venus-core";
+
 import { CartesianVisualArtifacts } from "./cartesian-visual-artifacts.js";
+import { BarChartVisualArtifacts } from "./barchart-visual-artifacts.js"
+import { LineChartVisualArtifacts } from "./linechart-visual-artifacts.js"
 import { GraphVisualArtifacts } from "./graph-visual-artifacts.js";
 
+
 export function createVisualArtifactsCompiler(visType) {
-	if (
-		visType === VIS_TYPES.VENUS_BARCHART ||
-		visType === VIS_TYPES.VENUS_LINECHART ||
-		visType === VIS_TYPES.VENUS_SCATTERPLOT
-	) {
-		return new CartesianVisualArtifacts();
+	switch (visType) {
+		case VIS_TYPES.VENUS_BARCHART:
+			return new BarChartVisualArtifacts()
+		case VIS_TYPES.VENUS_LINECHART:
+			return new LineChartVisualArtifacts()
+		case VIS_TYPES.VENUS_GRAPH:
+			return new GraphVisualArtifacts()
+		default:
+			return new CartesianVisualArtifacts()
 	}
-	
-	if (visType === VIS_TYPES.VENUS_GRAPH) {
-		return new GraphVisualArtifacts();
-	}
-	
-	return new VisualArtifacts();
 }
 
 export function emptyVisualArtifacts() {

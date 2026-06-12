@@ -3,12 +3,12 @@ import CartesianChartRenderer from "./cartesian-chart-renderer.js";
 import { CHANNEL_TYPES, MARK_TYPES } from "@wimmics/venus-core";
 
 export default class BarChartRenderer extends CartesianChartRenderer {
+
 	_renderVis() {
-		//const plot = this._state?.plot;
 		const layout = this.visualArtifacts?.layout;
 		const chart = this._state?.payload?.chart || this.chart;
 
-		console.log("[BarChart] artifacts = ", this.visualArtifacts)
+		this.barPadding = 3 // space between axis and first bar
 		
 		if (!layout?.x?.scale || !layout?.y?.scale || !chart) {
 			return false;
@@ -18,13 +18,10 @@ export default class BarChartRenderer extends CartesianChartRenderer {
 		
 		this._renderAxes({ layout }) // implemented in parent class
 		
-		if (layout.isHorizontal) {
-			this._renderHorizontalBars({ layout, bars: chart.bars });
-		} else {
-			this._renderVerticalBars({ layout, bars: chart.bars });
-		}
+		if (layout.isHorizontal) this._renderHorizontalBars({ layout, bars: chart.bars });
+		else this._renderVerticalBars({ layout, bars: chart.bars });
 		
-		this._applyBarInteractions();
+		this._setInteractions();
 		
 		return true;
 	}
@@ -55,10 +52,12 @@ export default class BarChartRenderer extends CartesianChartRenderer {
 
 		const getHeight = (d) => {
 			if (isStacked) {
-				return Math.max(0, y.scale(d.y0) - y.scale(d.y1));
+				const rawHeight = y.scale(d.y0) - y.scale(d.y1);
+				const touchesBaseline = d.y0 === 0;
+				return Math.max(0, rawHeight - (touchesBaseline ? this.barPadding : 0));
 			}
 
-			return Math.max(0, innerHeight - y.scale(d.value));
+			return Math.max(0, innerHeight - y.scale(d.value) - this.barPadding);
 		};
 
 		this.chartGroup
@@ -79,13 +78,14 @@ export default class BarChartRenderer extends CartesianChartRenderer {
 	}
 
 	_renderHorizontalBars({ layout, bars }) {
-		const { x, y, group, innerHeight, mode } = layout
+		const { x, y, group, mode } = layout
 
 		const visibleBars = bars.filter(d => d.observed !== false)
 
 		const isGrouped = mode === "grouped";
 		const isStacked = mode === "stacked" || mode === "normalize";
 
+		
 		const getX = (d) => {
 			if (isStacked) return x.scale(d.y0);
 			return 0;
@@ -112,7 +112,7 @@ export default class BarChartRenderer extends CartesianChartRenderer {
 
 		const getHeight = () => {
 			if (isGrouped) {
-			return group?.scale?.bandwidth?.() || y.scale.bandwidth();
+				return group?.scale?.bandwidth?.() || y.scale.bandwidth();
 			}
 
 			return y.scale.bandwidth();
@@ -125,7 +125,7 @@ export default class BarChartRenderer extends CartesianChartRenderer {
 			.data(visibleBars)
 			.enter()
 			.append("rect")
-			.attr("x", getX)
+			.attr("x", d => this.barPadding + getX(d))
 			.attr("y", getY)
 			.attr("width", getWidth)
 			.attr("height", getHeight)
@@ -134,67 +134,7 @@ export default class BarChartRenderer extends CartesianChartRenderer {
 			.attr("stroke-width", (d) => this._getMarkStrokeWidth(d.datum, MARK_TYPES.BARS));
 	}
 
-	// _renderHorizontalSimpleBars({ plot, layout, bars }) {
-	// 	const { x, y } = layout;
-		
-	// 	const barGroup = plot
-	// 		.append("g")
-	// 		.attr("class", "bars")
-		
-	// 	barGroup.selectAll("rect")
-	// 		.data(bars || [])
-	// 		.enter()
-	// 		.append("rect")
-	// 		.attr("x", 0)
-	// 		.attr("y", (d) => y.scale(d.x))
-	// 		.attr("width", (d) => Math.max(0, x.scale(d.value)))
-	// 		.attr("height", y.scale.bandwidth())
-	// 		.attr("fill", (d) => this._getMarkColor(d.datum, MARK_TYPES.BARS))
-	// 		.attr("stroke", "#ffffff")
-	// 		.attr("stroke-width", (d) => this._getMarkStrokeWidth(d.datum, MARK_TYPES.BARS));
-	// }
-
-	// _renderHorizontalGroupedBars({ plot, layout, bars }) {
-	// 	const { x, y, group } = layout;
-	// 	const observed = (bars || []).filter((d) => d.observed !== false);
-		
-	// 	const barGroup = plot
-	// 		.append("g")
-	// 		.attr("class", "bars")
-		
-	// 	barGroup.selectAll("rect")
-	// 		.data(observed)
-	// 		.enter()
-	// 		.append("rect")
-	// 		.attr("x", 0)
-	// 		.attr("y", (d) => y.scale(d.x) + (group?.scale?.(d.sub) || 0))
-	// 		.attr("width", (d) => Math.max(0, x.scale(d.value)))
-	// 		.attr("height", group?.scale?.bandwidth?.() || y.scale.bandwidth())
-	// 		.attr("fill", (d) => this._getMarkColor(d.datum, MARK_TYPES.BARS))
-	// 		.attr("stroke", "#ffffff")
-	// 		.attr("stroke-width", (d) => this._getMarkStrokeWidth(d.datum, MARK_TYPES.BARS));
-	// }
-
-	// _renderHorizontalStackedBars({ plot, layout, bars }) {
-	// 	const { x, y } = layout;
-
-	// 	plot
-	// 		.append("g")
-	// 		.attr("class", "bars")
-	// 		.selectAll("rect")
-	// 		.data((bars || []).filter((d) => d.observed !== false))
-	// 		.enter()
-	// 		.append("rect")
-	// 		.attr("x", (d) => x.scale(d.y0))
-	// 		.attr("y", (d) => y.scale(d.x))
-	// 		.attr("width", (d) => Math.max(0, x.scale(d.y1) - x.scale(d.y0)))
-	// 		.attr("height", y.scale.bandwidth())
-	// 		.attr("fill", (d) => this._getMarkColor(d.datum, MARK_TYPES.BARS))
-	// 		.attr("stroke", "#ffffff")
-	// 		.attr("stroke-width", (d) => this._getMarkStrokeWidth(d.datum, MARK_TYPES.BARS));
-	// }
-
-	_applyBarInteractions() {
+	_setInteractions() {
 		const bars = this.chartGroup.selectAll(".bars rect");
 		if (!bars.size()) return;
 		

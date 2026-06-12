@@ -263,7 +263,7 @@ export class VenusBase extends HTMLElement {
 		
 		const legendConfig = {
 			legendItems: this._visualArtifacts?.legends || [],
-			datasets: this._getLegendDatasets(),
+			datasets: this._getData(),
 			getScaleById: (scaleId) => this._visualArtifacts?.scales?.get(scaleId) || null
 		};
 		
@@ -582,10 +582,6 @@ export class VenusBase extends HTMLElement {
 		return this.currentProxyUrl || this.proxy || null;
 	}
 	
-	_buildVisualization() {
-		throw new Error("_buildVisualization must be implemented by subclass");
-	}
-	
 	_setDataFromBuildResult() {
 		throw new Error("_setDataFromBuildResult must be implemented by subclass");
 	}
@@ -606,9 +602,6 @@ export class VenusBase extends HTMLElement {
 		throw new Error("_getRenderPayload must be implemented by subclass");
 	}
 	
-	_getLegendDatasets() {
-		throw new Error("_getLegendDatasets must be implemented by subclass");
-	}
 	
 	_renderBaseDOM({ extraStyles = "" } = {}) {
 		this.shadowRoot.innerHTML = `

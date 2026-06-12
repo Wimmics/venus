@@ -1,14 +1,6 @@
 import { ColorLegend } from './color-legend.js';
 import { SizeLegend } from './size-legend.js';
 
-function normalizeLegendPosition(position) {
-	if (typeof position !== "string") return "bottom";
-	const value = position.toLowerCase().trim();
-	if (["left", "right", "top", "bottom"].includes(value)) return value;
-	if (["top-left", "bottom-left", "top-right", "bottom-right"].includes(value)) return value;
-	return "bottom";
-}
-
 /**
 * Factory function to create legend elements from compiled legend descriptors.
 * @param {Object} config - Configuration object

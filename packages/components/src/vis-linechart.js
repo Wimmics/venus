@@ -23,40 +23,36 @@ export class VenusLineChart extends VenusBase {
   }
 
   _setDataFromBuildResult(result) {
-    const { chart } = result;
-    this.rows = chart?.rows || [];
-  }
+		this.chart = result.chart;
+		this.rows = result.chart?.rows || [];
+	}
 
   _hasData() {
     return Array.isArray(this.rows) && this.rows.length > 0;
   }
 
+  _resetDataState() {
+		this.rows = []
+		this.chart = null
+	}
+
+  _getData() {
+		return { lines: this.rows || [], points: this.rows || [] }
+	}
+	
+	_getChart() {
+		return this.chart;
+	}
+
   _getRenderPayload() {
-    return { rows: this.rows };
-  }
-
-  _getLegendDatasets() {
-    return { rows: this.rows };
-  }
-
-  _getArtifactPayload() {
-    return { rows: this.rows };
-  }
+		return { 
+			rows: this.rows || [], 
+			chart: this.chart || null 
+		};
+	}
 
   _initDOMStructure() {
-    this._renderBaseDOM({
-      containerClass: "line-chart-container",
-      extraStyles: `
-        .plot-area text {
-          fill: #333;
-          font-size: 11px;
-        }
-        .plot-area .domain,
-        .plot-area .tick line {
-          stroke: #cfcfcf;
-        }
-      `
-    });
+    this._renderBaseDOM();
 
     const container = this._getContainerElement();
     if (container && !this.renderer) {

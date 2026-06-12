@@ -33,6 +33,7 @@ export default class ForceGraphRenderer extends BaseRenderer {
 	_renderVis() {
 		console.log("[ForceGraph Renderer] visual artifacts = ", this.visualArtifacts)
 		
+		// TODO: apparently this is not being used ; it should be used in directed graphs
 		const defs = this.svg.append("defs")
 			.append("marker")
 			.attr("id", "arrowhead")

@@ -1,0 +1,9 @@
+SELECT ?year (COUNT(?film) AS ?count)
+WHERE {
+  ?film wdt:P31 wd:Q11424 ;     # instance of film
+        wdt:P577 ?date .        # publication/release date
+
+  BIND(YEAR(?date) AS ?year)
+}
+GROUP BY ?year
+ORDER BY ?year

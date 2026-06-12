@@ -12,5 +12,6 @@
   },
   "y": {
     "field": "nbActors"
-  }
+  },
+  "direction": "horizontal"
 }

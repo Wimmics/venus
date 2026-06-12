@@ -1,429 +1,258 @@
 import * as d3 from "d3";
 import CartesianChartRenderer from "./cartesian-chart-renderer.js";
 
+import { isQuantitativeScaleType, MARK_TYPES } from "@wimmics/venus-core";
+
 export default class LineChartRenderer extends CartesianChartRenderer {
-  _getMarginBase() {
-    return { top: 24, right: 36, bottom: 64, left: 64 };
-  }
+	
+	_renderVis() {
+		const layout = this.visualArtifacts?.layout;
+		const chart = this._state?.payload?.chart || this.chart;
+		
+		if (!layout?.x?.scale || !layout?.y?.scale || !chart) {
+			return false;
+		}
+		
+		this._retrieveMarkChannels({marks: [ MARK_TYPES.LINES, MARK_TYPES.POINTS ]})
+		
+		this._renderAxes({ layout }) // implemented in parent class
 
-  _renderVis() {
-    const {
-      mapping,
-      xAxisConfig,
-      yAxisConfig,
-      xLabelAngle,
-      xLabelOffset,
-      yLabelOffset,
-      innerWidth,
-      innerHeight,
-      xField,
-      yField,
-      plot,
-      visualArtifacts,
-      width,
-      height
-    } = this._state || {};
-    const linesConfig = mapping?.lines || {};
-    const groupField = linesConfig?.group?.field;
-    const lineColorConfig = linesConfig?.color || {};
-    const lineSizeConfig = linesConfig?.size || {};
-    const colorField = lineColorConfig?.field;
-    const sizeField = lineSizeConfig?.field;
-    const hasPointsConfig =
-      mapping && typeof mapping === "object" && Object.prototype.hasOwnProperty.call(mapping, "points");
-    const pointsConfig = mapping?.points || {};
-    const pointsEnabled = pointsConfig.display === undefined ? hasPointsConfig : pointsConfig.display === true;
-    const xScaleConfig = mapping?.x?.scale || {};
-    const yScaleConfig = mapping?.y?.scale || {};
+		this._renderLines( { layout, series: chart?.series })
 
-    const lineColorChannel = this._getArtifactChannel(visualArtifacts, "lines", "color");
-    const lineSizeChannel = this._getArtifactChannel(visualArtifacts, "lines", "size");
-    const pointColorChannel = this._getArtifactChannel(visualArtifacts, "points", "color");
-    const pointSizeChannel = this._getArtifactChannel(visualArtifacts, "points", "size");
+		if (layout.pointsEnabled) this._renderPoints( { layout, points: chart?.points })
 
-    const colorScale = this._getArtifactScale(visualArtifacts, lineColorChannel);
-    const sizeScale = this._getArtifactScale(visualArtifacts, lineSizeChannel);
-    const pointColorScale = this._getArtifactScale(visualArtifacts, pointColorChannel);
-    const pointSizeScale = this._getArtifactScale(visualArtifacts, pointSizeChannel);
-    
-    
-    const defaultLineColor = lineColorChannel?.defaultValue || lineColorConfig?.value || "#4e79a7";
-    const defaultLineSize = lineSizeChannel?.defaultValue || lineSizeConfig?.value || 2;
-    const pointColorField = pointColorChannel?.field || pointsConfig?.color?.field;
-    const pointSizeField = pointSizeChannel?.field || pointsConfig?.size?.field;
-    const defaultPointColor = pointColorChannel?.defaultValue || pointsConfig?.color?.value || defaultLineColor;
-    const defaultPointSize = pointSizeChannel?.defaultValue || pointsConfig?.size?.value || 3;
+		this._setInteractions()
+	}
 
-    const lineColorField = lineColorChannel?.field || lineColorConfig?.field;
-    const lineSizeField = lineSizeChannel?.field || lineSizeConfig?.field;
+	_renderLines({ layout, series = []}) {
+		const { x, y } = layout
 
-    const yScaleType = String(yScaleConfig.type || "linear").toLowerCase();
+		const getX = (d) => {
+			const value =  isQuantitativeScaleType(x?.scaleType) ? Number(d.x) : String(d.x)
+			return x.scale(value)
+		} 
 
-    const rows = this.data
-      .map((row, index) => ({
-        row,
-        xRaw: row?.[xField],
-        yRaw: row?.[yField],
-        y: Number(row?.[yField]),
-        index
-      }))
-      .filter((item) => item.xRaw !== undefined && item.xRaw !== null && Number.isFinite(item.y))
-      .filter((item) => (yScaleType === "log" ? item.y > 0 : true));
+		const getY = (d) => y.scale(Number(d.y))
 
-    if (!rows.length) {
-      this._renderCenteredMessage(width, height, "No plottable rows found for the selected x/y fields");
-      this._resetFitState();
-      return false;
-    }
+		const lineGenerator = d3.line()
+			.defined((d) => Number.isFinite(Number(d.y)) && getX(d) != null)
+			.x(getX)
+			.y(getY)
 
-    const xScaleType = String(xScaleConfig.type || "ordinal").toLowerCase();
-    const useNumericX = ["linear", "log", "sqrt", "pow", "count"].includes(xScaleType);
-    const numericXOk = rows.every((item) => Number.isFinite(Number(item.xRaw)));
-    const useContinuousX = useNumericX && numericXOk;
+		const linesGroup = this.chartGroup
+			.append("g")
+			.attr("class", "lines");
 
-    const xValues = useContinuousX
-      ? rows.map((item) => Number(item.xRaw))
-      : rows.map((item) => String(item.xRaw));
-    const yValues = rows.map((item) => item.y);
+		linesGroup
+			.selectAll("path.line-path")
+			.data(series)
+			.enter()
+			.append("path")
+			.attr("class", "line-path")
+			.attr("data-series-key", (serie) => String(serie.key))
+			.attr("data-base-stroke-width", (serie) => this._getMarkSize(this._getSeriesDatum(serie), MARK_TYPES.LINES))
+			.attr("fill", "none")
+			.attr("stroke", (serie) => this._getMarkColor(this._getSeriesDatum(serie), MARK_TYPES.LINES))
+			.attr("stroke-width", (serie) => this._getMarkSize(this._getSeriesDatum(serie), MARK_TYPES.LINES))
+			.attr("stroke-linejoin", "round")
+			.attr("stroke-linecap", "round")
+			.attr("d", (serie) => lineGenerator(serie.rows || []))
+			
+	}
 
-    let xScale;
-    if (useContinuousX) {
-      const xDomainFromEncoding = xScaleConfig.domain;
-      const computedDomain = d3.extent(xValues);
-      const domain = Array.isArray(xDomainFromEncoding) && xDomainFromEncoding.length >= 2
-        ? [Number(xDomainFromEncoding[0]), Number(xDomainFromEncoding[xDomainFromEncoding.length - 1])]
-        : [computedDomain[0], computedDomain[1]];
-      xScale = d3.scaleLinear().domain(domain).range([0, innerWidth]);
-    } else {
-      const domain = Array.from(new Set(xValues));
-      const hasNumericLabels = domain.every((value) => Number.isFinite(Number(value)));
-      if (hasNumericLabels) {
-        domain.sort((a, b) => Number(a) - Number(b));
-      }
-      xScale = d3.scalePoint().domain(domain).range([0, innerWidth]).padding(0.2);
-    }
+	_renderPoints( { layout, points = []}) {
+		const { x, y } = layout
 
-    const yDomainFromEncoding = yScaleConfig.domain;
-    const yComputed = d3.extent(yValues);
-    let yDomain = Array.isArray(yDomainFromEncoding) && yDomainFromEncoding.length >= 2
-      ? [Number(yDomainFromEncoding[0]), Number(yDomainFromEncoding[yDomainFromEncoding.length - 1])]
-      : [yComputed[0], yComputed[1]];
-    if (yDomain[0] === yDomain[1]) {
-      yDomain = [yDomain[0] - 1, yDomain[1] + 1];
-    }
-    let yScale = d3.scaleLinear().domain(yDomain).range([innerHeight, 0]).nice();
-    if (yScaleType === "sqrt") yScale = d3.scaleSqrt().domain(yDomain).range([innerHeight, 0]).nice();
-    if (yScaleType === "log") {
-      const safeMin = Math.max(1e-9, yDomain[0]);
-      const safeMax = Math.max(safeMin * 10, yDomain[1]);
-      yScale = d3.scaleLog().domain([safeMin, safeMax]).range([innerHeight, 0]).nice();
-    }
-    if (yScaleType === "pow") {
-      const exponent = Number.isFinite(yScaleConfig.exponent) ? Number(yScaleConfig.exponent) : 1;
-      yScale = d3.scalePow().exponent(exponent).domain(yDomain).range([innerHeight, 0]).nice();
-    }
+		const getX = (d) => {
+			const value =  isQuantitativeScaleType(x?.scaleType) ? Number(d.x) : String(d.x)
+			return x.scale(value)
+		} 
 
-    const xTickFormatter = useContinuousX
-      ? this._buildTickFormatter(
-          xAxisConfig.tickFormat || (xScaleType === "count" ? "integer" : "raw"),
-          { fallback: "number" }
-        )
-      : this._buildTickFormatter(xAxisConfig.tickFormat, { fallback: "string" });
-    const yTickFormatter = this._buildTickFormatter(
-      yAxisConfig.tickFormat || (yScaleType === "count" ? "integer" : "raw"),
-      { fallback: "number" }
-    );
+		const getY = (d) => y.scale(Number(d.y))
 
-    plot
-      .append("g")
-      .attr("class", "x-axis")
-      .attr("transform", `translate(0,${innerHeight})`)
-      .call(this._buildValueAxis("bottom", xScale, xTickFormatter, xAxisConfig, xScaleType))
-      .selectAll("text")
-      .style("text-anchor", xLabelAngle ? "end" : "middle")
-      .attr(
-        "transform",
-        xLabelAngle
-          ? `translate(${xLabelOffset.x},${xLabelOffset.y}) rotate(${xLabelAngle})`
-          : `translate(${xLabelOffset.x},${xLabelOffset.y})`
-      );
+		const pointsGroup = this.chartGroup.append('g').classed('points', true)
 
-    plot
-      .append("g")
-      .attr("class", "y-axis")
-      .call(this._buildValueAxis("left", yScale, yTickFormatter, yAxisConfig, yScaleType))
-      .selectAll("text")
-      .attr("transform", `translate(${yLabelOffset.x},${yLabelOffset.y})`);
+		pointsGroup.selectAll('circle')
+			.data(points)
+			.enter()
+			.append('circle')
+				.classed("line-points", true)
+				.attr('data-series-key', d => String(d.seriesKey))	
+				.attr('cx', getX)
+				.attr('cy', getY)
+				.attr('r', d => this._getMarkSize(d.datum, MARK_TYPES.POINTS))
+				.attr('fill', d => this._getMarkColor(d.datum, MARK_TYPES.POINTS))
+				.attr('stroke', d => this._getMarkStroke(d.datum, MARK_TYPES.POINTS))
+				.attr('stroke-width', d => this._getMarkStrokeWidth(d.datum, MARK_TYPES.POINTS))
+	}
+	
 
-    this._renderAxisTitles({
-      plot,
-      innerWidth,
-      innerHeight,
-      bottomTitle: this._resolveAxisTitle(mapping?.x?.axis, xField),
-      leftTitle: this._resolveAxisTitle(mapping?.y?.axis, yField)
-    });
+	_setInteractions() {
+		const lines = this.chartGroup.selectAll("path.line-path")
 
-    const hasGroupField = typeof groupField === "string" && groupField.trim().length > 0;
-    const fallbackByColorField = typeof colorField === "string" && colorField.trim().length > 0;
-    const resolveSeriesKey = (row) => {
-      if (hasGroupField) return String(row?.[groupField] ?? "undefined");
-      return "__single__";
-    };
+		lines.on("mouseover", (event, serie) => {
+			this._focusMark({ mark: "series", seriesKey: String(serie.key) });
+	
+			this.callbacks.onHover?.({
+				mark: "series",
+				datum: this._resolveHoveredDatum(serie.rows || [], event),
+				seriesKey: String(serie.key),
+				x: event.offsetX,
+				y: event.offsetY,
+				event
+			});
+		})
+		.on("mousemove", (event, serie) => {
+			this.callbacks.onHover?.({
+				mark: "series",
+				datum: this._resolveHoveredDatum(serie.rows || [], event),
+				seriesKey: String(serie.key),
+				x: event.offsetX,
+				y: event.offsetY,
+				event
+			});
+		})
+		.on("mouseout", (event, serie) => {
+			this._resetFocusMark({ mark: "series" });
 
-    const groups = d3.group(rows, (item) => resolveSeriesKey(item.row));
+			this.callbacks.onOut?.({
+				mark: "series",
+				seriesKey: String(serie.key),
+				event
+			});
+		});
 
-    const toSeriesSizeValue = (seriesRows) => {
-      if (!sizeField) return defaultLineSize;
-      const values = seriesRows
-        .map((item) => Number(item.row?.[sizeField]))
-        .filter((value) => Number.isFinite(value));
-      if (!values.length) return defaultLineSize;
-      return d3.mean(values);
-    };
 
-    const toSeriesColor = (seriesRows) => {
-      if (!colorField || !colorScale) return defaultLineColor;
-      const firstValue = seriesRows
-        .map((item) => item?.row?.[colorField])
-        .find((value) => value !== undefined && value !== null);
-      if (firstValue === undefined) return defaultLineColor;
-      const color = colorScale(firstValue);
-      return color || defaultLineColor;
-    };
+		const points = this.chartGroup.selectAll(".line-points");
+		
+		points.on("mouseover", (event, point) => {
+			const seriesKey = String(point.seriesKey);
 
-    const toSeriesStrokeWidth = (seriesRows) => {
-      const base = toSeriesSizeValue(seriesRows);
-      if (!sizeField || !sizeScale) return Number(base) || defaultLineSize;
-      const widthValue = sizeScale(base);
-      const n = Number(widthValue);
-      return Number.isFinite(n) ? n : defaultLineSize;
-    };
+			this._focusMark({
+				mark: "point",
+				seriesKey,
+				activeElement: event.currentTarget
+			});
 
-    const resolvePointColor = (row, seriesStroke) => {
-      if (!pointsEnabled) return seriesStroke;
-      if (!pointColorField) return defaultPointColor || seriesStroke;
-      if (!pointColorScale) return defaultPointColor || seriesStroke;
-      const raw = row?.[pointColorField];
-      if (raw === undefined || raw === null) return defaultPointColor || seriesStroke;
-      const scaled = pointColorScale(raw);
-      return scaled || defaultPointColor || seriesStroke;
-    };
+			this.callbacks.onHover?.({
+				mark: "point",
+				datum: point.datum,
+				seriesKey,
+				x: event.offsetX,
+				y: event.offsetY,
+				event
+			});
+		})
+		.on("mousemove", (event, point) => {
+			this.callbacks.onHover?.({
+				mark: "point",
+				datum: point.datum,
+				seriesKey: String(point.seriesKey),
+				x: event.offsetX,
+				y: event.offsetY,
+				event
+			});
+		})
+		.on("mouseout", (event, point) => {
+			this._resetFocusMark({
+				mark: "point",
+				seriesKey: String(point.seriesKey)
+			});
 
-    const resolvePointRadius = (row, seriesStrokeWidth) => {
-      if (!pointsEnabled) return Math.max(2, Math.min(6, seriesStrokeWidth + 0.5));
-      if (!pointSizeField) {
-        const fixed = Number(defaultPointSize);
-        return Number.isFinite(fixed) && fixed > 0 ? fixed : 3;
-      }
-      if (!pointSizeScale) {
-        const fixed = Number(defaultPointSize);
-        return Number.isFinite(fixed) && fixed > 0 ? fixed : 3;
-      }
-      const raw = Number(row?.[pointSizeField]);
-      if (!Number.isFinite(raw)) {
-        const fixed = Number(defaultPointSize);
-        return Number.isFinite(fixed) && fixed > 0 ? fixed : 3;
-      }
-      const scaled = Number(pointSizeScale(raw));
-      if (Number.isFinite(scaled) && scaled > 0) return scaled;
-      const fixed = Number(defaultPointSize);
-      return Number.isFinite(fixed) && fixed > 0 ? fixed : 3;
-    };
+			this.callbacks.onOut?.({
+				mark: "point",
+				seriesKey: String(point.seriesKey),
+				event
+			});
+		});
+	}
 
-    const lineGenerator = d3.line()
-      .defined((item) => Number.isFinite(item.y))
-      .x((item) => useContinuousX ? xScale(Number(item.xRaw)) : xScale(String(item.xRaw)))
-      .y((item) => yScale(item.y));
+	_resolveHoveredDatum(rows = [], event) {
+		if (!Array.isArray(rows) || rows.length === 0) return null;
 
-    const resolveHoveredDatum = (seriesRows, event) => {
-      if (!Array.isArray(seriesRows) || seriesRows.length === 0) return null;
-      const plotNode = plot?.node?.();
-      if (!plotNode) return seriesRows[0]?.row || null;
+		const layout = this.visualArtifacts?.layout;
+		const x = layout?.x;
+		const plotNode = this.chartGroup?.node?.();
 
-      const [mouseX] = d3.pointer(event, plotNode);
-      const projected = seriesRows.map((item) => ({
-        item,
-        px: useContinuousX ? xScale(Number(item.xRaw)) : xScale(String(item.xRaw))
-      })).filter((entry) => Number.isFinite(entry.px));
-      if (!projected.length) return seriesRows[0]?.row || null;
+		if (!plotNode || !x?.scale) {
+			return rows[0]?.datum || null;
+		}
 
-      if (!useContinuousX || projected.length === 1) {
-        const closest = projected.reduce((best, entry) => {
-          if (!best) return entry;
-          return Math.abs(entry.px - mouseX) < Math.abs(best.px - mouseX) ? entry : best;
-        }, null);
-        return closest?.item?.row || seriesRows[0]?.row || null;
-      }
+		const [mouseX] = d3.pointer(event, plotNode);
 
-      const bisect = d3.bisector((entry) => entry.px).left;
-      const idx = bisect(projected, mouseX);
-      const left = projected[Math.max(0, idx - 1)];
-      const right = projected[Math.min(projected.length - 1, idx)];
-      if (!left || !right) return projected[Math.max(0, Math.min(projected.length - 1, idx))]?.item?.row || null;
-      if (left === right || !Number.isFinite(right.px - left.px) || right.px === left.px) {
-        return left.item?.row || seriesRows[0]?.row || null;
-      }
+		const isContinuousX = [
+			"linear",
+			"log",
+			"sqrt",
+			"pow",
+			"count",
+			"quantitative",
+			"sequential"
+		].includes(String(x?.scaleType || "").toLowerCase());
 
-      const t = Math.max(0, Math.min(1, (mouseX - left.px) / (right.px - left.px)));
-      const xLeft = Number(left.item.xRaw);
-      const xRight = Number(right.item.xRaw);
-      const yLeft = Number(left.item.y);
-      const yRight = Number(right.item.y);
-      const xInterp = Number.isFinite(xLeft) && Number.isFinite(xRight) ? (xLeft + (xRight - xLeft) * t) : left.item.xRaw;
-      const yInterp = Number.isFinite(yLeft) && Number.isFinite(yRight) ? (yLeft + (yRight - yLeft) * t) : left.item.y;
+		const projected = rows
+			.map((d) => {
+			const xValue = isContinuousX ? Number(d.x) : String(d.x);
+			return {
+				row: d,
+				px: x.scale(xValue)
+			};
+			})
+			.filter((d) => Number.isFinite(d.px));
 
-      return {
-        ...(left.item?.row || {}),
-        [xField]: xInterp,
-        [yField]: yInterp
-      };
-    };
+		if (!projected.length) {
+			return rows[0]?.datum || null;
+		}
 
-    for (const [groupKey, groupRows] of groups.entries()) {
-      const sorted = [...groupRows].sort((a, b) => {
-        if (useContinuousX) return Number(a.xRaw) - Number(b.xRaw);
-        const aNum = Number(a.xRaw);
-        const bNum = Number(b.xRaw);
-        if (Number.isFinite(aNum) && Number.isFinite(bNum)) {
-          return aNum - bNum;
-        }
-        return a.index - b.index;
-      });
+		const closest = projected.reduce((best, current) => {
+			if (!best) return current;
+			return Math.abs(current.px - mouseX) < Math.abs(best.px - mouseX)
+			? current
+			: best;
+		}, null);
 
-      const stroke = toSeriesColor(sorted);
-      const strokeWidth = toSeriesStrokeWidth(sorted);
+		return closest?.row?.datum || rows[0]?.datum || null;
+	}
 
-      plot
-        .append("path")
-        .datum(sorted)
-        .attr("class", "line-path")
-        .attr("data-series-key", String(groupKey))
-        .attr("data-base-stroke-width", strokeWidth)
-        .attr("fill", "none")
-        .attr("stroke", stroke)
-        .attr("stroke-width", strokeWidth)
-        .attr("stroke-linejoin", "round")
-        .attr("stroke-linecap", "round")
-        .attr("d", lineGenerator)
-        .on("mouseover", (event) => {
-          this._focusMark({ mark: "series", seriesKey: String(groupKey) });
-          const hoveredDatum = resolveHoveredDatum(sorted, event);
-          this.callbacks.onHover?.({
-            mark: "series",
-            datum: hoveredDatum,
-            seriesKey: String(groupKey),
-            x: event.offsetX,
-            y: event.offsetY,
-            event
-          });
-        })
-        .on("mousemove", (event) => {
-          const hoveredDatum = resolveHoveredDatum(sorted, event);
-          this.callbacks.onHover?.({
-            mark: "series",
-            datum: hoveredDatum,
-            seriesKey: String(groupKey),
-            x: event.offsetX,
-            y: event.offsetY,
-            event
-          });
-        })
-        .on("mouseout", () => {
-          this._resetFocusMark({ mark: "series" });
-          this.callbacks.onOut?.({ mark: "series", seriesKey: String(groupKey) });
-        });
+	_getSeriesDatum(serie) {
+  		return serie?.rows?.find((d) => d?.datum)?.datum || {};
+	}
 
-      if (pointsEnabled) {
-        plot
-          .append("g")
-          .attr("class", "line-points")
-          .selectAll("circle")
-          .data(sorted)
-          .enter()
-          .append("circle")
-          .attr("data-series-key", String(groupKey))
-          .attr("cx", (item) => useContinuousX ? xScale(Number(item.xRaw)) : xScale(String(item.xRaw)))
-          .attr("cy", (item) => yScale(item.y))
-          .attr("r", (item) => resolvePointRadius(item.row, strokeWidth))
-          .attr("fill", (item) => resolvePointColor(item.row, stroke))
-          .attr("stroke", "#ffffff")
-          .attr("stroke-width", 1.25)
-          .on("mouseover", (event, item) => {
-            this._focusMark({
-              mark: "point",
-              seriesKey: String(groupKey),
-              activeElement: event.currentTarget
-            });
-            this.callbacks.onHover?.({
-              mark: "point",
-              datum: item.row,
-              seriesKey: String(groupKey),
-              x: event.offsetX,
-              y: event.offsetY,
-              event
-            });
-          })
-          .on("mouseout", () => {
-            this._resetFocusMark({ mark: "point", seriesKey: String(groupKey) });
-            this.callbacks.onOut?.({ mark: "point", seriesKey: String(groupKey) });
-          });
-      }
-    }
+	
+	_focusMark({ mark, seriesKey, activeElement = null } = {}) {
+		if (!seriesKey || (mark !== "series" && mark !== "point")) return;
+		
+		const _this = this;
 
-    return true;
-  }
-
-  _focusMark({ mark, seriesKey, activeElement = null } = {}) {
-    if (!seriesKey || (mark !== "series" && mark !== "point")) return;
-    const plot = this._state?.plot;
-    if (!plot) return;
-
-    plot
-      .selectAll(".line-path")
-      .attr("opacity", function applyLineOpacity() {
-        return this.getAttribute("data-series-key") === seriesKey ? 1 : 0.15;
-      })
-      .attr("stroke-width", function applyLineWidth() {
-        const base = Number(this.getAttribute("data-base-stroke-width"));
-        const safeBase = Number.isFinite(base) && base > 0 ? base : 2;
-        return this.getAttribute("data-series-key") === seriesKey
-          ? safeBase * 1.45
-          : Math.max(1, safeBase * 0.75);
-      });
-
-    plot
-      .selectAll(".line-points circle")
-      .attr("opacity", function applyPointOpacity() {
-        const sameSeries = this.getAttribute("data-series-key") === seriesKey;
-        if (!sameSeries) return 0.15;
-        if (!activeElement) return 1;
-        return this === activeElement ? 1 : 0.45;
-      })
-      .attr("stroke", function applyPointStroke() {
-        return this === activeElement ? "#222222" : "#ffffff";
-      })
-      .attr("stroke-width", function applyPointStrokeWidth() {
-        return this === activeElement ? 2.25 : 1.25;
-      });
-  }
-
-  _resetFocusMark({ mark } = {}) {
-    if (mark && mark !== "series" && mark !== "point") return;
-    const plot = this._state?.plot;
-    if (!plot) return;
-
-    plot
-      .selectAll(".line-path")
-      .attr("opacity", 1)
-      .attr("stroke-width", function resetLineWidth() {
-        const base = Number(this.getAttribute("data-base-stroke-width"));
-        return Number.isFinite(base) && base > 0 ? base : 2;
-      });
-
-    plot
-      .selectAll(".line-points circle")
-      .attr("opacity", 1)
-      .attr("stroke", "#ffffff")
-      .attr("stroke-width", 1.25);
-  }
+		this.chartGroup
+			.selectAll(".line-path")
+			.attr("opacity", function applyLineOpacity() {
+				return this.getAttribute("data-series-key") === seriesKey ? 1 : 0.15;
+			})
+		
+		this.chartGroup
+			.selectAll(".line-points")
+			.attr("opacity", function applyPointOpacity() {
+				const sameSeries = this.getAttribute("data-series-key") === seriesKey;
+				if (!sameSeries) return 0.15;
+				if (!activeElement) return 1;
+				return this === activeElement ? 1 : 0.45;
+			})
+			.attr("stroke", function applyPointStroke(d) {
+				return this === activeElement ? "#ffffff" : _this._getMarkStroke(d.datum);
+			})
+	}
+	
+	_resetFocusMark({ mark } = {}) {
+		if (mark && mark !== "series" && mark !== "point") return;
+		
+		this.chartGroup
+			.selectAll(".line-path")
+			.attr("opacity", 1)
+		
+		this.chartGroup
+			.selectAll(".line-points")
+			.attr("opacity", 1)
+			.attr("stroke", d => this._getMarkStroke(d.datum))
+	}
 }

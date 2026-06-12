@@ -78,7 +78,7 @@ export class SparqlToBarChartMapper extends SparqlToVisMapper {
 			splitField
 		});
 
-		const xCategories = Array.from(new Set(normalizedRows.map((row) => row.x)));
+		const xValues = Array.from(new Set(normalizedRows.map((row) => row.x)));
 
 		const subCategories = splitField
 			? Array.from(new Set(normalizedRows.map((row) => row.sub)))
@@ -86,14 +86,14 @@ export class SparqlToBarChartMapper extends SparqlToVisMapper {
 
 		const aggregated = this._aggregateByCategory(
 			normalizedRows,
-			xCategories,
+			xValues,
 			subCategories
 		);
 
 		const bars = this._buildBarsForMode({
 			mode: layoutMode,
 			stackMode,
-			xCategories,
+			xValues,
 			subCategories,
 			aggregated,
 			xField,
@@ -111,7 +111,7 @@ export class SparqlToBarChartMapper extends SparqlToVisMapper {
 			groupField,
 			stackField,
 			splitField,
-			xCategories,
+			xValues,
 			subCategories
 		};
 	}
@@ -119,7 +119,7 @@ export class SparqlToBarChartMapper extends SparqlToVisMapper {
 	_buildBarsForMode({
 		mode,
 		stackMode,
-		xCategories,
+		xValues,
 		subCategories,
 		aggregated,
 		xField,
@@ -129,7 +129,7 @@ export class SparqlToBarChartMapper extends SparqlToVisMapper {
 		if (mode === "stacked" || mode === "normalize") {
 			return this._buildStackedBars({
 			stackMode,
-			xCategories,
+			xValues,
 			subCategories,
 			aggregated,
 			xField,
@@ -140,7 +140,7 @@ export class SparqlToBarChartMapper extends SparqlToVisMapper {
 
 		if (mode === "grouped") {
 			return this._buildGroupedBars({
-			xCategories,
+			xValues,
 			subCategories,
 			aggregated,
 			xField,
@@ -150,7 +150,7 @@ export class SparqlToBarChartMapper extends SparqlToVisMapper {
 		}
 
 		return this._buildSimpleBars({
-			xCategories,
+			xValues,
 			aggregated,
 			xField,
 			yField
@@ -180,10 +180,10 @@ export class SparqlToBarChartMapper extends SparqlToVisMapper {
 		}));
 	}
 	
-	_aggregateByCategory(rows, xCategories, subCategories) {
+	_aggregateByCategory(rows, xValues, subCategories) {
 		const aggregated = new Map();
 		
-		for (const xCategory of xCategories) {
+		for (const xCategory of xValues) {
 			const subMap = new Map();
 			for (const subCategory of subCategories) {
 				subMap.set(subCategory, { value: 0, sample: null, values: {} });
@@ -209,8 +209,8 @@ export class SparqlToBarChartMapper extends SparqlToVisMapper {
 		return aggregated;
 	}
 	
-	_buildSimpleBars({ xCategories, aggregated, xField, yField }) {
-		return xCategories.map((xCategory) => {
+	_buildSimpleBars({ xValues, aggregated, xField, yField }) {
+		return xValues.map((xCategory) => {
 			const bucket =
 			aggregated.get(xCategory)?.get("__single__") ||
 			{ value: 0, sample: null, values: {} };
@@ -229,8 +229,8 @@ export class SparqlToBarChartMapper extends SparqlToVisMapper {
 		});
 	}
 	
-	_buildGroupedBars({ xCategories, subCategories, aggregated, xField, yField, splitField }) {
-		return xCategories.flatMap((xCategory) =>
+	_buildGroupedBars({ xValues, subCategories, aggregated, xField, yField, splitField }) {
+		return xValues.flatMap((xCategory) =>
 			subCategories.map((subCategory) => {
 				const bucket =
 				aggregated.get(xCategory)?.get(subCategory) ||
@@ -256,7 +256,7 @@ export class SparqlToBarChartMapper extends SparqlToVisMapper {
 
 	_buildStackedBars({
 		stackMode,
-		xCategories,
+		xValues,
 		subCategories,
 		aggregated,
 		xField,
@@ -266,7 +266,7 @@ export class SparqlToBarChartMapper extends SparqlToVisMapper {
 		const normalized = stackMode === "normalize";
 		const bars = [];
 
-		for (const xCategory of xCategories) {
+		for (const xCategory of xValues) {
 			const buckets = subCategories.map((subCategory) => {
 			const bucket =
 				aggregated.get(xCategory)?.get(subCategory) ||

@@ -1,5 +1,6 @@
 import { CartesianEncodingManager } from "./cartesian-encoding-manager.js";
 import { getDefaultEncodingTemplate } from "../default-encodings.js";
+import { MARK_TYPES } from "@wimmics/venus-core/index.js";
 
 export class LineChartEncodingManager extends CartesianEncodingManager {
 	getChartType() {
@@ -11,7 +12,7 @@ export class LineChartEncodingManager extends CartesianEncodingManager {
 	}
 	
 	getMarks() {
-		return ["lines", "points"];
+		return [ MARK_TYPES.LINES, MARK_TYPES.POINTS ];
 	}
 	
 	getNestedMarkChannels() {

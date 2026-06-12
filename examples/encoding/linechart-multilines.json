@@ -1,5 +1,5 @@
 {
-  "title": "Evolution of population over time across countries",
+  "title": "Films released per year and per genre. Source: Wikidata.",
   "x": {
     "field": "year",
     "axis": {
@@ -8,23 +8,25 @@
     }
   },
   "y": {
-    "field": "population",
+    "field": "count",
     "scale": {
       "type": "log"
-    },
-    "axis": {
-      "tickFormat": "M"
     }
   },
   "lines": {
     "group": {
-      "field": "countryLabel"
+      "field": "genreLabel"
     },
     "size": {
       "value": 3
     }, 
     "color" : {
-      "field": "continentLabel"
+      "field": "genreLabel"
+    }
+  },
+  "points": {
+    "color": {
+      "field": "genreLabel"
     }
   }
 }

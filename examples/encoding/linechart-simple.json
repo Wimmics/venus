@@ -1,16 +1,16 @@
 {
-  "title": "Harrison Ford Co-Stars per Movie (Line Chart)",
+  "title": "Count of Movies Released per Year (Line Chart). Source: Wikidata.",
   "x": {
-    "field": "movieName",
+    "field": "year",
     "axis": {
       "labelAngle": -45,
       "labelOffset": { "x": -6, "y": 10 }
     }
   },
   "y": {
-    "field": "nbActors",
+    "field": "count",
     "scale": {
-      "type": "linear"
+      "type": "log"
     }
   },
   "lines": {

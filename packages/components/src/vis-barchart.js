@@ -21,10 +21,6 @@ export class VenusBarChart extends VenusBase {
 		this._initDOMStructure();
 	}
 	
-	// _buildVisualization(params) {
-	// 	return buildBarChart(params);
-	// }
-	
 	_setDataFromBuildResult(result) {
 		this.chart = result.chart;
 		this.rows = result.chart?.rows || [];
@@ -46,16 +42,11 @@ export class VenusBarChart extends VenusBase {
 		})
 	}
 	
-	// TODO: merge the following methods
 	_getRenderPayload() {
 		return { 
 			rows: this.rows || [], 
 			chart: this.chart || null 
 		};
-	}
-	
-	_getLegendDatasets() {
-		return { rows: this.rows };
 	}
 	
 	_getData() {

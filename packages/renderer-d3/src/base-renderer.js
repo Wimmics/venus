@@ -38,7 +38,6 @@ export default class BaseRenderer {
 		
 		if (validationMessage) {
 			this._renderCenteredMessage(this._state.width, this._state.height, validationMessage);
-			this._onValidationFailed();
 			return;
 		}
 		
@@ -79,7 +78,7 @@ export default class BaseRenderer {
 	/**
 	* Build the base render state shared by all renderer types.
 	*/
-	_createBaseState(payload, visualArtifacts) {
+	_createBaseState(payload) {
 		return {
 			payload,
 			width: this.width,
@@ -187,8 +186,6 @@ export default class BaseRenderer {
 				this.channels[channel][mark] = this._getArtifactChannel(mark, channel)
 			}
 		}
-
-		console.log("channels = ", this.channels)
 	}
 
 	_isMarkNodes(mark) { return mark === MARK_TYPES.NODES }

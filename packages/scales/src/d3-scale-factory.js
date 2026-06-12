@@ -36,7 +36,7 @@ export class D3ScaleFactory {
 		const shouldUseThreshold = isThresholdScaleType(scaleTypeForDomain) || Boolean(scaleConfig.binning);
 		const isThreshold = isThresholdScaleType(scaleTypeForDomain) && shouldUseThreshold
 		
-		const { domain, bounds, bins } = this.resolveDomain({
+		const { domain, bounds } = this.resolveDomain({
 			scaleConfig,
 			data,
 			field,
@@ -52,10 +52,8 @@ export class D3ScaleFactory {
 		if (isColorScale) {
 			scale = this.createColorScale({
 				scaleConfig,
-				data,
 				field,
 				domain,
-				scaleType: type,
 				isQuant
 			});
 		}
@@ -213,7 +211,7 @@ export class D3ScaleFactory {
 	}
 	
 	
-	createColorScale({ scaleConfig, data, field, domain, scaleType, isQuant }) {
+	createColorScale({ scaleConfig, field, domain, isQuant }) {
 		if (isQuant) {
 			const thresholdScale = this.createThresholdScale({
 				scaleConfig,
@@ -350,7 +348,6 @@ export class D3ScaleFactory {
 	
 	createAxis({ scale, orientation, axisConfig = {}, field, scaleType, tickValues = null }) {
 		if (!scale || !orientation) return null;
-		console.log("orientation = ", orientation)
 
 		const generator =
 			orientation === "left"
@@ -377,7 +374,6 @@ export class D3ScaleFactory {
 	
 	_buildTickFormatter({ tickFormat = "raw", scaleType = SCALE_TYPES.LINEAR }) {
 		const format = this._normalizeTickFormatName(tickFormat);
-		console.log(format, scaleType)
 
 		const asNumber = (value) => {
 			const number = Number(value);
@@ -472,7 +468,6 @@ export class D3ScaleFactory {
 	
 	resolveDomain({ scaleConfig, data, field, scaleType }) {
 		const userDomain = scaleConfig.domain;
-		
 		let domainResult = null
 		if (Array.isArray(data) && data.length > 0 && field) {
 			domainResult = this.domainCalculator.getDomain(
