@@ -7,6 +7,7 @@
     "type": "cooccurrence",
     "context": {
       "field": "movieName"
-    }
+    },
+    "labels": { "display": false}
   }
 }

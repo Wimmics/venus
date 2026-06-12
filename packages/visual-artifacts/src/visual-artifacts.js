@@ -27,10 +27,7 @@ export class VisualArtifacts {
 		const {
 			encoding,
 			data = [],
-			marks = [],
-			width = null,
-			height = null,
-			chart = null
+			marks = []
 		} = options;
 
 		if (!encoding || typeof encoding !== "object") {

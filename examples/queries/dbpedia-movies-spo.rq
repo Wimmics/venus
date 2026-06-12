@@ -1,0 +1,14 @@
+PREFIX dbo: <http://dbpedia.org/ontology/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT DISTINCT ?s ?sLabel ?p ?pLabel ?o ?oLabel
+WHERE {
+  ?s a dbo:Film ; ?p ?o .
+
+  FILTER(STRSTARTS(STR(?p), STR(dbo:)))
+
+  ?s rdfs:label ?sLabel . FILTER(LANG(?sLabel) = "en") 
+  ?o rdfs:label ?oLabel . FILTER(LANG(?oLabel) = "en") 
+
+  BIND(REPLACE(STRAFTER(STR(?p), "http://dbpedia.org/ontology/"), "_", " ") AS ?pLabel)
+} LIMIT 1000

@@ -1,5 +1,5 @@
 import { VisualArtifacts } from "./visual-artifacts";
-import { SCALE_TYPES } from "@wimmics/venus-core";
+import { isCountScaleType, SCALE_TYPES } from "@wimmics/venus-core";
 import * as d3 from "d3"
 
 export class CartesianVisualArtifacts extends VisualArtifacts {
@@ -116,7 +116,7 @@ export class CartesianVisualArtifacts extends VisualArtifacts {
 		return tickValues
 	}
 
-	_getScales( { encoding, range, domainResult, isHorizontal }) {
+	_getScales( { encoding, range, domainResult }) {
 		const scales = { x: {}, y: {}}
 		
 		for (let key of Object.keys(scales)) {
@@ -150,17 +150,29 @@ export class CartesianVisualArtifacts extends VisualArtifacts {
 			return axisConfig.tickValues;
 		}
 
-		// Quantitative scales with explicit tick step
+		const domain = typeof scale?.domain === "function" ? scale.domain() : [];
 		const tickStep = Number(axisConfig.tickStep);
 
-		if (
-			Number.isFinite(tickStep) &&
-			tickStep > 0 &&
-			scaleType !== SCALE_TYPES.BAND &&
-			scaleType !== SCALE_TYPES.POINT
-		) {
-			const domain = typeof scale?.domain === "function" ? scale.domain() : [];
+		// Categorical scales: preserve original domain values
+		if (scaleType === SCALE_TYPES.BAND || scaleType === SCALE_TYPES.POINT) {
+			if (Number.isFinite(tickStep) && tickStep > 0) {
+			return domain.filter((value) => {
+				const n = Number(value);
+				return Number.isFinite(n) && n % tickStep === 0;
+			});
+			}
 
+			const minLabelSpacing = Number(axisConfig.minLabelSpacing ?? 40);
+			const maxTicks = Math.max(1, Math.floor(availableSize / minLabelSpacing));
+
+			if (domain.length <= maxTicks) return domain;
+
+			const step = Math.ceil(domain.length / maxTicks);
+			return domain.filter((_, index) => index % step === 0);
+		}
+
+		// Quantitative scales
+		if (Number.isFinite(tickStep) && tickStep > 0) {
 			if (domain.length < 2) return null;
 
 			const start = Number(domain[0]);
@@ -173,38 +185,12 @@ export class CartesianVisualArtifacts extends VisualArtifacts {
 				ticks.push(Number(value.toFixed(12)));
 			}
 
-			return ticks;
+			return isCountScaleType(scaleType) ? ticks.map(d => d.toString()) : ticks;
 		}
 
-		// Default count behavior
-		if (
-			scaleType === SCALE_TYPES.COUNT &&
-			!Number.isFinite(tickStep)
-		) {
-			const domain = typeof scale?.domain === "function" ? scale.domain() : [];
+		
 
-			if (domain.length < 2) return null;
-
-			const start = Math.ceil(domain[0]);
-			const end = Math.floor(domain[1]);
-
-			return d3.range(start, end + 1);
-		}
-
-		// Categorical label skipping
-		if (scaleType !== SCALE_TYPES.BAND && scaleType !== SCALE_TYPES.POINT) {
-			return null;
-		}
-
-		const domain = typeof scale?.domain === "function" ? scale.domain() : [];
-
-		const minLabelSpacing = Number(axisConfig.minLabelSpacing ?? 40);
-		const maxTicks = Math.max(1, Math.floor(availableSize / minLabelSpacing));
-
-		if (domain.length <= maxTicks) return domain;
-
-		const step = Math.ceil(domain.length / maxTicks);
-		return domain.filter((_, index) => index % step === 0);
+		return null;
 	}
 
 	_resolveAxisSpec({ axisConfig = {}, field = null, tickLabels = [] } = {}) {

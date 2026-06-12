@@ -3,7 +3,7 @@
 * It derives and validates domains from data and optional user input.
 */
 
-import { isQuantitativeScaleType, isThresholdScaleType, SCALE_TYPES, SCALE_DEFAULTS } from "@wimmics/venus-core";
+import { isCountScaleType, isOrdinalScaleType, isQuantitativeScaleType, isThresholdScaleType, SCALE_TYPES, SCALE_DEFAULTS } from "@wimmics/venus-core";
 import { BinBreaksCalculator } from "./bin-breaks-calculator";
 
 export class DomainCalculator {
@@ -48,6 +48,8 @@ export class DomainCalculator {
 		
 		// Extract unique values for the requested field.
 		const extractedValues = this.getVal(data, field);
+		console.log(field, extractedValues)
+		console.log("data = ", data)
 		
 		if (extractedValues.length === 0) {
 			console.warn(`No values found in data for field "${field}"`);
@@ -167,8 +169,8 @@ export class DomainCalculator {
 		
 		_getThresholdDomain(extractedValues, field, userDomain, scaleType, binning = {}) {
 			const numericValues = extractedValues
-			.map((value) => this.convertToNumber(value))
-			.filter((value) => Number.isFinite(value));
+				.map((value) => this.convertToNumber(value))
+				.filter((value) => Number.isFinite(value));
 			
 			if (numericValues.length === 0) return [];
 			
@@ -176,23 +178,23 @@ export class DomainCalculator {
 			const dataMax = Math.max(...numericValues);
 			
 			const domainValues = Array.isArray(userDomain)
-			? userDomain.map((v) => this.convertToNumber(v)).filter(Number.isFinite)
-			: [];
+				? userDomain.map((v) => this.convertToNumber(v)).filter(Number.isFinite)
+				: [];
 			
 			const min = domainValues.length >= 2 ? Math.min(...domainValues) : dataMin;
 			const max = domainValues.length >= 2 ? Math.max(...domainValues) : dataMax;
 			
 			const method = typeof binning?.method === "string" && binning.method.trim()
-			? binning.method
-			: SCALE_DEFAULTS.BINNING.METHOD;
+				? binning.method
+				: SCALE_DEFAULTS.BINNING.METHOD;
 			
 			const bins = Number.isInteger(binning?.bins) && binning.bins > 0
-			? binning.bins
-			: SCALE_DEFAULTS.BINNING.BINS;
+				? binning.bins
+				: SCALE_DEFAULTS.BINNING.BINS;
 			
 			const breaks = Array.isArray(binning?.breaks)
-			? binning.breaks
-			: null;
+				? binning.breaks
+				: null;
 			
 			const breakInfo = this.binBreaksCalculator.computeBreaks(numericValues, {
 				method,
@@ -249,9 +251,9 @@ export class DomainCalculator {
 		* @returns {Array} Sorted values
 		*/
 		sortDomainValues(values, scaleType) {
-			if (scaleType === 'ordinal') {
+			if (isOrdinalScaleType(scaleType)) {
 				// Alphanumeric sort for ordinal scales.
-				return [...values].sort((a, b) => {
+				return [ ...values ].sort((a, b) => {
 					if (typeof a === 'string' && typeof b === 'string') {
 						return a.localeCompare(b, 'fr', { numeric: true });
 					}
@@ -259,7 +261,7 @@ export class DomainCalculator {
 				});
 			} else {
 				// Numeric sort for quantitative scales.
-				return [...values].sort((a, b) => {
+				return [ ...values ].sort((a, b) => {
 					const numA = this.convertToNumber(a);
 					const numB = this.convertToNumber(b);
 					return numA - numB;

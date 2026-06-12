@@ -125,32 +125,42 @@ export class VenusGraph extends VenusBase {
 		this._renderBaseDOM({
 			extraStyles: `
         .links line { stroke-opacity: 0.6; }
-        .links .directional { marker-end: url(#arrowhead); }
-        .links .semantic,
+        .links .semantic, .links .directional { marker-end: url(#arrowhead); }
+        
         .links .cooccurrence { stroke-opacity: 0.7; }
 			
         .node-label { font-size: 12px; pointer-events: none; fill: #333; text-anchor: middle; dominant-baseline: middle; }
 			
-        .node-highlighted circle { stroke: #ff4444 !important; stroke-width: 3px !important; }
-        .link-highlighted { stroke: #ff4444 !important; stroke-width: 2px !important; stroke-opacity: 1 !important; }
+        .node-downplayed {
+			opacity: 0.15;
+		}
+
+		.link-downplayed {
+			opacity: 0.08;
+		}
+
+		.node-downplayed text,
+		.link-downplayed text {
+			opacity: 0.05;
+		}
 			
         .context-menu {
-          position: absolute;
-          background: white;
-          border: 1px solid #ddd;
-          border-radius: 4px;
-          box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-          padding: 5px 0;
-          z-index: 30;
+			position: absolute;
+			background: white;
+			border: 1px solid #ddd;
+			border-radius: 4px;
+			box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+			padding: 5px 0;
+			z-index: 30;
         }
         .context-menu button {
-          display: block;
-          width: 100%;
-          border: none;
-          background: white;
-          padding: 8px 15px;
-          text-align: left;
-          cursor: pointer;
+			display: block;
+			width: 100%;
+			border: none;
+			background: white;
+			padding: 8px 15px;
+			text-align: left;
+			cursor: pointer;
         }
         .context-menu button:hover { background: #f0f0f0; }
       `

@@ -37,6 +37,7 @@
     }
   },
   "links": {
-    "type": "directional"
+    "type": "directional",
+    "labels": { "display": false}
   }
 }

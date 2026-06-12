@@ -19,7 +19,7 @@ WHERE {
       ?film wdt:P136 ?genre ;
             wdt:P577 ?releaseDate .
 
-      FILTER(?releaseDate >= "1900-01-01"^^xsd:dateTime)
+      FILTER(?releaseDate >= "1900-01-01"^^xsd:dateTime && ?releaseDate <= "2027-01-01"^^xsd:dateTime)
 
       BIND(YEAR(?releaseDate) AS ?year)
     }
@@ -30,4 +30,3 @@ WHERE {
     bd:serviceParam wikibase:language "en" .
   }
 }
-ORDER BY ?year ?genreLabel

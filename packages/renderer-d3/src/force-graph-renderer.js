@@ -1,14 +1,14 @@
 import * as d3 from "d3";
 import BaseRenderer from "./base-renderer.js";
 
-import { CHANNEL_TYPES, MARK_TYPES } from "@wimmics/venus-core";
+import { ATTRIBUTE_TYPES, CHANNEL_TYPES, MARK_DEFAULTS, MARK_TYPES } from "@wimmics/venus-core";
 
 export default class ForceGraphRenderer extends BaseRenderer {
 	constructor(opts = {}) {
 		super(opts);
 		this.simulation = null;
-		this.nodeGroup = null;
-		this.linkSel = null;
+		this.nodeGroups = null;
+		this.linkGroups = null;
 		
 		this.zoomBehavior = null;
 		
@@ -31,10 +31,9 @@ export default class ForceGraphRenderer extends BaseRenderer {
 	}
 	
 	_renderVis() {
-		console.log("[ForceGraph Renderer] visual artifacts = ", this.visualArtifacts)
 		
-		// TODO: apparently this is not being used ; it should be used in directed graphs
-		const defs = this.svg.append("defs")
+		// Define arrow heads for directional links
+		this.svg.append("defs")
 			.append("marker")
 			.attr("id", "arrowhead")
 			.attr("viewBox", "0 -5 10 10")
@@ -60,40 +59,79 @@ export default class ForceGraphRenderer extends BaseRenderer {
 		this.interactions.drag = this.interactions.enabled && this.interactions.drag !== false;
 		this.interactions.zoom = this.interactions.enabled && this.interactions.zoom !== false;
 
-		this._retrieveMarkChannels({ marks: [MARK_TYPES.NODES, MARK_TYPES.LINKS] })
+		this._retrieveMarkChannels({ marks: [MARK_TYPES.NODES, MARK_TYPES.LINKS], roles: { "nodes": ["source", "target"]} })
+		
+		this._retrieveMarkAttributes({ marks: [MARK_TYPES.NODES, MARK_TYPES.LINKS], roles: { "nodes": ["source", "target"]} })
+		
+		this._drawLinks()
+		this._drawNodes()
+		this._setInitialLabelsOpacity()
 
-		// this.channels.color.nodes = this._getArtifactChannel(MARK_TYPES.NODES, CHANNEL_TYPES.COLOR);
-		this.channels.color.source = this._getArtifactChannel(MARK_TYPES.NODES, CHANNEL_TYPES.COLOR, "source");
-		this.channels.color.target = this._getArtifactChannel(MARK_TYPES.NODES, CHANNEL_TYPES.COLOR, "target");
+		// Handle interactive behavior
+		this._setSimulation()
+		this._setZoomBehavior();
+		this._setDragAndDrop()
 		
-		// this.channels.size.nodes = this._getArtifactChannel(MARK_TYPES.NODES, CHANNEL_TYPES.SIZE);
-		this.channels.size.source = this._getArtifactChannel(MARK_TYPES.NODES, CHANNEL_TYPES.SIZE, "source");
-		this.channels.size.target = this._getArtifactChannel(MARK_TYPES.NODES, CHANNEL_TYPES.SIZE, "target");
-				
-		// Attributes: object helper keeping previously computed attribute features per mark
-		this.attributes = { nodes: { source: {}, target: {} }, links: {} }
-		this.attributes.nodes.labels = this._getArtifactAttribute( "nodes", "labels")
-		this.attributes.nodes.source.labels = this._getArtifactAttribute( "nodes", "labels", "source")
-		this.attributes.nodes.target.labels = this._getArtifactAttribute( "nodes", "labels", "target")
+		return true;
+	}
 
-		this.attributes.links.distance = this._getArtifactAttribute("links", "distance")
-		
-		let labelSel = null;
-		
+	_drawLinks(){
 		// Draw links
-		this.linkSel = this.chartGroup
+		this.linkGroups = this.chartGroup
 			.append("g")
 			.attr("class", "links")
-			.selectAll("line")
+			.selectAll("g")
 			.data(this.links)
 			.enter()
-				.append("line")
-				.attr("class", (d) => d.type || "directional")
-				.attr("stroke", (d) => this._getMarkColor(d, MARK_TYPES.LINKS))
-				.attr("stroke-width", (d) => this._getMarkSize(d, MARK_TYPES.LINKS))
-		
+				.append("g")
+			
+		this.linkGroups
+			.append("line")
+			.attr("class", d => d.type || "directional") // Important for styling according to link type (cf. css)
+			.attr("stroke", (d) => this._getMarkColor(d, MARK_TYPES.LINKS))
+			.attr("stroke-width", (d) => this._getMarkSize(d, MARK_TYPES.LINKS))
+
+		this.linkLabels = this.linkGroups
+			.filter((d) => this._displayLabel(d, "links"))
+			.append("g")
+			.attr("class", "link-label")
+
+		this.linkLabels.append("rect")
+			.attr("class", "link-label-bg")
+			.attr("rx", 2)
+			.attr("ry", 2)
+			.attr("fill", "white")
+			.attr("fill-opacity", 0.8)
+
+		this.linkLabels.append("text")
+			.attr("text-anchor", "middle")
+			.attr("dominant-baseline", "middle")
+			.style("pointer-events", "none")
+			.style("font-size", "10px")
+			.style("fill", "#555")
+			.text((d) => d.label || d.relation || d.type || "")
+
+		this.linkLabels.each(function () {
+			const g = d3.select(this);
+			const text = g.select("text").node();
+			if (!text) return;
+
+			const bbox = text.getBBox();
+			const padding = 2;
+
+			g.select("rect")
+				.attr("x", bbox.x - padding)
+				.attr("y", bbox.y - padding)
+				.attr("width", bbox.width + padding * 2)
+				.attr("height", bbox.height + padding * 2);
+		});
+
+		this._setLinkEvents()
+	}
+
+	_drawNodes() {
 		// Create nodes group
-		this.nodeGroup = this.chartGroup
+		this.nodeGroups = this.chartGroup
 			.append("g")
 			.attr("class", "nodes")
 			.selectAll("g")
@@ -102,7 +140,7 @@ export default class ForceGraphRenderer extends BaseRenderer {
 				.append("g")
 		
 		// Draw nodes
-		this.nodeGroup
+		this.nodeGroups
 			.append("circle")
 			.attr("r", (d) => this._getMarkSize(d, MARK_TYPES.NODES))
 			.attr("fill", (d) => this._getMarkColor(d, MARK_TYPES.NODES) )
@@ -110,77 +148,115 @@ export default class ForceGraphRenderer extends BaseRenderer {
 			.attr("stroke-width", (d) => this._getMarkStrokeWidth(d, MARK_TYPES.NODES));
 
 		// Handle labels display based on zoom and user-provided encoding
-		labelSel = this.nodeGroup
-			.filter((d) => this._showNodeLabels(d))
+		this.nodeLabels = this.nodeGroups
+			.filter((d) => this._displayLabel(d, "nodes"))
 			.append("text")
 			.attr("class", "node-label")
-			.text((d) => d.label || d.id);
-			if (labelSel) {
-				const initialZoom = this.interactions.zoom ? d3.zoomTransform(this.svg.node()).k : 1;
-				labelSel.style("opacity", (d) => this._computeLabelOpacity(d, initialZoom));
-			}
+			.text((d) => d.label || d.id)
 
-		// Handle interactive behavior
-		this._setSimulation(labelSel)
-		this._setZoomBehavior(labelSel);
-		this._setLinkEvents()
 		this._setNodeEvents()
-		this._setDragAndDrop()
-		
-		return true;
+	}
+
+	_setInitialLabelsOpacity(){
+
+		const initialZoom = this.interactions.zoom ? d3.zoomTransform(this.svg.node()).k : 1;
+
+		this.nodeLabels.style("opacity", (d) => this._computeLabelOpacity(d, MARK_TYPES.NODES, initialZoom));
+
+		this.linkLabels.style("opacity", (d) => this._computeLabelOpacity(d, MARK_TYPES.LINKS, initialZoom));
 	}
 
 	// Visual helpers
-	_computeLabelOpacity(d, zoomK) {
+	_computeLabelOpacity(d, mark, zoomK) {
 		const interpolate = (value, min, max) => {
 			if (value <= min) return 0;
 			if (value >= max) return 1;
 			return (value - min) / (max - min);
 		};
-		
-		if (!this._showNodeLabels(d)) return 0;
+
+		if (!this._displayLabel(d, mark)) return 0;
+
 		const zoomOpacity = interpolate(zoomK, 0.45, 0.95);
-		const renderedRadius = this._getMarkSize(d, MARK_TYPES.NODES) * zoomK;
-		const sizeOpacity = interpolate(renderedRadius, 3, 7);
-		return Math.max(0, Math.min(1, Math.min(zoomOpacity, sizeOpacity)));
+
+		if (mark === "nodes") {
+			const renderedRadius = this._getMarkSize(d, MARK_TYPES.NODES) * zoomK;
+			const sizeOpacity = interpolate(renderedRadius, 3, 7);
+			return Math.min(zoomOpacity, sizeOpacity);
+		}
+
+		if (mark === "links") {
+			const length = this._getLinkLength(d);
+			const renderedLength = length * zoomK;
+			const lengthOpacity = interpolate(renderedLength, 35, 90);
+			return Math.min(zoomOpacity, lengthOpacity);
+		}
+
+		return zoomOpacity;
 	}
 
-	_resolveNodeAttribute(d, attribute) {
-		const roles = Array.isArray(d?.roles) ? d.roles : [];
+	_getLinkLength(link) {
+		const source = link?.source;
+		const target = link?.target;
 
-		if (roles.length === 1 && roles[0] === "source" && this.attributes.nodes?.source?.[attribute]) {
-			return this.attributes.nodes?.source?.[attribute]
+		if (
+			!source || !target ||
+			!Number.isFinite(source.x) ||
+			!Number.isFinite(source.y) ||
+			!Number.isFinite(target.x) ||
+			!Number.isFinite(target.y)
+		) {
+			return 0;
 		}
-		if (roles.length === 1 && roles[0] === "target" && this.attributes.nodes?.target?.[attribute]) {
-			return this.attributes.nodes?.target?.[attribute]
-		}
-		return this.attributes.nodes?.[attribute]
+
+		const dx = target.x - source.x;
+		const dy = target.y - source.y;
+
+		return Math.sqrt(dx * dx + dy * dy);
 	}
 
-	_showNodeLabels(d){ return this._resolveNodeAttribute(d, "labels")?.display !== false }
+	_getLinkLabelPosition(link) {
+		const source = link.source;
+		const target = link.target;
 
-	_linkDistance() { return this.attributes.links.distance?.value }
+		if (
+			!source || !target ||
+			Number.isNaN(source.x) || Number.isNaN(source.y) ||
+			Number.isNaN(target.x) || Number.isNaN(target.y)
+		) {
+			return { x: 0, y: 0, angle: 0 };
+		}
+
+		const x = (source.x + target.x) / 2;
+		const y = (source.y + target.y) / 2;
+
+		const dx = target.x - source.x;
+		const dy = target.y - source.y;
+
+		let angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+		// keep label readable, not upside down
+		if (angle > 90 || angle < -90) {
+			angle += 180;
+		}
+
+		return { x, y, angle };
+	}
+
+	_getLinkDistance() {
+		return this._resolveAttribute({ mark: MARK_TYPES.LINKS, attribute: ATTRIBUTE_TYPES.DISTANCE })?.value
+	}
 		
-	_resolveNodeChannel(d, channel) {
-		const role = Array.isArray(d?.roles) ? d.roles[0] : null;
-
-		if (role && this.channels?.[channel]?.[role])
-			return this.channels?.[channel]?.[role]
-
-		return this.channels?.[channel]?.nodes
-	}	
-
 	// Event helpers
-	_setZoomBehavior(labelSel) {
+	_setZoomBehavior() {
 		if (this.interactions.zoom) {
 			this.zoomBehavior = d3
 				.zoom()
 				.scaleExtent([0.1, 8])
 				.on("zoom", (event) => {
-					this.chartGroup.attr("transform", event.transform);
-					if (labelSel) {
-						labelSel.style("opacity", (d) => this._computeLabelOpacity(d, event.transform.k));
-					}
+					this.chartGroup.attr("transform", event.transform);	
+					// Update labels' opacity according to zoom level
+					this.nodeLabels.style("opacity", (d) => this._computeLabelOpacity(d, MARK_TYPES.NODES, event.transform.k));
+					this.linkLabels.style("opacity", (d) => this._computeLabelOpacity(d, MARK_TYPES.LINKS, event.transform.k));
 				});
 			this.svg.call(this.zoomBehavior);
 		} else {
@@ -191,19 +267,25 @@ export default class ForceGraphRenderer extends BaseRenderer {
 	}
 
 	_setLinkEvents() {
-		this.linkSel.on("mouseover", (event, d) => this.callbacks.onHover?.({
-			mark: "link",
-			datum: d,
-			x: event.offsetX,
-			y: event.offsetY,
-			event
-		}))
-		.on("mouseout", () => this.callbacks.onOut?.({ mark: "link" }));
+		this.linkGroups.on("mouseover", (event, d) => {
+			this._focusMark({ mark: MARK_TYPES.LINKS, activeDatum: d })
+			this.callbacks.onHover?.({
+				mark: "link",
+				datum: d,
+				x: event.offsetX,
+				y: event.offsetY,
+				event
+			})
+		})
+		.on("mouseout", () => {
+			this._resetFocusMark()
+			this.callbacks.onOut?.({ mark: "link" })
+		})
 	}
 
 	_setNodeEvents() {
-		this.nodeGroup.on("mouseover", (event, d) => {
-			this._focusMark({ mark: "node", activeDatum: d });
+		this.nodeGroups.on("mouseover", (event, d) => {
+			this._focusMark({ mark: MARK_TYPES.NODES, activeDatum: d });
 			this.callbacks.onHover?.({
 				mark: "node",
 				datum: d,
@@ -213,7 +295,7 @@ export default class ForceGraphRenderer extends BaseRenderer {
 			});
 		})
 		.on("mouseout", () => {
-			this._resetFocusMark({ mark: "node" });
+			this._resetFocusMark();
 			this.callbacks.onOut?.({ mark: "node" });
 		})
 		.on("contextmenu", (event, d) => {
@@ -238,7 +320,7 @@ export default class ForceGraphRenderer extends BaseRenderer {
 	_setDragAndDrop() {
 		if (!this.interactions.drag) return
 
-		this.nodeGroup.call(
+		this.nodeGroups.call(
 			d3.drag()
 			.on("start", (event, d) => dragstarted(event, d, this.simulation))
 			.on("drag", (event, d) => dragged(event, d))
@@ -264,29 +346,61 @@ export default class ForceGraphRenderer extends BaseRenderer {
 	}
 	
 	_focusMark({ mark, activeDatum } = {}) {
-		if (mark !== "node" || !activeDatum) return;
-		const connectedLinks = this.links.filter((link) => (
-			link.source.id === activeDatum.id || link.target.id === activeDatum.id
-		));
-		const connectedNodeIds = new Set(connectedLinks.flatMap((link) => [link.source.id, link.target.id]));
-		this.linkSel?.classed("link-highlighted", (link) => (
-			link.source.id === activeDatum.id || link.target.id === activeDatum.id
-		));
-		this.nodeGroup?.classed("node-highlighted", (graphNode) => connectedNodeIds.has(graphNode.id));
+		if (!activeDatum) return;
+
+		if (mark === MARK_TYPES.NODES){
+			console.log("hovered node = ", activeDatum)
+			const activeNodeId = activeDatum.id;
+
+			const relatedLinks = this.links.filter((link) =>
+				link.source.id === activeNodeId || link.target.id === activeNodeId
+			);
+
+			const relatedNodeIds = new Set(
+				relatedLinks.flatMap((link) => [link.source.id, link.target.id])
+			);
+
+			this.nodeGroups?.classed(
+				"node-downplayed",
+				(node) => !relatedNodeIds.has(node.id) )
+
+			this.linkGroups?.classed(
+				"link-downplayed",
+				(link) => link.source.id !== activeNodeId && link.target.id !== activeNodeId )
+
+			return
+		}
+
+		if (mark === MARK_TYPES.LINKS){
+			const sourceId = activeDatum.source?.id ?? activeDatum.source;
+			const targetId = activeDatum.target?.id ?? activeDatum.target;
+			const relatedNodeIds = new Set([sourceId, targetId]);
+
+			this.nodeGroups?.classed(
+				"node-downplayed",
+				(node) => !relatedNodeIds.has(node.id)
+			);
+
+			this.linkGroups?.classed(
+				"link-downplayed",
+				(link) => link !== activeDatum
+			);
+
+			return
+		}
 	}
 	
-	_resetFocusMark({ mark } = {}) {
-		if (mark && mark !== "node") return;
-		this.linkSel?.classed("link-highlighted", false);
-		this.nodeGroup?.classed("node-highlighted", false);
+	_resetFocusMark() {
+		this.nodeGroups?.classed("node-downplayed", false);
+  		this.linkGroups?.classed("link-downplayed", false);
 	}
 
 	// Graph placement helpers
 
-	_setSimulation(labelSel) {
+	_setSimulation() {
 		this.simulation = d3
 			.forceSimulation(this.nodes)
-			.force("link", d3.forceLink(this.links).id((d) => d.id).distance(() => this._linkDistance()))
+			.force("link", d3.forceLink(this.links).id((d) => d.id).distance(() => this._getLinkDistance()))
 			.force("charge", d3.forceManyBody().strength(-200))
 			.force("center", d3.forceCenter(this._state.width / 2, this._state.height / 2))
 			.force("collision", d3.forceCollide().radius((d) => this._getMarkSize(d, MARK_TYPES.NODES) + 5))
@@ -351,32 +465,53 @@ export default class ForceGraphRenderer extends BaseRenderer {
 		let hasAppliedInitialFit = false;
 		this.simulation.on("tick", () => {
 			if (!this.interactions.zoom) {
-				this.nodeGroup.each(constrainNode);
+				this.nodeGroups.each(constrainNode);
 			}
 
-			if (!this.linkSel) return
+			if (!this.linkGroups) return
 			
-			this.linkSel.each(function (d) {
+			this.linkGroups.each(function (d) {
 				const p = calculateLinkPosition(d);
-				d3.select(this).attr("x1", p.x1).attr("y1", p.y1).attr("x2", p.x2).attr("y2", p.y2);
+				d3.select(this)
+					.selectAll('line')
+					.attr("x1", p.x1)
+					.attr("y1", p.y1)
+					.attr("x2", p.x2)
+					.attr("y2", p.y2);
+			});
+
+			
+			this.linkLabels
+				.attr("x", (d) => this._getLinkLabelPosition(d).x)
+				.attr("y", (d) => this._getLinkLabelPosition(d).y)
+				.attr("transform", (d) => {
+					const p = this._getLinkLabelPosition(d);
+					return `rotate(${p.angle},${p.x},${p.y})`;
+				});
+
+
+			this.linkLabels.attr("transform", (d) => {
+				const p = this._getLinkLabelPosition(d);
+				return `translate(${p.x},${p.y}) rotate(${p.angle})`;
 			});
 			
-			this.nodeGroup.attr("transform", (d) => {
+			
+			this.nodeGroups.attr("transform", (d) => {
 				const x = Number.isNaN(d.x) ? this._state.width / 2 : d.x;
 				const y = Number.isNaN(d.y) ? this._state.height / 2 : d.y;
 				return `translate(${x},${y})`;
 			});
 			
-			if (labelSel) {
-				labelSel.each(function (d) {
-					const placement = getLabelPlacement(d);
-					d3.select(this)
-					.attr("x", placement.x)
-					.attr("y", placement.y)
-					.style("text-anchor", placement.anchor)
-					.style("dominant-baseline", placement.baseline);
-				});
-			}
+			
+			this.nodeLabels.each(function (d) {
+				const placement = getLabelPlacement(d);
+				d3.select(this)
+				.attr("x", placement.x)
+				.attr("y", placement.y)
+				.style("text-anchor", placement.anchor)
+				.style("dominant-baseline", placement.baseline);
+			});
+			
 			
 			if (this.interactions.zoom && !hasAppliedInitialFit && this.simulation.alpha() < 0.8) {
 				this._applyInitialZoomFit();
@@ -463,8 +598,8 @@ export default class ForceGraphRenderer extends BaseRenderer {
 			this.svg.on(".zoom", null);
 		}
 		
-		this.nodeGroup = null;
-		this.linkSel = null;
+		this.nodeGroups = null;
+		this.linkGroups = null;
 		this.chartGroup = null;
 		this.zoomBehavior = null;
 		

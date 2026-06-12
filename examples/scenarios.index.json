@@ -26,6 +26,14 @@
       "endpoint": "https://dbpedia.org/sparql",
       "component": "venus-graph"
     },
+    {
+      "id": "visgraph-semantic-links-labels",
+      "name": "Graph structure of films on DBPedia",
+      "encodingPath": "./encoding/graph-semantic-links.json",
+      "queryPath": "./queries/dbpedia-movies-spo.rq",
+      "endpoint": "https://dbpedia.org/sparql",
+      "component": "venus-graph"
+    },
 
 
 

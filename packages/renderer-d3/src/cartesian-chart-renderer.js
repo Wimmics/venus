@@ -1,11 +1,5 @@
 import * as d3 from "d3";
 import BaseRenderer from "./base-renderer.js";
-import {
-	computeAxisAwareMargins,
-	measurePlotOverflow,
-	shouldRefitLayout,
-	growMargins
-} from "./utils/layout-fit.js";
 
 export default class CartesianChartRenderer extends BaseRenderer {
 	constructor(opts = {}) {
@@ -90,4 +84,5 @@ export default class CartesianChartRenderer extends BaseRenderer {
 	destroy() {
 		super.destroy();
 	}
+
 }

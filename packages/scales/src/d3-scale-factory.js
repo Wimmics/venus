@@ -42,6 +42,8 @@ export class D3ScaleFactory {
 			field,
 			scaleType: scaleTypeForDomain,
 		});
+
+		console.log('domain =', domain)
 		
 		// If no domain, then cancel the operation
 		if (!Array.isArray(domain) || domain.length === 0) return null;
@@ -301,7 +303,7 @@ export class D3ScaleFactory {
 		domainResult = null
 	} = {}) {
 		const type = normalizeScaleType(scaleConfig.type, fallbackType);
-		
+
 		const { domain, bounds, bins } = domainResult || this.resolveDomain({
 			scaleConfig,
 			data,
@@ -313,7 +315,7 @@ export class D3ScaleFactory {
 		
 		let scale;
 		
-		if (type === SCALE_TYPES.LINEAR || type === SCALE_TYPES.COUNT) {
+		if (type === SCALE_TYPES.LINEAR) {
 			scale = d3.scaleLinear().domain(domain).nice().range(range);
 		} else if (type === SCALE_TYPES.SQRT) {
 			scale = d3.scaleSqrt().domain(domain).nice().range(range);
@@ -321,19 +323,19 @@ export class D3ScaleFactory {
 			scale = d3.scaleLog().domain(domain).range(range);
 		} else if (type === SCALE_TYPES.POW) {
 			scale = d3.scalePow()
-			.exponent(Number.isFinite(scaleConfig.exponent) ? Number(scaleConfig.exponent) : 1)
-			.domain(domain)
-			.range(range);
+				.exponent(Number.isFinite(scaleConfig.exponent) ? Number(scaleConfig.exponent) : 1)
+				.domain(domain)
+				.range(range);
 		} else if (type === SCALE_TYPES.BAND) {
 			scale = d3.scaleBand()
-			.domain(domain)
-			.range(range)
-			.padding(scaleConfig.padding ?? 0.1);
+				.domain(domain)
+				.range(range)
+				.padding(scaleConfig.padding ?? 0.1);
 		} else {
 			scale = d3.scalePoint()
-			.domain(domain)
-			.range(range)
-			.padding(scaleConfig.padding ?? 0.5);
+				.domain(domain)
+				.range(range)
+				.padding(scaleConfig.padding ?? 0.5);
 		}
 
 		return {
@@ -385,10 +387,7 @@ export class D3ScaleFactory {
 		}
 
 		if (isCountScaleType(scaleType) && (!format || format === "raw")) {
-			return (value) => {
-				const number = asNumber(value);
-				return number === null ? String(value) : d3.format(",d")(Math.round(number));
-			};
+			return (value) => String(value);
 		}
 
 		if (!format || format === "raw") {

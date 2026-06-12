@@ -1,0 +1,36 @@
+{
+  "title": "Graph structure of films on DBPedia",
+  "nodes": {
+    "source": {
+      "field": "sLabel"
+    },
+    "target": {
+      "field": "oLabel"
+    },
+    "size": {
+      "metric": "degree",
+      "scale": {
+        "type": "linear",
+        "range": [
+          5,
+          25
+        ]
+      },
+      "legend": {
+        "title": "Links Count",
+        "position": "top-left"
+      }
+    }
+  },
+  "links": {
+    "type": "semantic",
+    "relation": { "field": "pLabel"},
+    "labels": { "display": true },
+    "color": {
+      "field": "pLabel",
+      "scale": {
+        "range": "Set2"
+      }
+    }
+  }
+}

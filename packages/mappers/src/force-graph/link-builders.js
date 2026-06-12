@@ -79,29 +79,35 @@ export function addSemanticLink({
 		applyNodeLabelField(node, nodeLabel?.labels);
 		nodesMap.set(targetId, node);
 	}
+	
 	const targetNode = nodesMap.get(targetId);
 	addNodeRole(targetNode, "target");
 	copyNodeFields(targetNode, binding, vars);
-	applyNodeLabelField(targetNode, resolveRoleNodeConfig({ nodes: nodeLabel }, targetNode, "target", "labels"));
+	applyNodeLabelField(
+		targetNode,
+		resolveRoleNodeConfig({ nodes: nodeLabel }, targetNode, "target", "labels")
+	);
+	
+	const semanticBinding = semanticVar ? binding[semanticVar] : null;
+	const semanticId = semanticBinding ? extractId(semanticBinding) : "relation";
+	const semanticLabel = semanticBinding?.value || "relation";
 	
 	const linkKey = `${sourceId}-${targetId}-semantic`;
+	
 	if (!linksMap.has(linkKey)) {
-		const semanticLabel =
-		semanticVar && binding[semanticVar]
-		? binding[semanticVar].value
-		: "relation";
-		
 		const link = {
 			source: sourceId,
 			target: targetId,
 			type: "semantic",
-			label: resolveBindingLabel(linkLabel, binding[semanticVar] || targetBinding, binding),
+			relation: semanticId,
 			semanticLabel,
+			label: resolveBindingLabel(linkLabel, semanticBinding || targetBinding, binding),
 			tooltip: semanticLabel
 		};
 		
 		linksMap.set(linkKey, link);
 	}
+	
 	mergeLinkBindingValues(linksMap.get(linkKey), binding, vars);
 }
 

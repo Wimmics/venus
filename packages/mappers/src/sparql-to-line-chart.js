@@ -1,5 +1,5 @@
-import { SparqlToVisMapper } from "../sparql-to-vis-mapper.js";
-import { bindingToValue } from "../extract-bindings-info.js";
+import { SparqlToVisMapper } from "./sparql-to-vis-mapper.js";
+import { bindingToValue } from "./extract-bindings-info.js";
 import { isQuantitativeScaleType, SCALE_TYPES, VIS_TYPES } from "@wimmics/venus-core";
 
 export class SparqlToLineChartMapper extends SparqlToVisMapper {

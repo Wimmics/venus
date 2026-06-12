@@ -6,4 +6,3 @@ WHERE {
   BIND(YEAR(?date) AS ?year)
 }
 GROUP BY ?year
-ORDER BY ?year

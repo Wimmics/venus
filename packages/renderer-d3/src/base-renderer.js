@@ -1,6 +1,6 @@
 import * as d3 from "d3";
 
-import { CHANNEL_TYPES, MARK_TYPES } from "@wimmics/venus-core";
+import { ATTRIBUTE_TYPES, CHANNEL_TYPES, MARK_ATTRIBUTES, MARK_CHANNELS, MARK_TYPES } from "@wimmics/venus-core";
 
 export default class BaseRenderer {
 	/**
@@ -24,6 +24,8 @@ export default class BaseRenderer {
 	render(payload = {}, visualArtifacts = null) {
 		this._ingestRenderPayload(payload);
 		this.visualArtifacts = visualArtifacts || this.visualArtifacts || {}
+
+		console.log("visual artifacts =", this.visualArtifacts)
 		
 		if (!this.container) throw new Error(`${this.constructor.name} requires a container element`);
 		
@@ -178,20 +180,74 @@ export default class BaseRenderer {
 	}
 
 	// Helper method to centralize channel information per mark
-	_retrieveMarkChannels({ marks = [] }) {
+	_retrieveMarkChannels({ marks = [], roles={} }) {
 		this.channels = {} 		
-		for (let channel of Object.values(CHANNEL_TYPES)) {
-			if (!this.channels[channel]) this.channels[channel] = {}
-			for (let mark of marks) {
+	
+		for (let mark of marks) {
+			for (let channel of MARK_CHANNELS[mark]) {
+				if (!this.channels[channel]) this.channels[channel] = {}
+
 				this.channels[channel][mark] = this._getArtifactChannel(mark, channel)
+				
+				const markRoles = roles[mark] || []
+				for (let role of markRoles) {
+					if (!this.channels[channel][mark])
+						this.channels[channel][mark] = {}
+
+					this.channels[channel][mark][role] = this._getArtifactChannel(mark, channel, role)
+				}
 			}
 		}
 	}
 
-	_isMarkNodes(mark) { return mark === MARK_TYPES.NODES }
+	_retrieveMarkAttributes({ marks = [], roles={} }) {
+		this.attributes = {} 		
+	
+		for (let mark of marks) {
+			for (let attribute of MARK_ATTRIBUTES[mark]) {
+				if (!this.attributes[attribute]) this.attributes[attribute] = {}
+
+				this.attributes[attribute][mark] = this._getArtifactAttribute(mark, attribute)
+				
+				const markRoles = roles[mark] || []
+				for (let role of markRoles) {
+					if (!this.attributes[attribute][mark])
+						this.attributes[attribute][mark] = {}
+
+					this.attributes[attribute][mark][role] = this._getArtifactAttribute(mark, attribute, role)
+				}
+			}
+		}
+	}
+
+	// ----- Helper methods for attributes -----------
+	
+	_resolveAttribute({ d = null, mark, attribute }) {
+		// TODO: why is roles a list? in what case can a value have multiple roles
+		const role = Array.isArray(d?.roles) ? d.roles[0] : null;
+		
+		if (role && this.attributes?.[attribute]?.[mark]?.[role])
+			return this.attributes?.[attribute]?.[mark]?.[role]
+
+		return this.attributes?.[attribute]?.[mark]
+	}
+
+	_displayLabel(d, mark){
+		return this._resolveAttribute({ d, mark, attribute: ATTRIBUTE_TYPES.LABELS })?.display !== false
+	}
+
+	
+
+	// ----- Helper methods for channels -------
 
 	_resolveChannel(d, mark, channel) {
-		return this._isMarkNodes(mark) ? this._resolveNodeChannel(d, channel) : this.channels?.[channel]?.[mark]
+		// TODO: why is roles a list? in what case can a value have multiple roles
+		const role = Array.isArray(d?.roles) ? d.roles[0] : null;
+		
+		if (role && this.channels?.[channel]?.[mark]?.[role])
+			return this.channels?.[channel]?.[mark]?.[role]
+
+		return this.channels?.[channel]?.[mark]
 	}
 
 	// Color scale helpers
