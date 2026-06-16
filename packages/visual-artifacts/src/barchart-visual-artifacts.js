@@ -7,10 +7,8 @@ import { SCALE_TYPES } from "@wimmics/venus-core";
 export class BarChartVisualArtifacts extends CartesianVisualArtifacts {
 
     _computeStackedYDomainFromChart(chart) {
-		const bars = chart?.bars || [];
-
+		const bars = chart?.bars || []
 		const maxTotal = d3.max(bars, (bar) => Number(bar?.y1) || 0) || 0;
-
 		return [0, Math.max(1, maxTotal)];
 	}
 
@@ -56,10 +54,7 @@ export class BarChartVisualArtifacts extends CartesianVisualArtifacts {
 			: null;
 	}
 
-    _getAxesDomain({ encoding, data, chart, isHorizontal }) {
-        const xScaleConfig = { ...(encoding?.x?.scale || {}) };
-        const yScaleConfig = { ...(encoding?.y?.scale || {}) };
-
+    _getAxesDomain({ chart, isHorizontal }) {
         const categoryDomain = chart?.xValues || [];
 
         const valueDomain =
@@ -68,29 +63,12 @@ export class BarChartVisualArtifacts extends CartesianVisualArtifacts {
             : this._isStacked(chart)
                 ? this._computeStackedYDomainFromChart(chart)
                 : this._computeBarYDomainFromChart(chart);
-
-        if (isHorizontal) {
-            xScaleConfig.domain = valueDomain;
-            yScaleConfig.domain = categoryDomain;
-        } else {
-            xScaleConfig.domain = categoryDomain;
-            yScaleConfig.domain = valueDomain;
-        }
-
-        return {
-            x: this.scaleFactory.resolveDomain({
-                scaleConfig: xScaleConfig,
-                data,
-                field: encoding?.x?.field || null,
-                scaleType: xScaleConfig?.type || (isHorizontal ? SCALE_TYPES.LINEAR : SCALE_TYPES.BAND)
-            }),
-            y: this.scaleFactory.resolveDomain({
-                scaleConfig: yScaleConfig,
-                data,
-                field: encoding?.y?.field || null,
-                scaleType: yScaleConfig?.type || (isHorizontal ? SCALE_TYPES.BAND : SCALE_TYPES.LINEAR)
-            })
-        };
+		
+		return {
+			x: { domain: isHorizontal ? valueDomain : categoryDomain },
+			y: { domain: isHorizontal ? categoryDomain : valueDomain }
+		}
+        
     }
 
     _getScales( { encoding, range, domainResult, isHorizontal }) {

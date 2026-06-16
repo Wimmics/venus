@@ -63,10 +63,10 @@ export default class ScatterPlotRenderer extends CartesianChartRenderer {
 		const points = this.chartGroup.selectAll('.scatter-points')
 
 		points.on("mouseover", (event, d) => {
-			this._focusMark({ mark: "point", activeDatum: d, activeElement: event.currentTarget });
+			this._focusMark({ activeDatum: d, activeElement: event.currentTarget });
 			
 			this.callbacks.onHover?.({
-				mark: "point",
+				mark: MARK_TYPES.POINTS,
 				datum: d.datum,
 				x: event.offsetX,
 				y: event.offsetY,
@@ -74,14 +74,13 @@ export default class ScatterPlotRenderer extends CartesianChartRenderer {
 			});
 		})
 		.on("mouseout", () => {
-			this._resetFocusMark({ mark: "point" });
+			this._resetFocusMark();
 
-			this.callbacks.onOut?.({ mark: "point" });
+			this.callbacks.onOut?.();
 		});
 	}
 	
-	_focusMark({ mark, activeDatum, activeElement } = {}) {
-		if (mark !== "point") return;
+	_focusMark({ activeDatum, activeElement } = {}) {
 		
 		this.chartGroup
 			.selectAll(".scatter-points")
@@ -92,8 +91,7 @@ export default class ScatterPlotRenderer extends CartesianChartRenderer {
 		this._showHoverGuides(activeElement)
 	}
 	
-	_resetFocusMark({ mark } = {}) {
-		if (mark && mark !== "point") return;
+	_resetFocusMark() {
 		
 		this.chartGroup
 			.selectAll(".scatter-points")

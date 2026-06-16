@@ -6,8 +6,7 @@
       "labelAngle": -45,
       "labelOffset": { "x": -6, "y": 10 },
       "tickStep": 10
-    },
-    "scale": {"type": "count"}
+    }
   },
   "y": {
     "field": "count",

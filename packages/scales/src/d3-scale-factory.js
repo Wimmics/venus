@@ -297,7 +297,7 @@ export class D3ScaleFactory {
 		data,
 		field,
 		range,
-		fallbackType = SCALE_TYPES.ORDINAL,
+		fallbackType = SCALE_TYPES.LINEAR,
 		domainResult = null
 	} = {}) {
 		const type = normalizeScaleType(scaleConfig.type, fallbackType);
@@ -313,7 +313,7 @@ export class D3ScaleFactory {
 		
 		let scale;
 		
-		if (type === SCALE_TYPES.LINEAR) {
+		if (type === SCALE_TYPES.LINEAR || isCountScaleType(type)) {
 			scale = d3.scaleLinear().domain(domain).nice().range(range);
 		} else if (type === SCALE_TYPES.SQRT) {
 			scale = d3.scaleSqrt().domain(domain).nice().range(range);
@@ -485,6 +485,8 @@ export class D3ScaleFactory {
 					bins: null
 				}
 		}
+
+		console.log("[resolveDomain] domainResult = ", domainResult)
 			
 		return domainResult;
 	}

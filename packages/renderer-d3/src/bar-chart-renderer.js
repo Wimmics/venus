@@ -144,12 +144,12 @@ export default class BarChartRenderer extends CartesianChartRenderer {
 			return Number.isFinite(current) && current >= 0 ? current : 0;
 		})
 		.on("mouseover", (event, datum) => {
-			this._focusMark({ mark: "bar", activeElement: event.currentTarget });
+			this._focusMark({ activeElement: event.currentTarget });
 			
 			const rawDatum = datum?.datum || datum?.raw || datum;
 			
 			this.callbacks.onHover?.({
-				mark: "bar",
+				mark: MARK_TYPES.BARS,
 				datum: rawDatum,
 				x: event.offsetX,
 				y: event.offsetY,
@@ -157,13 +157,13 @@ export default class BarChartRenderer extends CartesianChartRenderer {
 			});
 		})
 		.on("mouseout", () => {
-			this._resetFocusMark({ mark: "bar" });
-			this.callbacks.onOut?.({ mark: "bar" });
+			this._resetFocusMark();
+			this.callbacks.onOut?.();
 		});
 	}
 
-	_focusMark({ mark, activeElement } = {}) {
-		if (mark !== "bar" || !activeElement) return;
+	_focusMark({ activeElement } = {}) {
+		if (!activeElement) return;
 		
 		this.chartGroup.selectAll(".bars rect")
 			.attr("opacity", function () {
@@ -179,8 +179,7 @@ export default class BarChartRenderer extends CartesianChartRenderer {
 			});
 	}
 
-	_resetFocusMark({ mark } = {}) {
-		if (mark && mark !== "bar") return;
+	_resetFocusMark() {
 		
 		this.chartGroup.selectAll(".bars rect")
 			.attr("opacity", 1)

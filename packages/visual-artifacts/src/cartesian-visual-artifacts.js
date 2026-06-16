@@ -6,9 +6,6 @@ export class CartesianVisualArtifacts extends VisualArtifacts {
 
 	_processChartSpecificArtifacts() {
 		const { encoding, data, chart, width, height } = this._payload;
-
-		// console.log("cartesian encoding = ", encoding)
-		// console.log("cartesian chart = ", chart)
 		
 		this._processLayoutArtifacts({ 
 			encoding, 
@@ -27,6 +24,7 @@ export class CartesianVisualArtifacts extends VisualArtifacts {
 
 		// Resolve domains
 		const domainResult = this._getAxesDomain({ encoding: layoutEncoding, data: rows, chart, isHorizontal })
+		console.log("domainResult = ", domainResult)
 
 		// Build axis specs from resolved domains
 		const specsResult = this._getAxesSpecs({ encoding: layoutEncoding, domainResult })
@@ -169,8 +167,25 @@ export class CartesianVisualArtifacts extends VisualArtifacts {
 
 			const step = Math.ceil(domain.length / maxTicks);
 			return domain.filter((_, index) => index % step === 0);
-		}
+		} 
+		
+		if (scaleType === SCALE_TYPES.COUNT) {
+			if (domain.length < 2) return null;
 
+			const step = Number.isFinite(tickStep) && tickStep > 0
+				? tickStep
+				: 1;
+
+			const start = Math.ceil(Number(domain[0]) / step) * step;
+			const end = Math.floor(Number(domain[domain.length - 1]));
+
+			const ticks = [];
+			for (let value = start; value <= end + step * 1e-9; value += step) {
+				ticks.push(Number(value.toFixed(12)));
+			}
+
+			return ticks;
+		}
 		// Quantitative scales
 		if (Number.isFinite(tickStep) && tickStep > 0) {
 			if (domain.length < 2) return null;
@@ -185,7 +200,7 @@ export class CartesianVisualArtifacts extends VisualArtifacts {
 				ticks.push(Number(value.toFixed(12)));
 			}
 
-			return isCountScaleType(scaleType) ? ticks.map(d => d.toString()) : ticks;
+			return ticks
 		}
 
 		

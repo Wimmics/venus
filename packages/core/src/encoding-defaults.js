@@ -88,7 +88,7 @@ export const MARK_DEFAULTS = {
       metric: "degree",
       scale: {
         type: "linear",
-        range: [8, 25]
+        range: [10, 40]
       }
     },
     stroke: {
@@ -105,7 +105,7 @@ export const MARK_DEFAULTS = {
 
   links: {
     color: { value: "#999" },
-    size: { value: 1.5 },
+    size: { value: 3 },
     distance: { value: 100 },
     legend: COMMON_DEFAULTS.legend
   }

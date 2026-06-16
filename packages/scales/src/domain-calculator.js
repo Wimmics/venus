@@ -40,7 +40,7 @@ export class DomainCalculator {
 	* @returns {Array} Resolved domain for the field
 	*/
 	getDomain(data, field, userDomain = null, scaleType = SCALE_DEFAULTS.TYPE, binning = null) {
-			
+
 		if (!data || data.length === 0) {
 			console.warn(`No data available for field "${field}"`);
 			return {}
@@ -76,7 +76,6 @@ export class DomainCalculator {
 		const invalidityReport = this.analyzeDomainInvalidity(userDomain, extractedValues);
 		if (invalidityReport.isInvalid) {
 			const fixedDomain = this.fixDomain(userDomain, extractedValues, scaleType);
-			
 			// Emit a single consolidated warning with context.
 			const warningParts = [
 				`Invalid domain for field "${field}": ${invalidityReport.reason}`,
@@ -84,8 +83,7 @@ export class DomainCalculator {
 				`Data contains: [${this._formatValueList(extractedValues)}]`,
 				`Domain corrected to: [${this._formatValueList(fixedDomain)}]`
 			];
-			console.warn(warningParts.join(' | '));
-			
+		
 			return { domain: fixedDomain }
 		}
 		
@@ -235,9 +233,6 @@ export class DomainCalculator {
 			
 			const result = Array.from(values).flat()
 			const uniqueValues = result.filter((d,i) => result.indexOf(d) === i)
-			
-			// Cache field stats for optional diagnostics.
-			this.cacheFieldStats(field, uniqueValues, data.length);
 			
 			return uniqueValues;
 		}
@@ -462,43 +457,6 @@ export class DomainCalculator {
 				return isNaN(num) ? NaN : num;
 			}
 			return NaN;
-		}
-		
-		/**
-		* Cache field stats for optional diagnostics and reuse.
-		*
-		* @param {string} field - Field name
-		* @param {Array} uniqueValues - Unique values found
-		* @param {number} totalCount - Total number of records
-		*/
-		cacheFieldStats(field, uniqueValues, totalCount) {
-			const stats = {
-				uniqueValues: [...uniqueValues],
-				uniqueCount: uniqueValues.length,
-				totalCount: totalCount,
-				coverage: uniqueValues.length / totalCount,
-				lastUpdated: Date.now()
-			};
-			
-			this.fieldStatsCache.set(field, stats);
-		}
-		
-		/**
-		* Read cached stats for a field.
-		*
-		* @param {string} field - Field name
-		* @returns {Object|null} Stats object or null
-		*/
-		getFieldStats(field) {
-			return this.fieldStatsCache.get(field) || null;
-		}
-		
-		/**
-		* Clear caches and force recalculation on next call.
-		*/
-		clearCache() {
-			this.domainCache.clear();
-			this.fieldStatsCache.clear();
 		}
 		
 		/**

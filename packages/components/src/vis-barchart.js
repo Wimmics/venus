@@ -4,6 +4,7 @@ import { VIS_TYPES } from "@wimmics/venus-core";
 import { createSparqlMapper } from "@wimmics/venus-mappers"
 
 import { VenusBase } from "./vis-base.js";
+import { createTooltipManager } from "./tooltips/tooltips-factory.js";
 export class VenusBarChart extends VenusBase {
 	constructor() {
 		super({
@@ -17,6 +18,8 @@ export class VenusBarChart extends VenusBase {
 		this.encodingManager = createEncodingManager(VIS_TYPES.VENUS_BARCHART);
 		this.visualEncoding = this.encodingManager.getDefaultEncoding();
 		this.mapper = createSparqlMapper(VIS_TYPES.VENUS_BARCHART)
+
+		this.tooltipManager = createTooltipManager(VIS_TYPES.VENUS_BARCHART, { shadowRoot: this.shadowRoot })
 		
 		this._initDOMStructure();
 	}
@@ -78,35 +81,11 @@ export class VenusBarChart extends VenusBase {
 	}
 	
 	_onHover(payload = {}) {
-		if (payload.mark !== "bar") return;
-		const { datum, x, y } = payload;
-		const xField = this.visualEncoding?.x?.field;
-		const yField = this.visualEncoding?.y?.field;
-		const groupField = this.visualEncoding?.bars?.groups?.field;
-		const colorField = this.visualEncoding?.bars?.color?.field;
-		const sizeField = this.visualEncoding?.bars?.size?.field;
-		const title = this._resolveTooltipTitle(
-			datum,
-			this.visualEncoding?.bars,
-			xField ? datum?.[xField] : "Bar"
-		);
-		const lines = this._buildTooltipLines(datum, {
-			preferredOrder: [yField, groupField, colorField, sizeField],
-			excludeKeys: [xField],
-			markConfig: this.visualEncoding?.bars
-		});
-		
-		this._showTooltip({ title, lines }, x, y, {
-			className: "tooltip bar-tooltip",
-			offsetX: 12,
-			offsetY: -12,
-			delayMs: 80
-		});
+		this.tooltipManager.showTooltip(payload)
 	}
 	
-	_onOut(payload = {}) {
-		if (payload.mark && payload.mark !== "bar") return;
-		this._hideTooltip("tooltip bar-tooltip");
+	_onOut() {
+		this.tooltipManager.hideTooltip()
 	}
 }
 

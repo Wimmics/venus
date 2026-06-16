@@ -1,6 +1,6 @@
 import { SparqlToVisMapper } from "./sparql-to-vis-mapper.js";
 import { extractId, resolveBindingLabel } from "./extract-bindings-info.js";
-import { VIS_TYPES } from "@wimmics/venus-core";
+import { MARK_ATTRIBUTES, MARK_CHANNELS, MARK_TYPES, VIS_TYPES } from "@wimmics/venus-core";
 
 export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 	constructor(options = {}) {
@@ -10,46 +10,25 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 	map(results, ctx = {}) {
 		this._assertValidResults(results);
 		
-		const vars = results.head.vars || [];
-		const bindings = results.results.bindings || [];
-		const encoding = ctx.encoding || {};
+		this.vars = results.head.vars || [];
+		this.bindings = results.results.bindings || [];
+		this.encoding = ctx.encoding || {};
 		
-		const resolved = this._resolveGraphEncoding(encoding);
+		this.resolvedEncoding = this._resolveGraphEncoding();
 		
-		const nodesMap = new Map();
-		const linksMap = new Map();
+		this.nodesMap = new Map();
+		this.linksMap = new Map();
 		
-		if (resolved.linkType === "cooccurrence") {
-			this._mapCooccurrenceGraph({
-				bindings,
-				vars,
-				encoding,
-				resolved,
-				nodesMap,
-				linksMap
-			});
-		} else if (resolved.linkType === "semantic") {
-			this._mapSemanticGraph({
-				bindings,
-				vars,
-				encoding,
-				resolved,
-				nodesMap,
-				linksMap
-			});
+		if (this.resolvedEncoding.linkType === "cooccurrence") {
+			this._mapCooccurrenceGraph();
+		} else if (this.resolvedEncoding.linkType === "semantic") {
+			this._mapSemanticGraph();
 		} else {
-			this._mapDirectionalGraph({
-				bindings,
-				vars,
-				encoding,
-				resolved,
-				nodesMap,
-				linksMap
-			});
+			this._mapDirectionalGraph();
 		}
 		
-		const nodes = Array.from(nodesMap.values());
-		const links = Array.from(linksMap.values());
+		const nodes = Array.from(this.nodesMap.values());
+		const links = Array.from(this.linksMap.values());
 		
 		this._finalizeLinks(links);
 		this._addNodeDegrees(nodes, links);
@@ -57,32 +36,32 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 		return {
 			graph: { nodes, links },
 			meta: {
-				vars,
-				mappingResolved: resolved,
-				encodingUsed: JSON.parse(JSON.stringify(encoding))
+				vars: this.vars,
+				mappingResolved: this.resolvedEncoding,
+				encodingUsed: JSON.parse(JSON.stringify(this.encoding))
 			}
 		};
 	}
 	
-	_resolveGraphEncoding(encoding = {}) {
-		const linkType = encoding?.links?.type || "directional";
+	_resolveGraphEncoding() {
+		const linkType = this.encoding?.links?.type || "directional";
 		
 		const sourceVar =
-		linkType === "cooccurrence"
-		? encoding?.nodes?.field
-		: encoding?.nodes?.source?.field;
+			linkType === "cooccurrence"
+			? this.encoding?.nodes?.field
+			: this.encoding?.nodes?.source?.field;
 		
 		const targetVar =
-		linkType === "cooccurrence"
-		? null
-		: encoding?.nodes?.target?.field;
+			linkType === "cooccurrence"
+			? null
+			: this.encoding?.nodes?.target?.field;
 		
 		return {
 			linkType,
 			sourceVar,
 			targetVar,
-			contextVar: encoding?.links?.context?.field || null,
-			relationVar: encoding?.links?.relation?.field || null,
+			contextVar: this.encoding?.links?.context?.field || null,
+			relationVar: this.encoding?.links?.relation?.field || null,
 			cooccurrenceNodeVars: Array.isArray(sourceVar) ? sourceVar : [sourceVar].filter(Boolean)
 		};
 	}
@@ -91,37 +70,31 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 	// Directional links
 	// ---------------------------------------------------------------------------
 	
-	_mapDirectionalGraph({ bindings, vars, encoding, resolved, nodesMap, linksMap }) {
-		const { sourceVar, targetVar } = resolved;
+	_mapDirectionalGraph() {
+		const { sourceVar, targetVar } = this.resolvedEncoding;
 		
-		for (const binding of bindings) {
+		for (const binding of this.bindings) {
 			if (!binding[sourceVar] || !binding[targetVar]) continue;
 			
 			const sourceNode = this._upsertNode({
-				nodesMap,
 				binding,
 				entityVar: sourceVar,
-				encoding,
 				role: "source"
 			});
 			
 			const targetNode = this._upsertNode({
-				nodesMap,
 				binding,
 				entityVar: targetVar,
-				encoding,
 				role: "target"
 			});
 			
 			this._upsertMergedLink({
-				linksMap,
 				sourceId: sourceNode.id,
 				targetId: targetNode.id,
 				type: "directional",
 				binding,
-				vars,
 				label: this._resolveLinkLabel({
-					linkLabelConfig: encoding?.links?.labels,
+					linkLabelConfig: this.encoding?.links?.labels,
 					fallbackBinding: binding[targetVar],
 					binding
 				}),
@@ -129,7 +102,7 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 					key: "directional",
 					label: "directional",
 					type: "directional",
-					data: this._bindingToPlainObject(binding, vars)
+					data: this._bindingToPlainObject(binding)
 				}
 			});
 		}
@@ -139,25 +112,21 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 	// Semantic links
 	// ---------------------------------------------------------------------------
 	
-	_mapSemanticGraph({ bindings, vars, encoding, resolved, nodesMap, linksMap }) {
-		const { sourceVar, targetVar, relationVar } = resolved;
+	_mapSemanticGraph() {
+		const { sourceVar, targetVar, relationVar } = this.resolvedEncoding;
 		
-		for (const binding of bindings) {
+		for (const binding of this.bindings) {
 			if (!binding[sourceVar] || !binding[targetVar]) continue;
 			
 			const sourceNode = this._upsertNode({
-				nodesMap,
 				binding,
 				entityVar: sourceVar,
-				encoding,
 				role: "source"
 			});
 			
 			const targetNode = this._upsertNode({
-				nodesMap,
 				binding,
 				entityVar: targetVar,
-				encoding,
 				role: "target"
 			});
 			
@@ -165,18 +134,16 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 			const relationValue = relationBinding?.value || "relation";
 			const relationKey = relationBinding ? extractId(relationBinding) : relationValue;
 			
-			const valueData = this._bindingToPlainObject(binding, vars);
+			const valueData = this._bindingToPlainObject(binding);
 			if (relationVar) valueData[relationVar] = relationValue;
 			
 			this._upsertMergedLink({
-				linksMap,
 				sourceId: sourceNode.id,
 				targetId: targetNode.id,
 				type: "semantic",
 				binding,
-				vars,
 				label: this._resolveLinkLabel({
-					linkLabelConfig: encoding?.links?.labels,
+					linkLabelConfig: this.encoding?.links?.labels,
 					fallbackBinding: relationBinding || binding[targetVar],
 					binding
 				}),
@@ -196,20 +163,16 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 	// Cooccurrence links
 	// ---------------------------------------------------------------------------
 	
-	_mapCooccurrenceGraph({ bindings, vars, encoding, resolved, nodesMap, linksMap }) {
-		const { cooccurrenceNodeVars, contextVar } = resolved;
+	_mapCooccurrenceGraph() {
+		const { cooccurrenceNodeVars, contextVar } = this.resolvedEncoding
 		
 		if (!contextVar) {
 			throw new Error("Cooccurrence graph requires links.context.field");
 		}
 		
 		const contextGroups = this._groupEntitiesByContext({
-			bindings,
-			vars,
 			nodeVars: cooccurrenceNodeVars,
-			contextVar,
-			encoding,
-			nodesMap
+			contextVar
 		});
 		
 		for (const [contextValue, entityMap] of contextGroups.entries()) {
@@ -228,18 +191,16 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 					];
 					
 					const valueData = this._mergePlainRows(
-						pairBindings.map((binding) => this._bindingToPlainObject(binding, vars))
+						pairBindings.map((binding) => this._bindingToPlainObject(binding))
 					);
 					
 					valueData[contextVar] = contextValue;
 					
 					this._upsertMergedLink({
-						linksMap,
 						sourceId,
 						targetId,
 						type: "cooccurrence",
 						binding: pairBindings[0],
-						vars,
 						label: String(contextValue),
 						value: {
 							key: String(contextValue),
@@ -255,10 +216,10 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 		}
 	}
 	
-	_groupEntitiesByContext({ bindings, vars, nodeVars, contextVar, encoding, nodesMap }) {
+	_groupEntitiesByContext({ nodeVars, contextVar }) {
 		const groups = new Map();
 		
-		for (const binding of bindings) {
+		for (const binding of this.bindings) {
 			const contextBinding = binding?.[contextVar];
 			if (!contextBinding?.value) continue;
 			
@@ -275,10 +236,8 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 				if (!entityBinding) continue;
 				
 				const node = this._upsertNode({
-					nodesMap,
 					binding,
 					entityVar,
-					encoding,
 					role: null
 				});
 				
@@ -297,70 +256,64 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 	// Canonical nodes
 	// ---------------------------------------------------------------------------
 	
-	_upsertNode({ nodesMap, binding, entityVar, encoding, role = null }) {
+	_upsertNode({ binding, entityVar, role = null }) {
 		const entityBinding = binding?.[entityVar];
 		const id = extractId(entityBinding);
 		
-		if (!nodesMap.has(id)) {
-			nodesMap.set(id, this._makeNode({
-				binding,
-				entityVar,
-				id,
-				encoding,
-				role
-			}));
+		const nodeConfig = this._resolveNodeConfig({ role })
+		const node = this._makeNode({ binding, entityVar, id, labelsConfig: nodeConfig?.labels })
+
+		if (!this.nodesMap.has(id)) {
+			this.nodesMap.set(id, node);
 		}
 		
-		const node = nodesMap.get(id);
-		
 		if (role) this._addNodeRole(node, role);
+
+		// Copy associated fields used on channels and attributes for rendering
+		const associatedFields = this._getAssociatedFields(MARK_TYPES.NODES, nodeConfig)
+		for (const field of associatedFields) {
+			node[field] = binding[field]?.value
+		}
+
+		// Copy fields necessary for the tooltips
+		const tooltipFields = this._getTooltipFields({
+			config: nodeConfig?.tooltip, 
+			binding, 
+			primaryFields: [ entityVar ]})
+
+		for (const field of tooltipFields) {
+			if (binding?.[field]) {
+				node[field] = binding[field].value;
+				node.tooltipData[field] = binding[field];
+			}
+		}
 		
-		this._copyNodeFieldsByRole(node, binding, { entityVar, labelVar: `${entityVar}Label`});
-		
-		const labelsConfig = this._resolveNodeLabelsConfig({ encoding, node, role });
-		this._applyNodeLabelField(node, labelsConfig);
+		this._applyNodeLabelField(node, nodeConfig?.labels);
 		
 		return node;
 	}
 	
-	_makeNode({ binding, entityVar, id, encoding, role }) {
+	_makeNode({ binding, entityVar, id, labelsConfig = {} }) {
 		const entityBinding = binding?.[entityVar];
-		const labelsConfig = this._resolveNodeLabelsConfig({ encoding, node: null, role });
-		
+
 		const node = {
 			id,
 			label: resolveBindingLabel(labelsConfig, entityBinding, binding),
-			uri: entityBinding?.type === "uri" ? entityBinding.value : null,
 			type: entityBinding?.type || null,
-			originalData: {},
+			tooltipData: {},
 			roles: []
 		};
-		
-		if (role) this._addNodeRole(node, role);
-		
-		this._copyNodeFieldsByRole(node, binding, {
-			entityVar,
-			labelVar: `${entityVar}Label`
-		});
-		this._applyNodeLabelField(node, labelsConfig);
+
+		node[entityVar] = binding[entityVar]?.value;
+		node.tooltipData[entityVar] = binding[entityVar];
 		
 		return node;
 	}
 	
-	_resolveNodeLabelsConfig({ encoding, node, role }) {
-		if (!role) return encoding?.nodes?.labels;
+	_resolveNodeConfig({ role }) {
+		if (!role) return this.encoding?.nodes;
 		
-		const roles = Array.isArray(node?.roles) ? node.roles : [role];
-		
-		if (
-			roles.length === 1 &&
-			roles[0] === role &&
-			encoding?.nodes?.[role]?.labels !== undefined
-		) {
-			return encoding.nodes[role].labels;
-		}
-		
-		return encoding?.nodes?.labels;
+		return this.encoding.nodes[role] ?? this.encoding?.nodes
 	}
 	
 	_addNodeRole(node, role) {
@@ -369,28 +322,16 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 		if (!Array.isArray(node.roles)) node.roles = [];
 		if (!node.roles.includes(role)) node.roles.push(role);
 	}
-	
-	_copyBindingFieldsToNode(node, binding, vars = []) {
-		if (!node.originalData) node.originalData = {};
-		
-		for (const varName of vars) {
-			const value = binding?.[varName]?.value;
-			if (value === undefined || value === null) continue;
-			
-			node[varName] = this._mergeUniqueValue(node[varName], value);
-			node.originalData[varName] = binding[varName];
+
+	_getAssociatedFields(mark, nodeConfig) {
+		const encodingFields = MARK_CHANNELS[mark].concat(MARK_ATTRIBUTES[mark])
+
+		const dataFields = []
+		for (const field of encodingFields) {
+			dataFields.push(nodeConfig?.[field]?.field)
 		}
-	}
-	
-	_copyNodeFieldsByRole(node, binding, { entityVar, labelVar = null }) {
-		const entity = binding?.[entityVar];
-		if (!entity) return;
-		
-		node[entityVar] = entity.value;
-		
-		if (labelVar && binding?.[labelVar]) {
-			node[labelVar] = binding[labelVar].value;
-		}
+
+		return dataFields.filter(Boolean)
 	}
 	
 	_applyNodeLabelField(node, labelsConfig) {
@@ -417,31 +358,40 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 	// ---------------------------------------------------------------------------
 	
 	_upsertMergedLink({
-		linksMap,
 		sourceId,
 		targetId,
 		type,
 		binding,
-		vars,
 		label,
 		value
 	}) {
 		const key = this._makePairKey(sourceId, targetId, type);
 		
-		if (!linksMap.has(key)) {
-			linksMap.set(key, {
+		const link = {
 				source: sourceId,
 				target: targetId,
 				type,
 				label: "",
 				values: [],
-				weight: 0
-			});
+				weight: 0,
+				tooltipData: {} }
+
+		if (!this.linksMap.has(key)) {
+			this.linksMap.set(key, link);
 		}
 		
-		const link = linksMap.get(key);
+		const tooltipFields = this._getTooltipFields({
+			config: this.encoding?.links?.tooltip,
+			binding, 
+			primaryFields: [
+				this.resolvedEncoding.sourceVar,
+				this.resolvedEncoding.targetVar,
+				this.resolvedEncoding.relationVar,
+				this.resolvedEncoding.contextVar
+			].filter(Boolean)
+		})
 		
-		this._mergeLinkBindingValues(link, binding, vars);
+		this._mergeLinkBindingValues(link, binding, tooltipFields);
 		this._addLinkValue(link, value);
 		
 		link.weight = link.values.length;
@@ -489,14 +439,52 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 		existing.data = this._mergePlainRows([existing.data || {}, value.data || {}]);
 	}
 	
-	_mergeLinkBindingValues(link, binding, vars = []) {
+	_mergeLinkBindingValues(link, binding, tooltipFields = []) {
 		if (!link || !binding) return;
-		
-		for (const varName of vars) {
-			const value = binding?.[varName]?.value;
-			if (value === undefined || value === null) continue;
-			link[varName] = this._mergeUniqueValue(link[varName], value);
+
+		if (!link.tooltipData) link.tooltipData = {};
+
+		// Binding values for link construction
+		for (const field of this.vars) {
+			const bindingValue = binding?.[field];
+			if (!bindingValue) continue;
+
+			link[field] = this._mergeUniqueValue(
+				link[field],
+				bindingValue.value
+			);
 		}
+
+		// Binding values for tooltips
+		for (const field of tooltipFields) {
+			const bindingValue = binding?.[field];
+			if (!bindingValue) continue;
+
+			link.tooltipData[field] = this._mergeUniqueBinding(
+				link.tooltipData[field],
+				bindingValue
+			);
+		}
+	}
+
+	_mergeUniqueBinding(currentValue, nextValue) {
+		if (!currentValue) return nextValue;
+
+		const sameBinding = (a, b) =>
+			a?.type === b?.type &&
+			a?.value === b?.value &&
+			a?.datatype === b?.datatype &&
+			a?.["xml:lang"] === b?.["xml:lang"];
+
+		if (Array.isArray(currentValue)) {
+			return currentValue.some((item) => sameBinding(item, nextValue))
+			? currentValue
+			: [...currentValue, nextValue];
+		}
+
+		return sameBinding(currentValue, nextValue)
+			? currentValue
+			: [currentValue, nextValue];
 	}
 	
 	_finalizeLinks(links = []) {
@@ -524,10 +512,10 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 		return resolveBindingLabel(linkLabelConfig, fallbackBinding, binding);
 	}
 	
-	_bindingToPlainObject(binding, vars = []) {
+	_bindingToPlainObject(binding) {
 		const row = {};
 		
-		for (const varName of vars) {
+		for (const varName of this.vars) {
 			const value = binding?.[varName]?.value;
 			if (value !== undefined && value !== null) {
 				row[varName] = value;
@@ -591,4 +579,118 @@ export class SparqlToForceGraphMapper extends SparqlToVisMapper {
 			node.degree = degreeById.get(node.id) || 0;
 		}
 	}
+
+	// Tooltip resolvers
+
+	_getTooltipFields({
+		config = {},
+		binding,
+		primaryFields = []
+	} = {}) {
+		const explicit = config?.field ?? config?.fields;
+
+		if (Array.isArray(explicit)) return explicit;
+		if (typeof explicit === "string") return [explicit];
+
+		return this._getDataAssociatedFields({
+			binding,
+			primaryFields
+		});
+	}
+
+	_getDataAssociatedFields({ binding, primaryFields = [] }) {
+		const result = new Set();
+
+		for (const primaryField of primaryFields) {
+			if (!binding?.[primaryField]) continue;
+
+			result.add(primaryField);
+
+			for (const candidateField of this.vars) {
+				if (candidateField === primaryField) continue;
+				if (!binding?.[candidateField]) continue;
+
+				if (this._areBindingValuesAssociated(binding[primaryField], binding[candidateField])) {
+					result.add(candidateField);
+				}
+			}
+		}
+
+		return Array.from(result);
+	}
+
+	// Binding association logic
+	_areBindingValuesAssociated(a, b) {
+		const av = a?.value;
+		const bv = b?.value;
+
+		if (!av || !bv) return false;
+		if (av === bv) return true;
+
+		const aIsUri = a?.type === "uri" || this._looksLikeUri(av);
+		const bIsUri = b?.type === "uri" || this._looksLikeUri(bv);
+
+		// URI ↔ literal
+		if (aIsUri && !bIsUri) {
+			return this._uriMatchesLiteral(av, bv);
+		}
+
+		if (bIsUri && !aIsUri) {
+			return this._uriMatchesLiteral(bv, av);
+		}
+
+		// URI ↔ URI
+		if (aIsUri && bIsUri) {
+			return this._uriTerminal(av) === this._uriTerminal(bv);
+		}
+
+		// literal ↔ literal: conservative, only exact normalized match
+		return this._normalizeText(av) === this._normalizeText(bv);
+	}
+
+	_looksLikeUri(value) {
+		return /^https?:\/\//i.test(String(value));
+	}
+
+	_uriMatchesLiteral(uri, literal) {
+		const terminal = this._uriTerminal(uri);
+		const normalizedLiteral = this._normalizeText(literal);
+
+		if (!terminal || !normalizedLiteral) return false;
+
+		return (
+			terminal === normalizedLiteral ||
+			terminal.includes(normalizedLiteral) ||
+			normalizedLiteral.includes(terminal)
+		);
+	}
+
+	_uriTerminal(uri) {
+		const value = String(uri || "");
+
+		const cleaned = value
+			.split(/[?#]/)[0]
+			.replace(/\/$/, "");
+
+		const terminal = cleaned.substring(
+			Math.max(cleaned.lastIndexOf("/"), cleaned.lastIndexOf("#")) + 1
+		);
+
+		try {
+			return this._normalizeText(decodeURIComponent(terminal));
+		} catch {
+			return this._normalizeText(terminal)
+		}
+	}
+
+	_normalizeText(value) {
+		return String(value || "")
+			.toLowerCase()
+			.normalize("NFD")
+			.replace(/[\u0300-\u036f]/g, "")
+			.replace(/[_\-]+/g, " ")
+			.replace(/[^\p{L}\p{N}]+/gu, " ")
+			.trim();
+	}
+
 }

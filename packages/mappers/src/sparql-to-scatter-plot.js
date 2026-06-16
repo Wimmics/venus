@@ -1,66 +1,25 @@
-import { SparqlToVisMapper } from "./sparql-to-vis-mapper.js";
-import { bindingToValue } from "./extract-bindings-info.js";
-import { VIS_TYPES } from "@wimmics/venus-core";
+import { MARK_TYPES, VIS_TYPES } from "@wimmics/venus-core";
+import { SparqlToCartesianMapper } from "./sparql-to-cartesian.js";
 
-export class SparqlToScatterPlotMapper extends SparqlToVisMapper {
+export class SparqlToScatterPlotMapper extends SparqlToCartesianMapper {
 	constructor(options = {}) {
 		super({ ...options, visType: VIS_TYPES.VENUS_SCATTERPLOT });
 	}
 	
-	map(results, ctx = {}) {
-		this._assertValidResults(results);
+	_buildCanonicalChart(rows, encoding) {
+		const xField = encoding?.x?.field;
+		const yField = encoding?.y?.field;
+		const tooltipFields = this._getTooltipFields(encoding, MARK_TYPES.POINTS);
 		
-		const vars = results.head.vars || [];
-		const bindings = results.results.bindings || [];
-		const encoding = ctx?.encoding || {};
+		const points = rows.map((datum, index) => ({
+			x: this._toNumber(datum?.[xField]),
+			y: this._toNumber(datum?.[yField]),
+			datum,
+			tooltipData: this._extractOriginalData(datum, tooltipFields),
+			index
+		}))
+		.filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y));
 		
-		const rows = bindings.map((binding) => {
-			const row = {};
-			for (const varName of vars) {
-				row[varName] = bindingToValue(binding[varName]);
-			}
-			return row;
-		});
-		
-		const chart = this._buildCanonicalScatterPlot(rows, encoding);
-		
-		return {
-			chart,
-			meta: {
-				vars,
-				encodingUsed: JSON.parse(JSON.stringify(encoding))
-			}
-		};
-	}
-	
-	_buildCanonicalScatterPlot(rows, encoding) {
-		
-		const points = this._normalizePoints({
-			rows,
-			xField: encoding?.x?.field,
-			yField: encoding?.y?.field
-		});
-		
-		return {
-			rows,
-			points,
-		};
-	}
-	
-	_normalizePoints({ rows, xField, yField }) {
-		return (rows || [])
-		.map((datum, index) => {
-			const x = Number(datum?.[xField]);
-			const y = Number(datum?.[yField]);
-			
-			return {
-				x,
-				y,
-				datum,
-				index
-			};
-		})
-		.filter((point) => Number.isFinite(point.x))
-		.filter((point) => Number.isFinite(point.y));
+		return { rows, points, xField, yField };
 	}
 }

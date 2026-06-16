@@ -4,6 +4,7 @@ import { VIS_TYPES } from "@wimmics/venus-core";
 import { createSparqlMapper } from "@wimmics/venus-mappers";
 
 import { VenusBase } from "./vis-base.js";
+import { createTooltipManager } from "./tooltips/tooltips-factory.js";
 
 export class VenusLineChart extends VenusBase {
   constructor() {
@@ -18,6 +19,8 @@ export class VenusLineChart extends VenusBase {
     this.encodingManager = createEncodingManager(VIS_TYPES.VENUS_LINECHART);
     this.visualEncoding = this.encodingManager.getDefaultEncoding();
     this.mapper = createSparqlMapper(VIS_TYPES.VENUS_LINECHART)
+
+    this.tooltipManager = createTooltipManager(VIS_TYPES.VENUS_LINECHART, { shadowRoot: this.shadowRoot })
 
     this._initDOMStructure();
   }
@@ -72,44 +75,11 @@ export class VenusLineChart extends VenusBase {
   }
 
   _onHover(payload = {}) {
-    if (payload.mark !== "point" && payload.mark !== "series") return;
-    const { datum, x, y } = payload;
-    if (!datum) return;
-    const xField = this.visualEncoding?.x?.field;
-    const yField = this.visualEncoding?.y?.field;
-    const groupField = this.visualEncoding?.lines?.group?.field;
-    const colorField = this.visualEncoding?.lines?.color?.field;
-    const sizeField = this.visualEncoding?.lines?.size?.field;
-    const isSeriesHover = payload.mark === "series";
-    const fallbackTitle = isSeriesHover
-      ? (groupField ? datum?.[groupField] : (payload.seriesKey || "Series"))
-      : (xField ? datum?.[xField] : "Point");
-    const pointMarkConfig = this.visualEncoding?.points?.display !== false
-      ? this.visualEncoding?.points
-      : this.visualEncoding?.lines;
-    const tooltipMarkConfig = isSeriesHover ? this.visualEncoding?.lines : pointMarkConfig;
-    const title = this._resolveTooltipTitle(datum, tooltipMarkConfig, fallbackTitle);
-    const preferredOrder = isSeriesHover
-      ? [xField, yField, groupField, colorField, sizeField]
-      : [yField, colorField, sizeField];
-    const excludeKeys = isSeriesHover ? [] : [xField];
-    const lines = this._buildTooltipLines(datum, {
-      preferredOrder,
-      excludeKeys,
-      markConfig: tooltipMarkConfig
-    });
-
-    this._showTooltip({ title, lines }, x, y, {
-      className: "tooltip line-tooltip",
-      offsetX: 12,
-      offsetY: -12,
-      delayMs: 80
-    });
+    this.tooltipManager.showTooltip(payload)
   }
 
-  _onOut(payload = {}) {
-    if (payload.mark && payload.mark !== "point" && payload.mark !== "series") return;
-    this._hideTooltip("tooltip line-tooltip");
+  _onOut() {
+    this.tooltipManager.hideTooltip()
   }
 }
 

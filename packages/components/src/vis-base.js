@@ -3,6 +3,8 @@ import { fetchVisData } from "@wimmics/venus-datasource";
 import { createLegends, positionLegends } from "@wimmics/venus-legends";
 import { emptyVisualArtifacts, createVisualArtifactsCompiler } from "@wimmics/venus-visual-artifacts";
 
+import { TooltipManager } from "./tooltips/tooltip-manager";
+
 export class VenusBase extends HTMLElement {
 	static get observedAttributes() {
 		return ["width", "height", "resize"];
@@ -28,13 +30,15 @@ export class VenusBase extends HTMLElement {
 		this._legends = [];
 		this._visualArtifacts = emptyVisualArtifacts()
 		this.renderer = null;
-		this.tooltipTimeout = null;
+		
 		this.resizeObserver = null;
 		this.resizeRaf = null;
 		this._lastObservedSize = { width: 0, height: 0 };
 		this.resizeEnabled = true;
 
-		this.mapper = null
+		this.mapper = null // instantiated by subclass
+		this.tooltipManager = null // instantiated by subclass
+		this.encodingManager = null // instantiated by subclass
 	}
 	
 	connectedCallback() {
@@ -182,6 +186,9 @@ export class VenusBase extends HTMLElement {
 			this._setDataFromBuildResult(mapped)
 		}
 
+		this.tooltipManager.updateTooltipState({ enabled : this.visualEncoding?.interactions?.tooltip })
+		this.tooltipManager.updateEncoding(this.visualEncoding)
+
 		this.render();
 	}
 	
@@ -244,7 +251,7 @@ export class VenusBase extends HTMLElement {
 		this._visualArtifacts = emptyVisualArtifacts();
 
 		this._destroyLegends();
-		this._hideTooltip();
+		this.tooltipManager.hideTooltip();
 
 		this.renderer.destroy()
 
@@ -320,8 +327,6 @@ export class VenusBase extends HTMLElement {
 		})
 	}
 
-	
-	
 	_resolveBackgroundColor() {
 		const background = this.visualEncoding?.background;
 		if (typeof background === "string" && background.trim()) return background;
@@ -397,171 +402,6 @@ export class VenusBase extends HTMLElement {
 		}
 		titleElement.textContent = "";
 		titleElement.style.display = "none";
-	}
-	
-	_showTooltip(content, x, y, options = {}) {
-		if (!this._isTooltipEnabled()) return;
-		const {
-			className = "tooltip",
-			offsetX = 12,
-			offsetY = -12,
-			delayMs = 0,
-			dark = false,
-			whiteSpace = "normal",
-			maxWidth = 320
-		} = options;
-		
-		this._hideTooltip(className);
-		if (this.tooltipTimeout) clearTimeout(this.tooltipTimeout);
-		
-		const render = () => {
-			const container = this._getContainerElement();
-			if (!container) return;
-			
-			const tooltip = document.createElement("div");
-			tooltip.className = `${className}${dark ? " dark" : ""}`;
-			tooltip.style.whiteSpace = whiteSpace;
-			tooltip.style.maxWidth = `${maxWidth}px`;
-			
-			if (typeof content === "string") {
-				tooltip.textContent = content;
-			} else if (content && typeof content === "object") {
-				if (content.title) {
-					const title = document.createElement("div");
-					title.style.fontWeight = "bold";
-					title.style.marginBottom = "6px";
-					title.textContent = String(content.title);
-					tooltip.appendChild(title);
-				}
-				
-				const lines = Array.isArray(content.lines) ? content.lines : [];
-				for (const line of lines) {
-					const row = document.createElement("div");
-					row.textContent = String(line);
-					tooltip.appendChild(row);
-				}
-			}
-			
-			tooltip.style.left = `${x + offsetX}px`;
-			tooltip.style.top = `${y + offsetY}px`;
-			container.appendChild(tooltip);
-		};
-		
-		if (delayMs > 0) {
-			this.tooltipTimeout = setTimeout(render, delayMs);
-			return;
-		}
-		render();
-	}
-	
-	_hideTooltip(className = "tooltip") {
-		if (this.tooltipTimeout) clearTimeout(this.tooltipTimeout);
-		const tooltip = this.shadowRoot.querySelector(`.${className.split(" ").join(".")}`);
-		if (tooltip) tooltip.remove();
-	}
-	
-	_resolveTooltipFields(datum, { preferredOrder = [], excludeKeys = [], markTooltipFields = null } = {}) {
-		if (!datum || typeof datum !== "object") return [];
-		if (!this._isTooltipEnabled()) return [];
-		
-		const configuredFields = markTooltipFields;
-		const hasConfiguredFields = Array.isArray(configuredFields) && configuredFields.length > 0;
-		if (hasConfiguredFields) {
-			return configuredFields.filter((fieldName) => (
-				typeof fieldName === "string" &&
-				fieldName.trim() &&
-				Object.prototype.hasOwnProperty.call(datum, fieldName) &&
-				datum[fieldName] !== undefined &&
-				datum[fieldName] !== null
-			));
-		}
-		
-		const renderingKeys = new Set([
-			"x", "y", "vx", "vy", "fx", "fy", "px", "py", "index",
-			"sourceLinks", "targetLinks", "originalData", "roles", "__meta", "__x"
-		]);
-		for (const key of excludeKeys) {
-			if (typeof key === "string" && key.trim()) renderingKeys.add(key);
-		}
-		
-		const ordered = [];
-		const seen = new Set();
-		
-		for (const key of preferredOrder) {
-			if (typeof key !== "string" || !key.trim()) continue;
-			if (!Object.prototype.hasOwnProperty.call(datum, key)) continue;
-			if (datum[key] === undefined || datum[key] === null) continue;
-			ordered.push(key);
-			seen.add(key);
-		}
-		
-		const sourceKeys = Object.keys(datum.originalData || {});
-		for (const key of sourceKeys) {
-			if (seen.has(key)) continue;
-			if (!Object.prototype.hasOwnProperty.call(datum, key)) continue;
-			if (datum[key] === undefined || datum[key] === null) continue;
-			ordered.push(key);
-			seen.add(key);
-		}
-		
-		for (const key of Object.keys(datum)) {
-			if (renderingKeys.has(key) || seen.has(key)) continue;
-			const value = datum[key];
-			if (value === undefined || value === null) continue;
-			ordered.push(key);
-			seen.add(key);
-		}
-		
-		return ordered;
-	}
-	
-	_formatTooltipValue(value) {
-		if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-			return String(value);
-		}
-		try {
-			return JSON.stringify(value);
-		} catch {
-			return String(value);
-		}
-	}
-	
-	_resolveTooltipTitle(datum, markConfig, fallback = null) {
-		const titleConfig = markConfig?.tooltip?.title;
-		if (typeof titleConfig === "string") return titleConfig;
-		
-		const titleField =
-		titleConfig &&
-		typeof titleConfig === "object" &&
-		typeof titleConfig.field === "string" &&
-		titleConfig.field.trim()
-		? titleConfig.field.trim()
-		: null;
-		
-		if (
-			titleField &&
-			datum &&
-			typeof datum === "object" &&
-			datum[titleField] !== undefined &&
-			datum[titleField] !== null
-		) {
-			return this._formatTooltipValue(datum[titleField]);
-		}
-		
-		return fallback;
-	}
-	
-	_buildTooltipLines(datum, { preferredOrder = [], excludeKeys = [], markConfig = null } = {}) {
-		const markTooltipFields = Array.isArray(markConfig?.tooltip?.fields) ? markConfig.tooltip.fields : null;
-		const fields = this._resolveTooltipFields(datum, { preferredOrder, excludeKeys, markTooltipFields });
-		return fields.map((fieldName) => `${fieldName}: ${this._formatTooltipValue(datum[fieldName])}`);
-	}
-	
-	_isTooltipEnabled() {
-		const tooltipConfig = this.visualEncoding?.interactions?.tooltip;
-		if (tooltipConfig === undefined || tooltipConfig === null) return true;
-		if (typeof tooltipConfig === "boolean") return tooltipConfig;
-		return true;
 	}
 
 	_getChart() { return null }
@@ -676,6 +516,52 @@ export class VenusBase extends HTMLElement {
         .chart-group .tick line {
           stroke: #cfcfcf;
         }
+
+		.tooltip{
+			position: absolute;
+			z-index: 1000;
+			display: none;
+		}
+
+		.tooltip-title {
+			display: flex;
+			flex-direction: column;
+		}
+
+		.tooltip-title-main {
+			font-weight: 600;
+		}
+
+		.tooltip-title-subtitle {
+			font-size: 0.9em;
+			color: #666;
+			font-style: italic;
+		}
+
+		.tooltip-section-title {
+			margin-top: 5px;
+			font-style: italic;
+		}
+
+		.tooltip-table {
+			width: 100%;
+			border-collapse: collapse;
+		}
+
+		.tooltip-table td{
+			border: 1px solid #ccc;
+			padding: 4px 8px;
+		}
+
+		.tooltip-key {
+			font-weight: 600;
+			padding-right: 8px;
+			white-space: nowrap;
+		}
+
+		.tooltip-value {
+			text-align: left;
+		}
         ${extraStyles}
       </style>
       <div class="vis-container">
@@ -683,6 +569,7 @@ export class VenusBase extends HTMLElement {
         <div class="vis-surface">
           <svg></svg>
         </div>
+		<div class="tooltip"></div>
       </div>
     `;
 		this._applyDimensions();

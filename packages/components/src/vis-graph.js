@@ -12,9 +12,10 @@
 */
 import { createRenderer } from "@wimmics/venus-d3renderer";
 import { createEncodingManager } from "@wimmics/venus-encoding";
-import { VIS_TYPES } from "@wimmics/venus-core";
+import { MARK_TYPES, VIS_TYPES } from "@wimmics/venus-core";
 import { createSparqlMapper } from "@wimmics/venus-mappers";
 
+import { createTooltipManager } from "./tooltips/tooltips-factory.js";
 import { VenusBase } from "./vis-base.js";
 import "./vis-uri-metadata.js";
 
@@ -38,6 +39,8 @@ export class VenusGraph extends VenusBase {
 		this.visualEncoding = this.encodingManager.getDefaultEncoding();
 		
 		this.mapper = createSparqlMapper(VIS_TYPES.VENUS_GRAPH)
+
+		this.tooltipManager = createTooltipManager(VIS_TYPES.VENUS_GRAPH, { shadowRoot: this.shadowRoot })
 
 		this._initDOMStructure();
 	}
@@ -224,37 +227,26 @@ export class VenusGraph extends VenusBase {
 		});
 		
 		container.addEventListener("contextmenu", (event) => event.preventDefault());
-		container.addEventListener("mouseleave", () => this._hideTooltip());
+		container.addEventListener("mouseleave", () => this.tooltipManager.hideTooltip());
 	}
 	
 	_onHover(payload = {}) {
-		if (payload.mark === "node") {
-			this._showTooltip(payload.datum, payload.x, payload.y);
-			return;
-		}
-		if (payload.mark === "link") {
-			this._showLinkTooltip(payload.datum, payload.x, payload.y);
-		}
+		this.tooltipManager.showTooltip(payload)
 	}
 	
-	_onOut(payload = {}) {
-		if (payload.mark === "node") {
-			this._hideTooltip();
-			return;
-		}
-		if (payload.mark === "link") {
-			this._hideLinkTooltip();
-		}
+	_onOut() {
+		this.tooltipManager.hideTooltip()
 	}
 	
+	// TODO: to be re-designed on the future
 	_onClick(payload = {}) {
-		if (payload.mark === "node") {
+		if (payload.mark === MARK_TYPES.NODES) {
 			this.requestNodeDetails(payload.datum);
 		}
 	}
 	
 	_onContextMenu(payload = {}) {
-		if (payload.mark === "node") {
+		if (payload.mark === MARK_TYPES.NODES) {
 			this._showContextMenu(payload.datum, payload.x, payload.y);
 		}
 	}
@@ -278,99 +270,7 @@ export class VenusGraph extends VenusBase {
 		menu.appendChild(detailsBtn);
 		this._getContainerElement()?.appendChild(menu);
 	}
-	
-	_showTooltip(node, x, y) {
-		const nodeConfig = this._resolveNodeRoleConfig(node);
-		const lines = this._buildNodeTooltipLines(node);
-		super._showTooltip(
-			{
-				title: this._resolveTooltipTitle(node, nodeConfig, node.id),
-				lines
-			},
-			x,
-			y,
-			{
-				className: "tooltip node-tooltip",
-				offsetX: 15,
-				offsetY: -15,
-				delayMs: 150,
-				maxWidth: 320
-			}
-		);
-	}
-	
-	_buildNodeTooltipLines(node) {
-		if (!node || typeof node !== "object") return [];
-		
-		const preferredOrder = ["id", "label", "uri", "type"];
-		const nodeConfig = this._resolveNodeRoleConfig(node);
-		const sizeMetric = nodeConfig?.size?.metric;
-		const colorMetric = nodeConfig?.color?.metric;
-		if (sizeMetric === "degree" || colorMetric === "degree") {
-			preferredOrder.push("degree");
-		}
-		const fields = this._resolveTooltipFields(node, {
-			preferredOrder,
-			excludeKeys: ["source", "target"],
-			markTooltipFields: Array.isArray(nodeConfig?.tooltip?.fields)
-			? nodeConfig.tooltip.fields
-			: null
-		});
-		
-		const lines = [];
-		for (const fieldName of fields) {
-			if (fieldName === "label") continue;
-			lines.push(`${fieldName}: ${this._formatTooltipValue(node[fieldName])}`);
-		}
-		
-		return lines;
-	}
-	
-	_resolveNodeRoleConfig(node) {
-		const nodes = this.visualEncoding?.nodes || {};
-		const roles = Array.isArray(node?.roles) ? node.roles : [];
-		if (roles.length !== 1 || !nodes[roles[0]]) return nodes;
-		return {
-			...nodes,
-			...nodes[roles[0]],
-			tooltip: nodes[roles[0]].tooltip || nodes.tooltip
-		};
-	}
-	
-	_hideTooltip() {
-		super._hideTooltip("tooltip node-tooltip");
-	}
-	
-	_showLinkTooltip(link, x, y) {
-		const fallbackTitle = `${link.source?.id ?? link.source} → ${link.target?.id ?? link.target}`;
-		const title = this._resolveTooltipTitle(link, this.visualEncoding?.links, fallbackTitle);
-		const lines = this._buildTooltipLines(link, {
-			preferredOrder: this._getLinkTooltipPreferredOrder(link),
-			excludeKeys: ["source", "target"],
-			markConfig: this.visualEncoding?.links
-		});
-		super._showTooltip({ title, lines }, x, y, {
-			className: "tooltip link-tooltip",
-			offsetX: 10,
-			offsetY: -10,
-			dark: true,
-			maxWidth: 380
-		});
-	}
-	
-	_getLinkTooltipPreferredOrder(link) {
-		if (link?.type === "semantic") {
-			return ["semanticLabel", "relationshipType"];
-		}
-		if (link?.type === "cooccurrence") {
-			return ["semanticLabel", "relationshipType", "weight", "sharedValuesCount"];
-		}
-		return [];
-	}
-	
-	_hideLinkTooltip() {
-		super._hideTooltip("tooltip link-tooltip");
-	}
+
 	
 	render() {
 		this._ensureNodeDetailsPanel();

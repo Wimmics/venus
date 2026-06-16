@@ -91,10 +91,10 @@ export default class LineChartRenderer extends CartesianChartRenderer {
 		const lines = this.chartGroup.selectAll("path.line-path")
 
 		lines.on("mouseover", (event, serie) => {
-			this._focusMark({ mark: "series", seriesKey: String(serie.key) });
+			this._focusMark({ seriesKey: String(serie.key) });
 	
 			this.callbacks.onHover?.({
-				mark: "series",
+				mark: MARK_TYPES.LINES,
 				datum: this._resolveHoveredDatum(serie.rows || [], event),
 				seriesKey: String(serie.key),
 				x: event.offsetX,
@@ -104,7 +104,7 @@ export default class LineChartRenderer extends CartesianChartRenderer {
 		})
 		.on("mousemove", (event, serie) => {
 			this.callbacks.onHover?.({
-				mark: "series",
+				mark: MARK_TYPES.LINES,
 				datum: this._resolveHoveredDatum(serie.rows || [], event),
 				seriesKey: String(serie.key),
 				x: event.offsetX,
@@ -113,13 +113,8 @@ export default class LineChartRenderer extends CartesianChartRenderer {
 			});
 		})
 		.on("mouseout", (event, serie) => {
-			this._resetFocusMark({ mark: "series" });
-
-			this.callbacks.onOut?.({
-				mark: "series",
-				seriesKey: String(serie.key),
-				event
-			});
+			this._resetFocusMark()
+			this.callbacks.onOut?.()
 		});
 
 
@@ -129,13 +124,12 @@ export default class LineChartRenderer extends CartesianChartRenderer {
 			const seriesKey = String(point.seriesKey);
 
 			this._focusMark({
-				mark: "point",
 				seriesKey,
 				activeElement: event.currentTarget
 			});
 
 			this.callbacks.onHover?.({
-				mark: "point",
+				mark: MARK_TYPES.POINTS,
 				datum: point.datum,
 				seriesKey,
 				x: event.offsetX,
@@ -145,7 +139,7 @@ export default class LineChartRenderer extends CartesianChartRenderer {
 		})
 		.on("mousemove", (event, point) => {
 			this.callbacks.onHover?.({
-				mark: "point",
+				mark: MARK_TYPES.POINTS,
 				datum: point.datum,
 				seriesKey: String(point.seriesKey),
 				x: event.offsetX,
@@ -154,16 +148,9 @@ export default class LineChartRenderer extends CartesianChartRenderer {
 			});
 		})
 		.on("mouseout", (event, point) => {
-			this._resetFocusMark({
-				mark: "point",
-				seriesKey: String(point.seriesKey)
-			});
+			this._resetFocusMark();
 
-			this.callbacks.onOut?.({
-				mark: "point",
-				seriesKey: String(point.seriesKey),
-				event
-			});
+			this.callbacks.onOut?.();
 		});
 	}
 
@@ -219,9 +206,7 @@ export default class LineChartRenderer extends CartesianChartRenderer {
 	}
 
 	
-	_focusMark({ mark, seriesKey, activeElement = null } = {}) {
-		if (!seriesKey || (mark !== "series" && mark !== "point")) return;
-		
+	_focusMark({ seriesKey, activeElement = null } = {}) {
 		const _this = this;
 
 		this.chartGroup
@@ -243,9 +228,7 @@ export default class LineChartRenderer extends CartesianChartRenderer {
 			})
 	}
 	
-	_resetFocusMark({ mark } = {}) {
-		if (mark && mark !== "series" && mark !== "point") return;
-		
+	_resetFocusMark() {		
 		this.chartGroup
 			.selectAll(".line-path")
 			.attr("opacity", 1)

@@ -415,7 +415,7 @@ export default class ForceGraphRenderer extends BaseRenderer {
 		this.linkGroups.on("mouseover", (event, d) => {
 			this._focusMark({ mark: MARK_TYPES.LINKS, activeDatum: d })
 			this.callbacks.onHover?.({
-				mark: "link",
+				mark: MARK_TYPES.LINKS,
 				datum: d,
 				x: event.offsetX,
 				y: event.offsetY,
@@ -424,7 +424,7 @@ export default class ForceGraphRenderer extends BaseRenderer {
 		})
 		.on("mouseout", () => {
 			this._resetFocusMark()
-			this.callbacks.onOut?.({ mark: "link" })
+			this.callbacks.onOut?.()
 		})
 	}
 
@@ -435,7 +435,7 @@ export default class ForceGraphRenderer extends BaseRenderer {
 		this.nodeGroups.on("mouseover", (event, d) => {
 			this._focusMark({ mark: MARK_TYPES.NODES, activeDatum: d });
 			this.callbacks.onHover?.({
-				mark: "node",
+				mark: MARK_TYPES.NODES,
 				datum: d,
 				x: event.offsetX,
 				y: event.offsetY,
@@ -444,7 +444,7 @@ export default class ForceGraphRenderer extends BaseRenderer {
 		})
 		.on("mouseout", () => {
 			this._resetFocusMark();
-			this.callbacks.onOut?.({ mark: "node" });
+			this.callbacks.onOut?.();
 		})
 		.on("contextmenu", (event, d) => {
 			event.preventDefault();
@@ -504,13 +504,13 @@ export default class ForceGraphRenderer extends BaseRenderer {
 
 		if (mark === MARK_TYPES.NODES){
 			const activeNodeId = activeDatum.id;
-
-			const relatedLinks = this.links.filter((link) =>
-				link.source.id === activeNodeId || link.target.id === activeNodeId
+			
+			const relatedLinks = this.renderedLinks.filter((link) =>
+				link.baseLink.source.id === activeNodeId || link.baseLink.target.id === activeNodeId
 			);
 
 			const relatedNodeIds = new Set(
-				relatedLinks.flatMap((link) => [link.source.id, link.target.id])
+				relatedLinks.flatMap((link) => [ link.baseLink.source.id, link.baseLink.target.id])
 			);
 
 			this.nodeGroups?.classed(
@@ -519,7 +519,7 @@ export default class ForceGraphRenderer extends BaseRenderer {
 
 			this.linkGroups?.classed(
 				"link-downplayed",
-				(link) => link.source.id !== activeNodeId && link.target.id !== activeNodeId )
+				(link) => link.baseLink.source.id !== activeNodeId && link.baseLink.target.id !== activeNodeId )
 
 			return
 		}
