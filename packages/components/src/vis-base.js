@@ -1,9 +1,10 @@
 
 import { fetchVisData } from "@wimmics/venus-datasource";
-import { createLegends, positionLegends } from "@wimmics/venus-legends";
+import { LegendManager } from "@wimmics/venus-legends";
 import { emptyVisualArtifacts, createVisualArtifactsCompiler } from "@wimmics/venus-visual-artifacts";
 
 import { TooltipManager } from "./tooltips/tooltip-manager";
+
 
 export class VenusBase extends HTMLElement {
 	static get observedAttributes() {
@@ -27,7 +28,6 @@ export class VenusBase extends HTMLElement {
 		
 		this.visualArtifactsCompiler = createVisualArtifactsCompiler(this.visType);
 		
-		this._legends = [];
 		this._visualArtifacts = emptyVisualArtifacts()
 		this.renderer = null;
 		
@@ -45,6 +45,9 @@ export class VenusBase extends HTMLElement {
 		this._applyDimensions();
 		this.resizeEnabled = this._parseBooleanAttributeValue(this.getAttribute("resize"), true);
 		this._applyResizeBehavior();
+
+		this.legendManager = new LegendManager({ container: this._getContainerElement() }) // Init legend manager after container was created
+
 		this.render();
 	}
 	
@@ -175,7 +178,7 @@ export class VenusBase extends HTMLElement {
 		this.visualEncoding = this.encodingManager.validateEncoding(encoding)
 		
 		this._visualArtifacts = emptyVisualArtifacts()
-		this._destroyLegends()
+		this.legendManager?.destroyLegends()
 
 		if (this.sparqlData) {
 			const mapped = this.mapper.map(this.sparqlData, { 
@@ -210,7 +213,7 @@ export class VenusBase extends HTMLElement {
 			this._visualArtifacts
 		);
 
-		this._manageLegends();
+		this.legendManager?.createLegends({ data: this._getData(), visualArtifacts: this._visualArtifacts })
 	}
 
 	_remapFromRawResult() {
@@ -238,7 +241,7 @@ export class VenusBase extends HTMLElement {
 		}
 
 		this._visualArtifacts = emptyVisualArtifacts();
-		this._destroyLegends();
+		this.legendManager?.destroyLegends()
 		this._resetDataState();
 	}
 
@@ -250,7 +253,7 @@ export class VenusBase extends HTMLElement {
 		this.sparqlData = null;
 		this._visualArtifacts = emptyVisualArtifacts();
 
-		this._destroyLegends();
+		this.legendManager?.destroyLegends()
 		this.tooltipManager.hideTooltip();
 
 		this.renderer.destroy()
@@ -260,54 +263,6 @@ export class VenusBase extends HTMLElement {
 		}
 
 		this._resetDataState();
-	}
-	
-	_manageLegends() {
-		const container = this._getContainerElement();
-		if (!container) return;
-		
-		this._destroyLegends();
-		
-		const legendConfig = {
-			legendItems: this._visualArtifacts?.legends || [],
-			datasets: this._getData(),
-			getScaleById: (scaleId) => this._visualArtifacts?.scales?.get(scaleId) || null
-		};
-		
-		const newLegends = createLegends(legendConfig);
-		
-		const relayoutLegends = () => {
-			const topInset = this._getLegendTopInset(container);
-			positionLegends(container, this._legends, {
-				position: "bottom",
-				spacing: 20,
-				gap: 20,
-				stackGap: 12,
-				topInset
-			});
-			this._applyLegendSurfaceInsets(container);
-		};
-		
-		newLegends.forEach((legend) => {
-			legend.addEventListener("legendtoggle", () => {
-				requestAnimationFrame(() => relayoutLegends());
-			});
-			container.appendChild(legend);
-
-			legend.render()
-
-			this._legends.push(legend);
-		});
-		
-		relayoutLegends();
-		// Custom elements can finalize internal layout one frame later.
-		// Run a deferred pass so bottom legends are centered side by side at first paint.
-		requestAnimationFrame(() => relayoutLegends());
-	}
-	
-	_destroyLegends() {
-		this._legends.forEach((legend) => legend.remove());
-		this._legends = [];
 	}
 	
 	_compileVisualArtifacts() {
@@ -340,55 +295,6 @@ export class VenusBase extends HTMLElement {
 		const title = this.visualEncoding?.title;
 		if (typeof title === "string" && title.trim()) return title.trim();
 		return null;
-	}
-	
-	_getLegendTopInset(container) {
-		const titleElement = container?.querySelector(".vis-title");
-		if (!titleElement || titleElement.style.display === "none") return 0;
-		return Math.max(0, Math.round(titleElement.getBoundingClientRect().height));
-	}
-	
-	_applyLegendSurfaceInsets(container) {
-		const surface = container?.querySelector(".vis-surface");
-		if (!surface) return;
-		
-		const reservingLegends = this._legends.filter((legend) => legend?._legendCompact === false);
-		if (!reservingLegends.length) {
-			surface.style.paddingTop = "0px";
-			surface.style.paddingRight = "0px";
-			surface.style.paddingBottom = "0px";
-			surface.style.paddingLeft = "0px";
-			return;
-		}
-		
-		const surfaceRect = surface.getBoundingClientRect();
-		const inset = { top: 0, right: 0, bottom: 0, left: 0 };
-		const reserveGap = 8;
-		
-		reservingLegends.forEach((legend) => {
-			const rect = legend.getBoundingClientRect();
-			const position = legend?._legendPosition || "bottom";
-			
-			if (position === "top" || position === "top-left" || position === "top-right") {
-				inset.top = Math.max(inset.top, Math.round(rect.bottom - surfaceRect.top + reserveGap));
-			}
-			if (position === "bottom" || position === "bottom-left" || position === "bottom-right") {
-				inset.bottom = Math.max(inset.bottom, Math.round(surfaceRect.bottom - rect.top + reserveGap));
-			}
-			if (position === "left" || position === "top-left" || position === "bottom-left") {
-				inset.left = Math.max(inset.left, Math.round(rect.right - surfaceRect.left + reserveGap));
-			}
-			if (position === "right" || position === "top-right" || position === "bottom-right") {
-				inset.right = Math.max(inset.right, Math.round(surfaceRect.right - rect.left + reserveGap));
-			}
-		});
-		
-		const maxHorizontal = Math.max(0, Math.floor(surfaceRect.width / 2) - 1);
-		const maxVertical = Math.max(0, Math.floor(surfaceRect.height / 2) - 1);
-		surface.style.paddingTop = `${Math.max(0, Math.min(inset.top, maxVertical))}px`;
-		surface.style.paddingRight = `${Math.max(0, Math.min(inset.right, maxHorizontal))}px`;
-		surface.style.paddingBottom = `${Math.max(0, Math.min(inset.bottom, maxVertical))}px`;
-		surface.style.paddingLeft = `${Math.max(0, Math.min(inset.left, maxHorizontal))}px`;
 	}
 	
 	_updateTitle(container) {

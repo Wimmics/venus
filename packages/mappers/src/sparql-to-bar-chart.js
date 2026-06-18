@@ -7,32 +7,6 @@ export class SparqlToBarChartMapper extends SparqlToCartesianMapper {
 		super({ ...options, visType: VIS_TYPES.VENUS_BARCHART });
 	}
 	
-	// map(results, ctx) {
-	// 	this._assertValidResults(results);
-		
-	// 	const vars = results.head.vars || [];
-	// 	const bindings = results.results.bindings || [];
-	// 	const encoding = ctx?.encoding || {};
-		
-	// 	const rows = bindings.map((binding) => {
-	// 		const row = {};
-	// 		for (const varName of vars) {
-	// 			row[varName] = bindingToValue(binding[varName]);
-	// 		}
-	// 		return row;
-	// 	});
-		
-	// 	const chart = this._buildCanonicalBarChart(rows, encoding);
-		
-	// 	return {
-	// 		chart,
-	// 		meta: {
-	// 			vars,
-	// 			encodingUsed: JSON.parse(JSON.stringify(encoding))
-	// 		}
-	// 	};
-	// }
-	
 	_buildCanonicalChart(rows, encoding) {
 		const xField = encoding?.x?.field;
 		const yField = encoding?.y?.field;
