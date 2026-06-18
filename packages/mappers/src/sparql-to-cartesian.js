@@ -35,35 +35,41 @@ export class SparqlToCartesianMapper extends SparqlToVisMapper {
         throw new Error(`${this.constructor.name} must implement _buildCanonicalChart()`);
     }
     
-    _getTooltipFields(encoding, markName) {
-        const tooltip = encoding?.[markName]?.tooltip;
-        const fields = tooltip?.field ?? tooltip?.fields;
+    _toNumber(value, fallback = NaN) {
+        const n = Number(value);
+        return Number.isFinite(n) ? n : fallback;
+    }
+    
+    _getTooltipFields(tooltipConfig = {}) {
+        const fields = tooltipConfig?.field ?? tooltipConfig?.fields;
         
         if (Array.isArray(fields)) return fields;
         if (typeof fields === "string") return [fields];
         
-        return null; // null = all fields
+        return null; // null = use all fields
     }
     
-    _extractOriginalData(row = {}, fields = null) {
-        const selected = Array.isArray(fields) ? fields : Object.keys(row);
-        const originalData = {};
+    _createTooltipData(row = {}, fields = null) { 
+        const selectedFields = Array.isArray(fields) ? fields : Object.keys(row);
+        const tooltipData = {};
         
-        for (const field of selected) {
-            if (row[field] !== undefined && row[field] !== null) {
-                originalData[field] = row[field];
+        for (const field of selectedFields) {
+            const value = row?.[field];
+            if (value !== undefined && value !== null) {
+                tooltipData[field] = value;
             }
         }
         
-        return originalData;
+        return tooltipData;
     }
     
-    _mergeOriginalData(target = {}, row = {}, fields = null) {
-        const selected = Array.isArray(fields) ? fields : Object.keys(row);
+    _mergeTooltipData(target = {}, row = {}, fields = null) {
+        const selectedFields = Array.isArray(fields) ? fields : Object.keys(row);
         
-        for (const field of selected) {
-            const value = row[field];
+        for (const field of selectedFields) {
+            const value = row?.[field];
             if (value === undefined || value === null) continue;
+            
             target[field] = this._mergeUniqueValue(target[field], value);
         }
         
@@ -83,40 +89,5 @@ export class SparqlToCartesianMapper extends SparqlToVisMapper {
         ? currentValue
         : [currentValue, nextValue];
     }
-    
-    _toNumber(value, fallback = NaN) {
-        const n = Number(value);
-        return Number.isFinite(n) ? n : fallback;
-    }
-    
-    _isValidValue(value) {
-        return value !== undefined && value !== null;
-    }
-    
-    _unique(values = []) {
-        return Array.from(new Set(values));
-    }
-    
-    _collectUniqueFieldValues(rows = [], field) {
-        return this._unique(
-            rows
-            .map((row) => row?.[field])
-            .filter((value) => value !== undefined && value !== null)
-        );
-    }
-    
-    _sortByX(rows = [], xScaleType = "point") {
-        const type = String(xScaleType || "").toLowerCase();
-        const numeric = ["linear", "log", "sqrt", "pow", "count", "quantitative"].includes(type);
-        
-        return [...rows].sort((a, b) => {
-            if (numeric) return Number(a.x) - Number(b.x);
-            
-            const an = Number(a.x);
-            const bn = Number(b.x);
-            if (Number.isFinite(an) && Number.isFinite(bn)) return an - bn;
-            
-            return (a.index ?? 0) - (b.index ?? 0);
-        });
-    }
+
 }

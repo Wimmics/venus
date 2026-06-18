@@ -71,14 +71,14 @@ export const MARK_DEFAULTS = {
   points: {
     display: true,
     color: { value: "#ccc" },
-    stroke: { value: "#f5f5f5"},
+    stroke: { value: "#fff"},
     size: { value: 4 },
     legend: COMMON_DEFAULTS.legend
   },
 
   lines: {
     color: { value: "#ccc" },
-    size: { value: 2 },
+    size: { value: 3 },
     legend: COMMON_DEFAULTS.legend
   },
 

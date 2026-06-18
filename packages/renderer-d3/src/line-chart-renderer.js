@@ -224,7 +224,7 @@ export default class LineChartRenderer extends CartesianChartRenderer {
 				return this === activeElement ? 1 : 0.45;
 			})
 			.attr("stroke", function applyPointStroke(d) {
-				return this === activeElement ? "#ffffff" : _this._getMarkStroke(d.datum);
+				return this === activeElement ? "#ffffff" : this._getMarkStroke(d.datum, MARK_TYPES.POINTS);
 			})
 	}
 	
@@ -236,6 +236,6 @@ export default class LineChartRenderer extends CartesianChartRenderer {
 		this.chartGroup
 			.selectAll(".line-points")
 			.attr("opacity", 1)
-			.attr("stroke", d => this._getMarkStroke(d.datum))
+			.attr("stroke", d => this._getMarkStroke(d.datum, MARK_TYPES.POINTS))
 	}
 }

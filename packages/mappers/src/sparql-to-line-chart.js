@@ -1,69 +1,30 @@
-import { SparqlToVisMapper } from "./sparql-to-vis-mapper.js";
 import { bindingToValue } from "./extract-bindings-info.js";
-import { isQuantitativeScaleType, SCALE_TYPES, VIS_TYPES } from "@wimmics/venus-core";
+import { isQuantitativeScaleType, MARK_TYPES, SCALE_TYPES, VIS_TYPES } from "@wimmics/venus-core";
+import { SparqlToCartesianMapper } from "./sparql-to-cartesian.js";
 
-export class SparqlToLineChartMapper extends SparqlToVisMapper {
+export class SparqlToLineChartMapper extends SparqlToCartesianMapper {
 	constructor(options = {}) {
 		super({ ...options, visType: VIS_TYPES.VENUS_LINECHART });
 	}
-	map(results, ctx) {
-		this._assertValidResults(results);
-		
-		const vars = results.head.vars || [];
-		const bindings = results.results.bindings || [];
-		const encoding = ctx?.encoding || {};
-		
-		const rows = bindings.map((binding) => {
-			const row = {};
-			for (const varName of vars) {
-				row[varName] = bindingToValue(binding[varName]);
-			}
-			return row;
-		});
-		
-		const chart = this._buildCanonicalLineChart(rows, encoding);
-		
-		return {
-			chart,
-			meta: {
-				vars,
-				encodingUsed: JSON.parse(JSON.stringify(encoding))
-			}
-		};
-	}
-	
-	_buildCanonicalLineChart(rows, encoding) {
+
+
+	_buildCanonicalChart(rows, encoding) {
 		const xField = encoding?.x?.field;
 		const yField = encoding?.y?.field;
-		
-		const linesConfig = encoding?.lines || {};
-		const seriesField = linesConfig?.field || linesConfig?.group?.field || linesConfig?.color?.field || null;
-		
-		const xScaleType = encoding?.x?.scale?.type || SCALE_TYPES.LINEAR;
-		
-		const normalizedRows = this._normalizeRows({
-			rows,
-			xField,
-			yField,
-			seriesField
-		});
-		
-		const series = this._buildSeries({
-			rows: normalizedRows,
-			xScaleType
-		});
-		
-		return {
-			rows,
-			points: normalizedRows,
-			series,
-			xValues: this._collectXValues(normalizedRows, xScaleType)
-		};
+		const seriesField = encoding?.lines?.group?.field || encoding?.lines?.color?.field || null;
+
+		const tooltipFields = this._getTooltipFields(encoding?.points?.tooltip) ?? this._getTooltipFields(encoding?.lines?.tooltip);
+
+		const points = this._getPoints({ rows, xField, yField, seriesField, tooltipFields }); 
+		const series = this._getSeries({ rows: points, xScaleType: encoding?.x?.scale?.type }); 
+
+		return { rows, points, series };
 	}
 	
-	_normalizeRows({ rows, xField, yField, seriesField }) {
-		return (rows || [])
-		.map((datum, index) => {
+	
+	_getPoints({ rows, xField, yField, seriesField, tooltipFields }) {
+
+		return (rows || []).map((datum, index) => {
 			const xRaw = datum?.[xField];
 			const yRaw = datum?.[yField];
 			const y = Number(yRaw);
@@ -71,10 +32,8 @@ export class SparqlToLineChartMapper extends SparqlToVisMapper {
 			return {
 				x: xRaw,
 				y,
-				seriesKey: seriesField
-				? String(datum?.[seriesField] ?? "undefined")
-				: "__single__",
-				datum,
+				seriesKey: seriesField ? String(datum?.[seriesField] ?? "undefined") : "__single__",
+				datum: {...datum, tooltipData: this._createTooltipData(datum, tooltipFields)},
 				index
 			};
 		})
@@ -82,7 +41,7 @@ export class SparqlToLineChartMapper extends SparqlToVisMapper {
 		.filter((row) => Number.isFinite(row.y));
 	}
 	
-	_buildSeries({ rows, xScaleType = SCALE_TYPES.POINT }) {
+	_getSeries({ rows, xScaleType = SCALE_TYPES.POINT }) {
 		const groups = new Map();
 		
 		for (const row of rows || []) {

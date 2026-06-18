@@ -1,39 +1,39 @@
-import { SparqlToVisMapper } from "./sparql-to-vis-mapper.js";
 import { bindingToValue } from "./extract-bindings-info.js";
 import { VIS_TYPES } from "@wimmics/venus-core";
+import { SparqlToCartesianMapper } from "./sparql-to-cartesian.js";
 
-export class SparqlToBarChartMapper extends SparqlToVisMapper {
+export class SparqlToBarChartMapper extends SparqlToCartesianMapper {
 	constructor(options = {}) {
 		super({ ...options, visType: VIS_TYPES.VENUS_BARCHART });
 	}
 	
-	map(results, ctx) {
-		this._assertValidResults(results);
+	// map(results, ctx) {
+	// 	this._assertValidResults(results);
 		
-		const vars = results.head.vars || [];
-		const bindings = results.results.bindings || [];
-		const encoding = ctx?.encoding || {};
+	// 	const vars = results.head.vars || [];
+	// 	const bindings = results.results.bindings || [];
+	// 	const encoding = ctx?.encoding || {};
 		
-		const rows = bindings.map((binding) => {
-			const row = {};
-			for (const varName of vars) {
-				row[varName] = bindingToValue(binding[varName]);
-			}
-			return row;
-		});
+	// 	const rows = bindings.map((binding) => {
+	// 		const row = {};
+	// 		for (const varName of vars) {
+	// 			row[varName] = bindingToValue(binding[varName]);
+	// 		}
+	// 		return row;
+	// 	});
 		
-		const chart = this._buildCanonicalBarChart(rows, encoding);
+	// 	const chart = this._buildCanonicalBarChart(rows, encoding);
 		
-		return {
-			chart,
-			meta: {
-				vars,
-				encodingUsed: JSON.parse(JSON.stringify(encoding))
-			}
-		};
-	}
+	// 	return {
+	// 		chart,
+	// 		meta: {
+	// 			vars,
+	// 			encodingUsed: JSON.parse(JSON.stringify(encoding))
+	// 		}
+	// 	};
+	// }
 	
-	_buildCanonicalBarChart(rows, encoding) {
+	_buildCanonicalChart(rows, encoding) {
 		const xField = encoding?.x?.field;
 		const yField = encoding?.y?.field;
 
@@ -84,10 +84,13 @@ export class SparqlToBarChartMapper extends SparqlToVisMapper {
 			? Array.from(new Set(normalizedRows.map((row) => row.sub)))
 			: ["__single__"];
 
+		const tooltipFields = this._getTooltipFields(encoding?.bars?.tooltip);
+
 		const aggregated = this._aggregateByCategory(
 			normalizedRows,
 			xValues,
-			subCategories
+			subCategories,
+			tooltipFields
 		);
 
 		const bars = this._buildBarsForMode({
@@ -180,13 +183,18 @@ export class SparqlToBarChartMapper extends SparqlToVisMapper {
 		}));
 	}
 	
-	_aggregateByCategory(rows, xValues, subCategories) {
+	_aggregateByCategory(rows, xValues, subCategories, tooltipFields = null) {
 		const aggregated = new Map();
 		
 		for (const xCategory of xValues) {
 			const subMap = new Map();
 			for (const subCategory of subCategories) {
-				subMap.set(subCategory, { value: 0, sample: null, values: {} });
+				subMap.set(subCategory, { 
+					value: 0, 
+					sample: null, 
+					values: {},
+					tooltipData: {} 
+				});
 			}
 			aggregated.set(xCategory, subMap);
 		}
@@ -196,7 +204,12 @@ export class SparqlToBarChartMapper extends SparqlToVisMapper {
 			if (!subMap) continue;
 			
 			if (!subMap.has(row.sub)) {
-				subMap.set(row.sub, { value: 0, sample: null, values: {} });
+				subMap.set(row.sub, { 
+					value: 0, 
+					sample: null, 
+					values: {},
+					tooltipData: {} 
+				});
 			}
 			
 			const bucket = subMap.get(row.sub);
@@ -204,6 +217,7 @@ export class SparqlToBarChartMapper extends SparqlToVisMapper {
 			if (!bucket.sample) bucket.sample = row.raw;
 			
 			this._mergeAggregateValues(bucket.values, row.raw);
+			this._mergeTooltipData(bucket.tooltipData, row.raw, tooltipFields)
 		}
 		
 		return aggregated;
@@ -211,9 +225,7 @@ export class SparqlToBarChartMapper extends SparqlToVisMapper {
 	
 	_buildSimpleBars({ xValues, aggregated, xField, yField }) {
 		return xValues.map((xCategory) => {
-			const bucket =
-			aggregated.get(xCategory)?.get("__single__") ||
-			{ value: 0, sample: null, values: {} };
+			const bucket = aggregated.get(xCategory)?.get("__single__") || { value: 0, sample: null, values: {} };
 			
 			const value = bucket.value || 0;
 			const datum = this._createAggregateDatum(bucket);
@@ -326,6 +338,8 @@ export class SparqlToBarChartMapper extends SparqlToVisMapper {
 		for (const [fieldName, values] of Object.entries(bucket.values || {})) {
 			datum[fieldName] = values.length === 1 ? values[0] : [...values];
 		}
+
+		datum.tooltipData = { ...(bucket.tooltipData || {}) }
 		
 		return datum;
 	}

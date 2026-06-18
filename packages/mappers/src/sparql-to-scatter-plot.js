@@ -9,13 +9,12 @@ export class SparqlToScatterPlotMapper extends SparqlToCartesianMapper {
 	_buildCanonicalChart(rows, encoding) {
 		const xField = encoding?.x?.field;
 		const yField = encoding?.y?.field;
-		const tooltipFields = this._getTooltipFields(encoding, MARK_TYPES.POINTS);
+		const tooltipFields = this._getTooltipFields(encoding?.points?.tooltip, MARK_TYPES.POINTS);
 		
 		const points = rows.map((datum, index) => ({
 			x: this._toNumber(datum?.[xField]),
 			y: this._toNumber(datum?.[yField]),
-			datum,
-			tooltipData: this._extractOriginalData(datum, tooltipFields),
+			datum: {...datum, tooltipData: this._createTooltipData(datum, tooltipFields)},
 			index
 		}))
 		.filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y));

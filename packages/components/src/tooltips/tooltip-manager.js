@@ -159,14 +159,14 @@ export class TooltipManager {
 	// Basic implementation of getContent; subclass override if needed according to chart's data format
 	_getContent(datum) {
 
-		console.log("datum - ", datum)
-
         const fields = { dataFields: [] }
 
-        for (let field of Object.keys(datum)) {
+		const data = datum.tooltipData || datum
+
+        for (let field of Object.keys(data)) {
             fields.dataFields.push({
                 key: field,
-                value: datum[field]
+                value: data[field]
             })
         }
         
