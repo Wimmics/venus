@@ -1,7 +1,7 @@
 import { VisualArtifacts } from "./visual-artifacts";
 import { CHANNEL_TYPES, MARK_TYPES } from "@wimmics/venus-core";
 
-export class GraphVisualArtifacts extends VisualArtifacts {
+export class ForceGraphVisualArtifacts extends VisualArtifacts {
 	
 	_processChartSpecificArtifacts() {
 		const { encoding, marks, data } = this._payload
@@ -70,19 +70,5 @@ export class GraphVisualArtifacts extends VisualArtifacts {
 			if (!scaleId.startsWith("nodes.")) continue;
 			if (!activeScaleIds.has(scaleId)) { this.scales.delete(scaleId) }
 		}
-	}
-
-	_parseStrokeWidth(value) {
-		if (Number.isFinite(value) && Number(value) >= 0) return Number(value);
-		
-		if (typeof value === "string") {
-			const pxMatch = value.trim().match(/^(\d+(?:\.\d+)?)px$/i);
-			if (pxMatch) return Number(pxMatch[1]);
-			
-			const numeric = Number(value);
-			if (Number.isFinite(numeric) && numeric >= 0) return numeric;
-		}
-		
-		return 1.5;
 	}
 }

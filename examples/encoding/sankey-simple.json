@@ -1,0 +1,12 @@
+{
+  "title": "Film genres by country and decade. Source: Wikidata.",
+  "nodes": {
+    "fields": ["genreLabel", "countryLabel", "decade"]
+  },
+  "links": {
+    "value": {
+      "field": "count",
+      "aggregate": "sum"
+    }
+  }
+}

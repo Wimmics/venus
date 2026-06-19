@@ -175,6 +175,8 @@ export class VenusBase extends HTMLElement {
 	
 	setEncoding(encoding) {
 		this.visualEncoding = this.encodingManager.validateEncoding(encoding)
+
+		
 		
 		this._visualArtifacts = emptyVisualArtifacts()
 		this.legendManager?.destroyLegends()

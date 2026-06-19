@@ -30,7 +30,7 @@ export class SparqlToCartesianMapper extends SparqlToVisMapper {
         });
     }
     
-    _buildCanonicalChart() {
+    _buildCanonicalChart() {                                 
         throw new Error(`${this.constructor.name} must implement _buildCanonicalChart()`);
     }
     

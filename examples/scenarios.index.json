@@ -20,7 +20,7 @@
     },
     {
       "id": "visgraph-cooccurrence-color-size",
-      "name": "Harrison Ford Co-Stars and their Birth Year",
+      "name": "Force-directed Graph: Harrison Ford Co-Stars and their Birth Year",
       "encodingPath": "./encoding/vis-graph-cooccurrence-color-size.json",
       "queryPath": "./queries/redford-costars-birthyear.rq",
       "endpoint": "https://dbpedia.org/sparql",
@@ -28,11 +28,21 @@
     },
     {
       "id": "visgraph-semantic-links-labels",
-      "name": "Graph structure of films on DBPedia",
+      "name": "Force-directed Graph: Graph structure of films on DBPedia",
       "encodingPath": "./encoding/graph-semantic-links.json",
       "queryPath": "./queries/dbpedia-movies-spo.rq",
       "endpoint": "https://dbpedia.org/sparql",
       "component": "venus-graph"
+    },
+
+
+    {
+      "id": "sankey-simple",
+      "name": "Sankey: Films genre by country and decade",
+      "encodingPath": "./encoding/sankey-simple.json",
+      "queryPath": "./queries/film-genre-country-decade.rq",
+      "endpoint": "https://query.wikidata.org/sparql",
+      "component": "venus-sankey"
     },
 
 

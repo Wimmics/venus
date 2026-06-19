@@ -3,6 +3,7 @@ import { SparqlToLineChartMapper } from "./sparql-to-line-chart";
 import { SparqlToBarChartMapper } from "./sparql-to-bar-chart";
 import { SparqlToScatterPlotMapper } from "./sparql-to-scatter-plot";
 import { SparqlToForceGraphMapper } from "./sparql-to-force-graph";
+import { SparqlToSankey } from "./sparql-to-sankey";
 import { VIS_TYPES } from "@wimmics/venus-core";
 import { SparqlToVisMapper } from "./sparql-to-vis-mapper";
 
@@ -16,6 +17,8 @@ export function createSparqlMapper(visType, options = {}) {
 			return new SparqlToScatterPlotMapper(options)
 		case VIS_TYPES.VENUS_GRAPH:
 			return new SparqlToForceGraphMapper(options)
+		case VIS_TYPES.VENUS_SANKEY:
+			return new SparqlToSankey(options)
 		default:
 			return new SparqlToVisMapper(options)
 	}

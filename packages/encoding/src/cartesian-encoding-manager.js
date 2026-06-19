@@ -2,19 +2,19 @@ import { EncodingManager } from "./encoding-manager.js";
 
 export class CartesianEncodingManager extends EncodingManager {
     
-    getDefaultScaleType(path) {
-        if (path.endsWith(".color")) return "ordinal";
-        if (path === "x") return "linear";
-        if (path === "y") return "linear";
-        return "linear";
-    }
+    // getDefaultScaleType(path) {
+    //     if (path.endsWith(".color")) return SCALE_TYPES.ORDINAL;
+    //     if (path === "x") return SCALE_TYPES.LINEAR;
+    //     if (path === "y") return "linear";
+    //     return "linear";
+    // }
 
     
     mergeEncoding(userEncoding) {
         return this._mergeCartesianEncoding(userEncoding);
     }
     
-    validateChartSpecificEncoding(merged) {
+    validateVisSpecificEncoding(merged) {
         this._validateRequiredXY(merged);
         this._validateCommonCartesianEncoding(merged);
     }

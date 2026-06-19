@@ -20,6 +20,19 @@ export const MARK_ATTRIBUTES = {
 
 export function getEncodingTemplate(visType) {
 	switch(visType) {
+		case VIS_TYPES.VENUS_SANKEY:
+			return { 
+				nodes: { ...MARK_DEFAULTS.nodes, 
+					align: "justify", 
+					width: 15, 
+					padding: 10 },
+				links: { ...MARK_DEFAULTS.links, 
+					value: {
+						field: null,
+						aggregate: "sum"
+					}},
+				interactions: COMMON_DEFAULTS.interactions 
+			}
 		case VIS_TYPES.VENUS_GRAPH:
 			return { 
 				nodes: MARK_DEFAULTS.nodes, 

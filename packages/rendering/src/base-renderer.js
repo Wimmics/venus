@@ -36,12 +36,7 @@ export default class BaseRenderer {
 		this.chartGroup = this.svg.append('g').classed('chart-group', true) 
 		
 		this._state = this._createBaseState(payload)
-		// const validationMessage = this._validateState();
-		
-		// if (validationMessage) {
-		// 	this._renderCenteredMessage(this._state.width, this._state.height, validationMessage);
-		// 	return;
-		// }
+
 		
 		this._prepareRenderState(); 
 		return this._renderVis();
@@ -88,33 +83,10 @@ export default class BaseRenderer {
 		};
 	}
 	
-	// /**
-	//  * Abort rendering when there are no data to draw.
-	//  */
-	// _validateState() {
-	// 	const data = this._state?.payload?.rows 
-		
-	// 	if (!data || !Array.isArray(data)) return null
-
-	// 	if (!data?.length) return "No available data to visualize"
-		
-	// 	return null
-	// }
-	
-	/**
-	* Hook invoked when validation fails, for subclass cleanup/reset logic.
-	*/
-	_onValidationFailed() {}
-	
 	/**
 	* Hook to enrich state before the visualization-specific render step.
 	*/
 	_prepareRenderState() {}
-	
-	/**
-	* Hook invoked after successful drawing for post-render behaviors.
-	*/
-	_afterRender() {}
 	
 	/**
 	* Abstract visualization-specific drawing method implemented by children.

@@ -8,73 +8,28 @@
 * - Domain calculation for nodes and links
 * - D3 scale creation
 */
-import { EncodingManager } from "./encoding-manager.js";
-import { getEncodingTemplate, MARK_TYPES, VIS_TYPES } from "@wimmics/venus-core";
+import { GraphEncodingManager } from "./graph-encoding-manager";
+import { VIS_TYPES } from "@wimmics/venus-core";
 
-export class ForceGraphEncodingManager extends EncodingManager {
-
-	getMarks() {
-		return [ MARK_TYPES.NODES, MARK_TYPES.LINKS ]
-	}
+export class ForceGraphEncodingManager extends GraphEncodingManager {
 
 	getChartType() {
 		return VIS_TYPES.VENUS_GRAPH
 	}
 
-	getDefaultEncoding() {
-		return getEncodingTemplate(this.getChartType());
-	}
-	
-	mergeEncoding(userEncoding) {
-		return this._mergeGraphEncoding(userEncoding);
-	}
-	
-	validateChartSpecificEncoding(merged) {
-		this._validateGraphConstructionConfig(merged);
-		this._validateSingleScaleConfig(merged);
-		this._validateNodeMetricConfig(merged);
-		this._validateRoleNodeConfig(merged);
-	}
-	
-	_mergeGraphEncoding(userEncoding) {
-		const defaults = this.getDefaultEncoding();
-		console.log("defaults =", defaults)
 
+	_validateGraphSpecificEncoding(merged){
+        this._validateSingleScaleConfig(merged);
+        this._validateGraphConstructionConfig(merged);
+        this._validateNodeMetricConfig(merged);
 
-
-		return {
-			...defaults,
-			...userEncoding,
-			interactions: {
-				...(defaults.interactions || {}),
-				...(userEncoding.interactions || {})
-			},
-			nodes: {
-				...(defaults.nodes || {}),
-				...(userEncoding.nodes || {}),
-				tooltip: {
-					...(defaults.nodes?.tooltip || {}),
-					...(userEncoding.nodes?.tooltip || {})
-				}
-			},
-			links: {
-				...(defaults.links || {}),
-				...(userEncoding.links || {}),
-				tooltip: {
-					...(defaults.links?.tooltip || {}),
-					...(userEncoding.links?.tooltip || {})
-				}
-			}
-		};
-	}
+		this._validateRoleNodeConfig(merged) // Specific force-graph validation
+    }   
 	
 	_validateSingleScaleConfig(encoding) {
-		if (Array.isArray(encoding?.nodes?.color)) {
-			throw new Error('Invalid encoding: "nodes.color" must be an object, not an array.');
-		}
-		if (Array.isArray(encoding?.nodes?.size)) {
-			throw new Error('Invalid encoding: "nodes.size" must be an object, not an array.');
-		}
+		super._validateSingleScaleConfig(encoding)
+
+		// Validate specific force-graph scale config
 		for (const role of ["source", "target"]) {
 			if (Array.isArray(encoding?.nodes?.[role]?.color)) {
 				throw new Error(`Invalid encoding: "nodes.${role}.color" must be an object, not an array.`);
@@ -82,9 +37,6 @@ export class ForceGraphEncodingManager extends EncodingManager {
 			if (Array.isArray(encoding?.nodes?.[role]?.size)) {
 				throw new Error(`Invalid encoding: "nodes.${role}.size" must be an object, not an array.`);
 			}
-		}
-		if (Array.isArray(encoding?.links?.color)) {
-			throw new Error('Invalid encoding: "links.color" must be an object, not an array.');
 		}
 	}
 	
@@ -126,7 +78,7 @@ export class ForceGraphEncodingManager extends EncodingManager {
 	_validateGraphConstructionConfig(encoding) {
 		if (encoding?.links?.field !== undefined) {
 			throw new Error(
-				'Invalid encoding: "links.field" is no longer supported. Use "nodes.source.field" and "nodes.target.field", "links.relation.field", or "links.context.field".'
+				'Invalid encoding: "links.field" is not supported. Use "nodes.source.field" and "nodes.target.field", "links.relation.field", or "links.context.field".'
 			);
 		}
 		const linkType = encoding?.links?.type;
@@ -171,16 +123,6 @@ export class ForceGraphEncodingManager extends EncodingManager {
 		
 		validateRole("source");
 		validateRole("target");
-	}
-	
-	resolveNodeChannelDataKey(channelEncoding) {
-		if (typeof channelEncoding?.field === "string" && channelEncoding.field.trim()) {
-			return channelEncoding.field;
-		}
-		if (channelEncoding?.metric === "degree") {
-			return "degree";
-		}
-		return null;
 	}
 	
 }

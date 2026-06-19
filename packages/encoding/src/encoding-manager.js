@@ -44,7 +44,7 @@ export class EncodingManager {
 		
 		this._validateTooltipConfig(userEncoding, this.getMarks());
 		
-		this.validateChartSpecificEncoding(userEncoding);
+		this.validateVisSpecificEncoding(userEncoding);
 		this._validateMarks(userEncoding);
 
 		return userEncoding;
@@ -58,7 +58,7 @@ export class EncodingManager {
 		throw new Error("mergeEncoding must be implemented by subclass");
 	}
 	
-	validateChartSpecificEncoding(merged) {
+	validateVisSpecificEncoding(merged) {
 		throw new Error("validateEncoding must be implemented by subclass");
 	}
 	

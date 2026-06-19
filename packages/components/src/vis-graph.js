@@ -108,11 +108,7 @@ export class VenusGraph extends VenusBase {
 	
 	// TODO: check if these methods are useful and whether we can merge them
 	_getRenderPayload() {
-		return { nodes: this.nodes, links: this.links };
-	}
-	
-	_getLegendDatasets() {
-		return { nodes: this.nodes, links: this.links };
+		return this._getData()
 	}
 
 	_getData() {

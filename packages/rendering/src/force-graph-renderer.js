@@ -18,16 +18,6 @@ export default class ForceGraphRenderer extends BaseRenderer {
 		this.nodes = [];
 		this.links = [];
 	}
-
-	// _validateState() {
-	// 	if (!this.links.length) 
-	// 		console.warn("There are no links available to draw.")
-		
-	// 	if (!this.nodes?.length) 
-	// 		return "No data to visualize";
-
-	// 	return null;
-	// }
 	
 	/**
 	 * Return the renderer payload shape used for rerenders and resize updates.
@@ -43,8 +33,6 @@ export default class ForceGraphRenderer extends BaseRenderer {
 		this.nodes = payload?.nodes || [];
 		this.links = payload?.links || [];
 	}
-	
-	
 
 	/**
 	 * Expand multi-valued logical links into independently renderable curved edges.
