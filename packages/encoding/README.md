@@ -312,6 +312,6 @@ Notes:
 - Depends on `@wimmics/venus-core` for logging.
 - Used by:
 - `@wimmics/venus-components`
-- `@wimmics/venus-d3renderer`
-- `@wimmics/venus-datasource`
-- `@wimmics/venus-mappers`
+- `@wimmics/venus-rendering`
+- `@wimmics/venus-import`
+- `@wimmics/venus-transform`

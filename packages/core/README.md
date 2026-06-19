@@ -12,6 +12,6 @@ Minimal shared utilities used across the Venus monorepo.
   - `@wimmics/venus-components`
   - `@wimmics/venus-encoding`
   - `@wimmics/venus-sparql`
-  - `@wimmics/venus-mappers` (indirectly through consumers)
+  - `@wimmics/venus-transform` (indirectly through consumers)
 - Depends on:
   - No internal Venus packages.

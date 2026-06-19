@@ -17,7 +17,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Adjust the relative path if your sparql package is not at ../sparql
-const rqInSparqlPackage = path.resolve(__dirname, "../datasource/queries/**/*.rq");
+const rqInSparqlPackage = path.resolve(__dirname, "../import/queries/**/*.rq");
 const rqLocalToo = path.resolve(__dirname, "src/**/*.rq"); // optional, if you ever add rq files locally
 
 const jsonModules = () => ({

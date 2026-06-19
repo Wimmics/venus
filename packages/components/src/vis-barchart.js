@@ -1,10 +1,11 @@
-import { createRenderer } from "@wimmics/venus-d3renderer";
+import { createRenderer } from "@wimmics/venus-rendering";
 import { createEncodingManager } from "@wimmics/venus-encoding";
 import { VIS_TYPES } from "@wimmics/venus-core";
-import { createSparqlMapper } from "@wimmics/venus-mappers"
+import { createSparqlMapper } from "@wimmics/venus-transform"
+import { createTooltipManager } from "@wimmics/venus-visual-mapping";
 
 import { VenusBase } from "./vis-base.js";
-import { createTooltipManager } from "./tooltips/tooltips-factory.js";
+
 export class VenusBarChart extends VenusBase {
 	constructor() {
 		super({

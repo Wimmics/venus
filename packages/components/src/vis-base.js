@@ -1,9 +1,7 @@
 
-import { fetchVisData } from "@wimmics/venus-datasource";
-import { LegendManager } from "@wimmics/venus-legends";
-import { emptyVisualArtifacts, createVisualArtifactsCompiler } from "@wimmics/venus-visual-artifacts";
-
-import { TooltipManager } from "./tooltips/tooltip-manager";
+import { fetchVisData } from "@wimmics/venus-import";
+import { LegendManager } from "../../visual-mapping";
+import { emptyVisualArtifacts, createVisualArtifactsCompiler } from "../../visual-mapping";
 
 
 export class VenusBase extends HTMLElement {
@@ -39,6 +37,8 @@ export class VenusBase extends HTMLElement {
 		this.mapper = null // instantiated by subclass
 		this.tooltipManager = null // instantiated by subclass
 		this.encodingManager = null // instantiated by subclass
+
+		this._loading = false;
 	}
 	
 	connectedCallback() {
@@ -140,38 +140,37 @@ export class VenusBase extends HTMLElement {
 	async launch() {
 		this._resetVisualizationState({ keepEncoding: true });
 
-		const fetchResult = await fetchVisData({
-			endpoint: this._resolveEndpoint(),
-			query: this.sparqlQuery,
-			jsonData: this.sparqlResult,
-			proxyUrl: this._resolveProxyUrl()
-		});
+		this._loading = true;
+		this._showLoading();
 
-		console.log("fetched result = ", fetchResult)
-		if (fetchResult.status !== "success") {
-			throw new Error(fetchResult.message || "Failed to fetch visualization data");
+		let fetchResult;
+		try {
+			fetchResult = await fetchVisData({
+				endpoint: this._resolveEndpoint(),
+				query: this.sparqlQuery,
+				jsonData: this.sparqlResult,
+				proxyUrl: this._resolveProxyUrl()
+			});
+
+			if (fetchResult.status !== "success") {
+				throw new Error(fetchResult.message || "Failed to fetch visualization data");
+			}
+
+			const raw = fetchResult.raw;
+
+			if (raw?.head?.vars)
+				this.encodingManager.validateReferencedFields(this.visualEncoding, raw.head.vars);
+
+			const mapped = this.mapper.map(raw, { encoding: this.visualEncoding })
+
+			this._setDataFromBuildResult(mapped);
+			this.sparqlData = raw;
+
+			this.render();
+		} finally {
+			this._loading = false;
+			this._hideLoading();
 		}
-
-		const raw = fetchResult.raw;
-
-		if (raw?.head?.vars) {
-			this.encodingManager.validateReferencedFields(
-			this.visualEncoding,
-			raw.head.vars
-			);
-		}
-
-		const mapped = this.mapper.map(raw, {
-			encoding: this.visualEncoding,
-			encodingManager: this.encodingManager
-		});
-
-		console.log("mapped data = ", mapped)
-
-		this._setDataFromBuildResult(mapped);
-		this.sparqlData = raw;
-
-		this.render();
 	}
 	
 	setEncoding(encoding) {
@@ -181,10 +180,7 @@ export class VenusBase extends HTMLElement {
 		this.legendManager?.destroyLegends()
 
 		if (this.sparqlData) {
-			const mapped = this.mapper.map(this.sparqlData, { 
-				encoding: this.visualEncoding,
-				encodingManager: this.encodingManager
-			})
+			const mapped = this.mapper.map(this.sparqlData, { encoding: this.visualEncoding})
 
 			this._setDataFromBuildResult(mapped)
 		}
@@ -202,14 +198,25 @@ export class VenusBase extends HTMLElement {
 			container.style.background = this._resolveBackgroundColor();
 			this._updateTitle(container);
 		}
-		
+
+		// hide any previous empty message
+		this._hideEmptyMessage();
+
 		if (!this.renderer) return;
-		
+
 		this._syncRendererSizeFromContainer(container);
+
+		// If there's no data after mapping/transformation, show a message and skip rendering
+		if (!this._hasData()) {
+			this._hideLoading();
+			this._showEmptyMessage('No data to display');
+			return;
+		}
+
 		this._compileVisualArtifacts();
-		
+
 		this.renderer.render(
-			this._getRenderPayload(), 
+			this._getRenderPayload(),
 			this._visualArtifacts
 		);
 
@@ -468,14 +475,50 @@ export class VenusBase extends HTMLElement {
 		.tooltip-value {
 			text-align: left;
 		}
+			
+				.vis-loading {
+			position: absolute;
+			inset: 0;
+			display: none;
+			align-items: center;
+			justify-content: center;
+			background: rgba(255,255,255,0.85);
+			z-index: 60;
+		}
+		.vis-loading.visible { display: flex; }
+		.vis-loading .spinner {
+			width: 40px;
+			height: 40px;
+			border: 4px solid rgba(0,0,0,0.08);
+			border-top-color: rgba(0,0,0,0.6);
+			border-radius: 50%;
+			animation: vis-spin 1s linear infinite;
+		}
+		@keyframes vis-spin { to { transform: rotate(360deg); } }
+				.vis-empty {
+					position: absolute;
+					inset: 0;
+					display: none;
+					align-items: center;
+					justify-content: center;
+					background: rgba(255,255,255,0.95);
+					z-index: 55;
+					color: #666;
+					font-size: 14px;
+					text-align: center;
+					padding: 12px;
+				}
+				.vis-empty.visible { display: flex; }
         ${extraStyles}
       </style>
       <div class="vis-container">
         <div class="vis-title"></div>
-        <div class="vis-surface">
-          <svg></svg>
-        </div>
-		<div class="tooltip"></div>
+				<div class="vis-surface">
+					<svg></svg>
+				</div>
+				<div class="vis-loading"><div class="spinner"></div></div>
+				<div class="vis-empty"><div class="vis-empty-message"></div></div>
+				<div class="tooltip"></div>
       </div>
     `;
 		this._applyDimensions();
@@ -483,6 +526,32 @@ export class VenusBase extends HTMLElement {
 	
 	_getContainerElement() {
 		return this.shadowRoot?.querySelector('.vis-container');
+	}
+
+	_showLoading() {
+		const el = this.shadowRoot?.querySelector('.vis-loading');
+		if (!el) return;
+		el.classList.add('visible');
+	}
+
+	_hideLoading() {
+		const el = this.shadowRoot?.querySelector('.vis-loading');
+		if (!el) return;
+		el.classList.remove('visible');
+	}
+
+	_showEmptyMessage(text) {
+		const el = this.shadowRoot?.querySelector('.vis-empty');
+		const msg = this.shadowRoot?.querySelector('.vis-empty-message');
+		if (!el || !msg) return;
+		msg.textContent = text || 'No data available';
+		el.classList.add('visible');
+	}
+
+	_hideEmptyMessage() {
+		const el = this.shadowRoot?.querySelector('.vis-empty');
+		if (!el) return;
+		el.classList.remove('visible');
 	}
 	
 	_normalizeDimensionValue(nextValue, fallbackValue) {

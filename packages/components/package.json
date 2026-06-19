@@ -28,13 +28,11 @@
     "@rollup/plugin-terser": "^0.4.0",
 
     "@wimmics/venus-core": "file:../core",
-    "@wimmics/venus-d3renderer": "file:../renderer-d3",
+    "@wimmics/venus-rendering": "file:../rendering",
     "@wimmics/venus-encoding": "file:../encoding",
-    "@wimmics/venus-mappers": "file:../mappers",
-    "@wimmics/venus-datasource": "file:../datasource",
-    "@wimmics/venus-legends": "file:../legends",
-    "@wimmics/venus-visual-artifacts": "file:../visual-artifacts",
-    "@wimmics/venus-scales": "file:../scales",
+    "@wimmics/venus-transform": "file:../transform",
+    "@wimmics/venus-import": "file:../import",
+    "@wimmics/venus-visual-mapping": "file:../visual-mapping",
     
     "rollup": "^4.0.0",
     "rollup-plugin-string": "^3.0.0"

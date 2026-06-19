@@ -1,0 +1,11 @@
+{
+  "name": "@wimmics/venus-visual-mapping",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": [
+    "./index.js",
+    "./dist/index.js"
+  ],
+  "main": "./index.js"
+}

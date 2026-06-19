@@ -1,27 +1,6 @@
-export const CHANNEL_TYPES = {
-	COLOR: "color", 
-	SIZE: "size", 
-	STROKE: "stroke", 
-	STROKE_WIDTH: "strokeWidth"
-}
-
-export const CHANNEL_OPTIONS = {
-	GROUP: "groups", // for grouped bars
-	STACK: "stack", // for stacked bars, areas,e tc
-}
-
-export const MARK_TYPES = {
-	NODES: "nodes",
-	LINKS: "links", 
-	BARS: "bars",
-	LINES: "lines",
-	POINTS: "points", 
-}
-
-export const ATTRIBUTE_TYPES = {
-	LABELS: "labels",
-	DISTANCE: "distance"
-}
+import { MARK_DEFAULTS, CARTESIAN_DEFAULTS, COMMON_DEFAULTS } from "./encoding-defaults.js"
+import { CHANNEL_TYPES, ATTRIBUTE_TYPES } from "./encoding-objects.js"
+import { VIS_TYPES } from "./vis-types.js"
 
 export const MARK_CHANNELS = {
 	"nodes": [ CHANNEL_TYPES.COLOR, CHANNEL_TYPES.SIZE, CHANNEL_TYPES.STROKE, CHANNEL_TYPES.STROKE_WIDTH ],
@@ -33,58 +12,42 @@ export const MARK_CHANNELS = {
 
 export const MARK_ATTRIBUTES = {
 	"nodes": [ ATTRIBUTE_TYPES.LABELS ],
-	"links": [ ATTRIBUTE_TYPES.DISTANCE, ATTRIBUTE_TYPES.LABELS ]
+	"links": [ ATTRIBUTE_TYPES.DISTANCE, ATTRIBUTE_TYPES.LABELS ],
+	"bars": [ ATTRIBUTE_TYPES.LABELS ],
+	"lines": [ ATTRIBUTE_TYPES.LABELS ],
+	"points": [ ATTRIBUTE_TYPES.LABELS ]
 }
 
-export const SCALE_TYPES = {
-	ORDINAL: "ordinal",
-	LINEAR: "linear",
-	COUNT: "count",
-	SQRT: "sqrt",
-	LOG: "log",
-	POW: "pow",
-	QUANTITATIVE: "quantitative",
-	SEQUENTIAL: "sequential",
-	THRESHOLD: "threshold",
-	BAND: "band",
-	POINT: "point"
-};
-
-const QUANTITATIVE_TYPES = new Set([
-	SCALE_TYPES.LINEAR,
-	SCALE_TYPES.SQRT,
-	SCALE_TYPES.LOG,
-	SCALE_TYPES.POW,
-	SCALE_TYPES.QUANTITATIVE,
-	SCALE_TYPES.SEQUENTIAL
-]);
-
-export function isColorScale(channel) {
-	return channel === CHANNEL_TYPES.COLOR || channel === CHANNEL_TYPES.STROKE;
+export function getEncodingTemplate(visType) {
+	switch(visType) {
+		case VIS_TYPES.VENUS_GRAPH:
+			return { 
+				nodes: MARK_DEFAULTS.nodes, 
+				links: MARK_DEFAULTS.links,
+				interactions: COMMON_DEFAULTS.interactions 
+			}
+		case VIS_TYPES.VENUS_BARCHART:
+			return { 
+				x: CARTESIAN_DEFAULTS.x.FALLBACK(visType), 
+				y: CARTESIAN_DEFAULTS.y,
+				bars: MARK_DEFAULTS.bars,
+				interactions: COMMON_DEFAULTS.interactions  
+			}
+		case VIS_TYPES.VENUS_LINECHART:
+			return { 
+				x: CARTESIAN_DEFAULTS.x.FALLBACK(visType), 
+				y: CARTESIAN_DEFAULTS.y,
+				lines: MARK_DEFAULTS.lines,
+				points: MARK_DEFAULTS.points,
+				interactions: COMMON_DEFAULTS.interactions  
+			}
+		case VIS_TYPES.VENUS_SCATTERPLOT:
+			return { 
+				x: CARTESIAN_DEFAULTS.x.FALLBACK(visType), 
+				y: CARTESIAN_DEFAULTS.y,
+				points: MARK_DEFAULTS.points,
+				interactions: COMMON_DEFAULTS.interactions  
+			}
+	}
 }
-
-export function normalizeScaleType(type, fallback = SCALE_TYPES.ORDINAL) {
-	return typeof type === "string" && type.trim()
-	? type.trim()
-	: fallback;
-}
-
-export function isCountScaleType(type) {
-	return SCALE_TYPES.COUNT === normalizeScaleType(type)
-}
-
-export function isOrdinalScaleType(type) {
-	let normalizedType = normalizeScaleType(type)
-	return normalizedType === SCALE_TYPES.ORDINAL || normalizedType === SCALE_TYPES.BAND || normalizedType === SCALE_TYPES.POINT
-}
-
-export function isQuantitativeScaleType(type) {
-	return QUANTITATIVE_TYPES.has(normalizeScaleType(type));
-}
-
-export function isThresholdScaleType(type) {
-	return normalizeScaleType(type) == SCALE_TYPES.THRESHOLD
-}
-
-
 

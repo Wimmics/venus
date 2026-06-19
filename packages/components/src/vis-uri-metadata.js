@@ -1,4 +1,4 @@
-import { fetchNodeDetails } from "@wimmics/venus-datasource";
+import { fetchNodeDetails } from "@wimmics/venus-import";
 import { VIS_TYPES } from "@wimmics/venus-core";
 
 export class VenusUriMeta extends HTMLElement {

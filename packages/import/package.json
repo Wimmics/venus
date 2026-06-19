@@ -1,0 +1,8 @@
+{
+  "name": "@wimmics/venus-import",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "main": "./index.js"
+}
