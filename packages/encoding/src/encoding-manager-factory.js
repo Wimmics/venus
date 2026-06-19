@@ -1,52 +1,22 @@
-/**
- * Encoding Manager Factory
- * 
- * Registry-based factory for creating visualization-specific encoding managers.
- * Follows the same pattern as mapper-factory.js for consistency.
- * Allows dynamic registration of new visualization types.
- */
+import { ForceGraphEncodingManager } from "./force-graph-encoding-manager.js"
+import { BarChartEncodingManager } from "./bar-chart-encoding-manager.js";
+import { LineChartEncodingManager } from "./line-chart-encoding-manager.js";
+import { ScatterPlotEncodingManager } from "./scatter-plot-encoding-manager.js";
 
-const registry = new Map();
+import { VIS_TYPES } from "@wimmics/venus-core";
+import { EncodingManager } from "./encoding-manager.js";
 
-/**
- * Register an encoding manager class for a visualization type.
- * @param {string} visType - Visualization type identifier
- * @param {Function} EncodingManagerClass - Constructor for the encoding manager
- */
-export function registerEncodingManager(visType, EncodingManagerClass) {
-  registry.set(visType, EncodingManagerClass);
-}
-
-/**
- * Create an encoding manager for the specified visualization type.
- * @param {string} visType - Visualization type ('force-graph', 'sankey', etc.)
- * @returns {EncodingManager} Encoding manager instance
- * @throws {Error} If visualization type is not registered
- */
 export function createEncodingManager(visType) {
-  const ManagerClass = registry.get(visType);
-  if (!ManagerClass) {
-    throw new Error(
-      `No encoding manager registered for "${visType}". Known types: ${[...registry.keys()].join(", ")}`
-    );
-  }
-
-  return new ManagerClass();
-}
-
-/**
- * Check if an encoding manager is registered for a visualization type.
- * @param {string} visType - Visualization type
- * @returns {boolean} True if registered
- */
-export function hasEncodingManager(visType) {
-  return registry.has(visType);
-}
-
-/**
- * List all registered visualization types.
- * @returns {string[]} Sorted array of registered visualization types
- */
-export function listEncodingManagers() {
-  return [...registry.keys()].sort();
+	switch (visType) {
+		case VIS_TYPES.VENUS_BARCHART:
+		return new BarChartEncodingManager()
+		case VIS_TYPES.VENUS_LINECHART:
+		return new LineChartEncodingManager()
+		case VIS_TYPES.VENUS_SCATTERPLOT:
+		return new ScatterPlotEncodingManager()
+		case VIS_TYPES.VENUS_GRAPH:
+		return new ForceGraphEncodingManager()
+		default:
+		return new EncodingManager()
+	}
 }

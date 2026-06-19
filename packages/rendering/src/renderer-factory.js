@@ -1,44 +1,24 @@
-const registry = new Map();
+import ForceGraphRenderer from "./force-graph-renderer.js";
+import BarChartRenderer from "./bar-chart-renderer.js";
+import LineChartRenderer from "./line-chart-renderer.js";
+import ScatterPlotRenderer from "./scatter-plot-renderer.js";
+import BaseRenderer from "./base-renderer.js";
 
-/**
- * Register a renderer class for a visualization type.
- * @param {string} visType
- * @param {Function} RendererClass
- */
-export function registerRenderer(visType, RendererClass) {
-  registry.set(visType, RendererClass);
-}
+import { VIS_TYPES } from "@wimmics/venus-core";
 
-/**
- * Create a renderer instance for a visualization type.
- * @param {string} visType
- * @param {Object} options
- * @returns {Object}
- */
+
 export function createRenderer(visType, options = {}) {
-  const RendererClass = registry.get(visType);
-  if (!RendererClass) {
-    throw new Error(
-      `No renderer registered for "${visType}". Known types: ${[...registry.keys()].join(", ")}`
-    );
-  }
-  return new RendererClass(options);
-}
-
-/**
- * Check if a renderer is registered for a visualization type.
- * @param {string} visType
- * @returns {boolean}
- */
-export function hasRenderer(visType) {
-  return registry.has(visType);
-}
-
-/**
- * List all registered renderer visualization types.
- * @returns {string[]}
- */
-export function listRenderers() {
-  return [...registry.keys()].sort();
+	switch (visType){
+		case VIS_TYPES.VENUS_BARCHART:
+			return new BarChartRenderer(options)
+		case VIS_TYPES.VENUS_LINECHART:
+			return new LineChartRenderer(options)
+		case VIS_TYPES.VENUS_SCATTERPLOT:
+			return new ScatterPlotRenderer(options)
+		case VIS_TYPES.VENUS_GRAPH:
+			return new ForceGraphRenderer(options)
+		default:
+			return new BaseRenderer(options)
+	}
 }
 
