@@ -306,26 +306,6 @@ export class SparqlToForceGraphMapper extends SparqlToGraphMapper {
 		return link
 	}
 	
-	/**
-	 * Computes the degree of each node from the finalized link list.
-	 * Degree is a basic graph metric used by layouts and visual encodings, so it
-	 * is derived once here instead of being recomputed by consumers.
-	 */
-	_addNodeDegrees(nodes, links) {
-		const degreeById = new Map();
-		
-		for (const node of nodes) {
-			degreeById.set(node.id, 0);
-		}
-		
-		for (const link of links) {
-			degreeById.set(link.source, (degreeById.get(link.source) || 0) + 1);
-			degreeById.set(link.target, (degreeById.get(link.target) || 0) + 1);
-		}
-		
-		for (const node of nodes) {
-			node.degree = degreeById.get(node.id) || 0;
-		}
-	}
+	
 
 }

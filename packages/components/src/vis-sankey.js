@@ -54,7 +54,18 @@ export class VenusSankey extends VenusBase {
 	}
 
     _initDOMStructure() {
-        this._renderBaseDOM();
+        this._renderBaseDOM({
+            extraStyles: `
+                 .node-downplayed {
+                    opacity: 0.15;
+                }
+
+                .link-downplayed {
+                    opacity: 0.08;
+                }
+
+            `
+        });
         
         const container = this._getContainerElement();
         if (container && !this.renderer) {

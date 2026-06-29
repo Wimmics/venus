@@ -158,10 +158,14 @@ export class VenusBase extends HTMLElement {
 
 			const raw = fetchResult.raw;
 
+			console.log("fetched data = ", raw)
+
 			if (raw?.head?.vars)
 				this.encodingManager.validateReferencedFields(this.visualEncoding, raw.head.vars);
 
 			const mapped = this.mapper.map(raw, { encoding: this.visualEncoding })
+
+			console.log("mapped data = ", mapped)
 
 			this._setDataFromBuildResult(mapped);
 			this.sparqlData = raw;
@@ -174,10 +178,11 @@ export class VenusBase extends HTMLElement {
 	}
 	
 	setEncoding(encoding) {
-		this.visualEncoding = this.encodingManager.validateEncoding(encoding)
+		this.encodingManager.validateEncoding(encoding) // If anything goes wrong here an error will be thrown
 
-		
-		
+		this.visualEncoding = this.encodingManager.mergeEncoding(encoding) // If encoding is valid, we merge it with the defaults to cover optional fields
+		console.log('final encoding = ', this.visualEncoding)
+
 		this._visualArtifacts = emptyVisualArtifacts()
 		this.legendManager?.destroyLegends()
 

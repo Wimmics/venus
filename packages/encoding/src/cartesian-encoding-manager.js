@@ -1,26 +1,16 @@
 import { EncodingManager } from "./encoding-manager.js";
+import { getEncodingTemplate } from "@wimmics/venus-core";
 
 export class CartesianEncodingManager extends EncodingManager {
-    
-    // getDefaultScaleType(path) {
-    //     if (path.endsWith(".color")) return SCALE_TYPES.ORDINAL;
-    //     if (path === "x") return SCALE_TYPES.LINEAR;
-    //     if (path === "y") return "linear";
-    //     return "linear";
-    // }
 
+    getDefaultEncoding() {
+        return getEncodingTemplate(this.getChartType());
+    }
     
     mergeEncoding(userEncoding) {
-        return this._mergeCartesianEncoding(userEncoding);
-    }
-    
-    validateVisSpecificEncoding(merged) {
-        this._validateRequiredXY(merged);
-        this._validateCommonCartesianEncoding(merged);
-    }
-    
-    _mergeCartesianEncoding(userEncoding) {
         const defaults = this.getDefaultEncoding();
+        console.log('user encoding = ', userEncoding)
+        console.log("default encoding = ", defaults)
         const merged = {
             ...defaults,
             ...(userEncoding || {}),
@@ -41,9 +31,17 @@ export class CartesianEncodingManager extends EncodingManager {
         for (const mark of this.getMarks()) {
             merged[mark] = this._mergeMark(defaults, userEncoding, mark);
         }
+
+        console.log("merged encoding = ", merged)
         
         return merged;
     }
+    
+    validateVisSpecificEncoding(merged) {
+        this._validateRequiredXY(merged);
+        this._validateCommonCartesianEncoding(merged);
+    }
+    
     
     _mergeMark(defaults, userEncoding, mark) {
         const channels = this.getMarkChannels(mark);

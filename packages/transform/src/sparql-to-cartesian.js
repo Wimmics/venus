@@ -24,7 +24,7 @@ export class SparqlToCartesianMapper extends SparqlToVisMapper {
         return bindings.map((binding) => {
             const row = {};
             for (const varName of vars) {
-                row[varName] = this._bindingToValue(binding[varName]);
+                row[varName] = binding[varName]?.value
             }
             return row;
         });

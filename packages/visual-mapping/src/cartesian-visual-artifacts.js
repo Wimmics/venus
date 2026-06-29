@@ -28,19 +28,8 @@ export class CartesianVisualArtifacts extends VisualArtifacts {
 
 		// Build axis specs from resolved domains
 		const specsResult = this._getAxesSpecs({ encoding: layoutEncoding, domainResult })
-		
-		// Compute margin from axis specs
-		const finalMargin = this._computeCartesianMargins({
-			axes: {
-				bottom: specsResult.x,
-				left: specsResult.y
-			},
-			userMargin: layoutEncoding?.margin || {}
-		});
 
-		// Compute inner size and ranges
-		const innerWidth = Math.max(1, Number(width || 800) - finalMargin.left - finalMargin.right);
-		const innerHeight = Math.max(1, Number(height || 600) - finalMargin.top - finalMargin.bottom);
+		const { margin, innerHeight, innerWidth } = this._getChartSpace({ encoding: layoutEncoding, specs: specsResult, width, height })
 
 		specsResult.x.titlePosition = this._computeAxisTitlePosition({ axisSpec: specsResult.x, side: "bottom", innerWidth, innerHeight})
 		specsResult.y.titlePosition = this._computeAxisTitlePosition({ axisSpec: specsResult.y, side: "left", innerHeight, innerHeight})
@@ -63,7 +52,7 @@ export class CartesianVisualArtifacts extends VisualArtifacts {
 		const chartExtras = this._resolveChartLayoutExtras({ encoding: layoutEncoding, chart, scaleResult, isHorizontal });
 
 		this.layout = {
-			margin: finalMargin,
+			margin,
 			innerWidth,
 			innerHeight,
 			mode: chart?.mode || null,
@@ -77,7 +66,35 @@ export class CartesianVisualArtifacts extends VisualArtifacts {
 		};
 	}
 
-	
+	_getChartSpace({ encoding, specs, width, height }) {
+		const bottomRequirement =
+			this.chartSpaceManager.computeLabelRequirement({
+				labels: specs.x.tickLabels,
+				angle: specs.x.labelAngle,
+				offset: specs.x.labelOffset,
+				title: specs.x.title,
+				orientation: "bottom"
+			});
+
+		const leftRequirement =
+			this.chartSpaceManager.computeLabelRequirement({
+				labels: specs.y.tickLabels,
+				angle: specs.y.labelAngle,
+				offset: specs.y.labelOffset,
+				title: specs.y.title,
+				orientation: "left"
+			});
+
+		return this.chartSpaceManager.computeChartSpace({
+			width,
+			height,
+			userMargin: encoding?.margin,
+			requirements: {
+				bottom: bottomRequirement,
+				left: leftRequirement
+			}
+		});
+	}
 
 	_getAxes( { encoding, scaleResult, tickValues }) {
 		const axes = { x: { orientation: "bottom"}, y: { orientation: "left"} }

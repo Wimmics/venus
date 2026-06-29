@@ -4,7 +4,7 @@ import { VIS_TYPES } from "./vis-types.js"
 
 export const MARK_CHANNELS = {
 	"nodes": [ CHANNEL_TYPES.COLOR, CHANNEL_TYPES.SIZE, CHANNEL_TYPES.STROKE, CHANNEL_TYPES.STROKE_WIDTH ],
-	"links": [ CHANNEL_TYPES.COLOR, CHANNEL_TYPES.STROKE, CHANNEL_TYPES.STROKE_WIDTH ],
+	"links": [ CHANNEL_TYPES.COLOR, CHANNEL_TYPES.STROKE, CHANNEL_TYPES.STROKE_WIDTH, CHANNEL_TYPES.OPACITY ],
 	"bars": [ CHANNEL_TYPES.COLOR, CHANNEL_TYPES.STROKE, CHANNEL_TYPES.STROKE_WIDTH ],
 	"lines": [ CHANNEL_TYPES.COLOR, CHANNEL_TYPES.STROKE, CHANNEL_TYPES.STROKE_WIDTH ],
 	"points": [ CHANNEL_TYPES.COLOR, CHANNEL_TYPES.SIZE, CHANNEL_TYPES.STROKE, CHANNEL_TYPES.STROKE_WIDTH ]
@@ -21,22 +21,10 @@ export const MARK_ATTRIBUTES = {
 export function getEncodingTemplate(visType) {
 	switch(visType) {
 		case VIS_TYPES.VENUS_SANKEY:
-			return { 
-				nodes: { ...MARK_DEFAULTS.nodes, 
-					align: "justify", 
-					width: 15, 
-					padding: 10 },
-				links: { ...MARK_DEFAULTS.links, 
-					value: {
-						field: null,
-						aggregate: "sum"
-					}},
-				interactions: COMMON_DEFAULTS.interactions 
-			}
 		case VIS_TYPES.VENUS_GRAPH:
 			return { 
-				nodes: MARK_DEFAULTS.nodes, 
-				links: MARK_DEFAULTS.links,
+				nodes: { ...MARK_DEFAULTS.nodes.common, ...MARK_DEFAULTS.nodes.byVisType(visType)}, 
+				links: { ...MARK_DEFAULTS.links.common, ...MARK_DEFAULTS.links.byVisType(visType)},
 				interactions: COMMON_DEFAULTS.interactions 
 			}
 		case VIS_TYPES.VENUS_BARCHART:
@@ -51,7 +39,7 @@ export function getEncodingTemplate(visType) {
 				x: CARTESIAN_DEFAULTS.x.FALLBACK(visType), 
 				y: CARTESIAN_DEFAULTS.y,
 				lines: MARK_DEFAULTS.lines,
-				points: MARK_DEFAULTS.points,
+				points: { ...MARK_DEFAULTS.points },
 				interactions: COMMON_DEFAULTS.interactions  
 			}
 		case VIS_TYPES.VENUS_SCATTERPLOT:

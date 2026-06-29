@@ -35,16 +35,32 @@
       "component": "venus-graph"
     },
 
+    {
+      "id": "visgraph-semantic-datalens",
+      "name": "Force-directed Graph: ML Resource on Datalens",
+      "encodingPath": "./encoding/semantic-graph-datalens.json",
+      "queryPath": "./queries/resource-properties-datalens.rq",
+      "endpoint": "https://graph.i3s.unice.fr/repositories/datalens",
+      "component": "venus-graph"
+    },
+
 
     {
       "id": "sankey-simple",
-      "name": "Sankey: Films genre by country and decade",
+      "name": "Sankey: People per country and birth decade",
       "encodingPath": "./encoding/sankey-simple.json",
-      "queryPath": "./queries/film-genre-country-decade.rq",
-      "endpoint": "https://query.wikidata.org/sparql",
+      "queryPath": "./queries/people-country-birthDecade.rq",
+      "endpoint": "https://dbpedia.org/sparql",
       "component": "venus-sankey"
     },
-
+    {
+      "id": "sankey-colored-nodes",
+      "name": "Sankey: Universities across countries and cities",
+      "encodingPath": "./encoding/sankey-colored-nodes.json",
+      "queryPath": "./queries/university-features.rq",
+      "endpoint": "https://dbpedia.org/sparql",
+      "component": "venus-sankey"
+    },
 
 
     {

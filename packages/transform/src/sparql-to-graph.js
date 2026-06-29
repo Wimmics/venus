@@ -18,8 +18,7 @@ export class SparqlToGraphMapper extends SparqlToVisMapper {
 		const nodes = Array.from(this.nodesMap.values());
 		const links = Array.from(this.linksMap.values());
 		
-		this._finalizeLinks(links);
-		this._addNodeDegrees(nodes, links);
+		this._postProcessCanonicalGraph(nodes, links)
 		
 		return {
 			graph: { nodes, links },
@@ -34,6 +33,11 @@ export class SparqlToGraphMapper extends SparqlToVisMapper {
     _buildCanonicalGraph(){
         throw new Error("_buildCanonicalGraph must be implemented by subclass")
     }
+
+	_postProcessCanonicalGraph(nodes, links) {
+		this._finalizeLinks(links)
+		this._addNodeDegrees(nodes, links)
+	}
 
     // ---------------------------------------------------------------------------
     // Canonical nodes
@@ -145,18 +149,22 @@ export class SparqlToGraphMapper extends SparqlToVisMapper {
 	}) {
 		const key = this._makePairKey(sourceId, targetId, type);
 		
-		const link = {
-				source: sourceId,
-				target: targetId,
-				type,
-				label: "",
-				values: [],
-				weight: 0,
-				tooltipData: {} }
+		const link = this.linksMap.get(key) || {
+			source: sourceId,
+			target: targetId,
+			type,
+			label: "",
+			values: [],
+			weight: 0,
+			bindingCount: 0,
+			tooltipData: {}
+		};
 
 		if (!this.linksMap.has(key)) {
 			this.linksMap.set(key, link);
 		}
+
+		link.bindingCount = (link.bindingCount || 0) + 1;
 		
 		const tooltipFields = this._getTooltipFields({
 			config: this.encoding?.links?.tooltip,
@@ -172,7 +180,7 @@ export class SparqlToGraphMapper extends SparqlToVisMapper {
 		this._mergeLinkBindingValues(link, binding, tooltipFields);
 		this._addLinkValue(link, value);
 		
-		link.weight = link.values.length;
+		link.weight = link.bindingCount;
 		link.label = this._joinLabels(link.values.map((item) => item.label || label || type));
 		
 		this._addLinkContext({ link, binding: value, type })
@@ -356,7 +364,14 @@ export class SparqlToGraphMapper extends SparqlToVisMapper {
 			if (!Array.isArray(link.values)) link.values = [];
 			
 			link.valueCount = link.values.length;
-			link.weight = Math.max(1, link.valueCount || link.weight || 1);
+			link.bindingCount = Number.isFinite(link.bindingCount) && link.bindingCount > 0
+				? link.bindingCount
+				: link.valueCount;
+
+			const hasNumericStrength = Number.isFinite(link.value) && link.value > 0;
+			link.weight = hasNumericStrength
+				? link.value
+				: Math.max(1, link.bindingCount || 1);
 			
 			if (!link.label) {
 				link.label = link.values.length
@@ -367,6 +382,29 @@ export class SparqlToGraphMapper extends SparqlToVisMapper {
 			link.tooltip = link.label;
 		}
 	}
+
+	/**
+	 * Computes the degree of each node from the finalized link list.
+	 * Degree is a basic graph metric used by layouts and visual encodings, so it
+	 * is derived once here instead of being recomputed by consumers.
+	 */
+	_addNodeDegrees(nodes, links) {
+		const degreeById = new Map();
+		
+		for (const node of nodes) {
+			degreeById.set(node.id, 0);
+		}
+		
+		for (const link of links) {
+			degreeById.set(link.source, (degreeById.get(link.source) || 0) + 1);
+			degreeById.set(link.target, (degreeById.get(link.target) || 0) + 1);
+		}
+		
+		for (const node of nodes) {
+			node.degree = degreeById.get(node.id) || 0;
+		}
+	}
+
     // Tooltip resolvers
 
 	_getTooltipFields({

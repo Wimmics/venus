@@ -83,3 +83,4 @@ Thumbs.db
 
 example-apps/react
 example-apps/angular
+examples/cache/*.json

@@ -6,6 +6,8 @@ import { SCALE_DEFAULTS,
 	MARK_CHANNELS, 
 	isColorScale, 
 	MARK_ATTRIBUTES} from "@wimmics/venus-core";
+	
+import { ChartSpaceManager } from "./chart-space-manager";
 
 export class VisualArtifacts {
 	constructor({ scaleFactory = new D3ScaleFactory() } = {}) {
@@ -17,6 +19,8 @@ export class VisualArtifacts {
 		this.layout = {}
 
 		this._payload = {}
+
+		this.chartSpaceManager = new ChartSpaceManager()
 	}
 
 	build(options = {}) {
@@ -76,13 +80,20 @@ export class VisualArtifacts {
 	}
 
 	_processMarkArtifacts({ mark, config, data, role = null }) {
+		// console.log("[processMarkArtifacts]")
+		// console.log("mark = ", mark)
+		// console.log("config = ", config)
+		// console.log("data = ", data)
 
 		for (let channel of (MARK_CHANNELS[mark] || [])) {
+			// console.log("channel = ", channel)
+			// console.log("channel config = ", config?.[channel])
+
 			this._processScaleChannel({
 				mark: mark,
 				role: role,
 				channel: channel,
-				channelConfig: this._resolveChannelConfig( mark, channel, config?.[channel] || {}),
+				channelConfig: config?.[channel],
 				data: data,
 				isColorScale: isColorScale(channel)
 			});
@@ -93,7 +104,8 @@ export class VisualArtifacts {
 			this._processAttribute({
 				mark: mark,
 				attribute: attribute,
-				attributeConfig: config?.[attribute]
+				attributeConfig: config?.[attribute],
+				role: role
 			})
 		}
 		
@@ -109,7 +121,7 @@ export class VisualArtifacts {
 	}) {
 		
 		const field = this._resolveChannelDataKey(channelConfig);
-		const hasValue = channelConfig.value !== undefined && channelConfig.value !== null;
+		const hasValue = channelConfig?.value !== undefined && channelConfig?.value !== null;
 		
 		if (!field && !hasValue) return;
 		
@@ -139,7 +151,7 @@ export class VisualArtifacts {
 			defaultValue: channelConfig.value
 		});
 		
-		if (field && scaleResult.scale) {
+		if (field && scaleResult?.scale) {
 			this.legends.push({
 				field: field,
 				type: channel,
@@ -155,43 +167,10 @@ export class VisualArtifacts {
 				domain: scaleResult.domain,
 				range: scaleResult.range,
 
-				...channelConfig.legend,
-				title: channelConfig.legend.title || field
+				...channelConfig?.legend,
+				title: channelConfig?.legend?.title || field
 			});
 		}
-	}
-	
-	_resolveChannelConfig(mark, channel, channelConfig = {}) {
-		const defaults = MARK_DEFAULTS?.[mark]?.[channel] || {};
-		
-		return {
-			...defaults,
-			...(channelConfig || {}),
-			legend: {
-				...(MARK_DEFAULTS?.[mark]?.legend || {}),
-				...(defaults.legend || {}),
-				...(channelConfig?.legend || {})
-			},
-			scale: channelConfig?.scale
-			? {
-				...(defaults.scale || {}),
-				...channelConfig.scale
-			}
-			: defaults.scale || null
-		};
-	}
-	
-	_resolveAttributeConfig(mark, attribute, attributeConfig = {}) {
-		const defaults = MARK_DEFAULTS?.[mark]?.[attribute] || {};
-		
-		const cleanConfig = Object.fromEntries(
-			Object.entries(attributeConfig || {}).filter(([, value]) => value !== undefined)
-		);
-		
-		return {
-			...defaults,
-			...cleanConfig
-		};
 	}
 	
 	_resolveChannelDataKey(channelConfig) {
@@ -212,20 +191,14 @@ export class VisualArtifacts {
 		attributeConfig,
 		role = null
 	}) {
-		const resolvedConfig = this._resolveAttributeConfig(
-			mark,
-			attribute,
-			attributeConfig
-		);
-		
-		if (!resolvedConfig || typeof resolvedConfig !== "object") return;
-		
+		if (attributeConfig == null) return;
+
 		this.attributes.push({
 			mark,
 			role,
 			attribute,
-			...resolvedConfig,
-			encoding: resolvedConfig
+			...attributeConfig,
+			encoding: attributeConfig
 		});
 	}
 	

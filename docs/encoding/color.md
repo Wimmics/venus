@@ -28,3 +28,4 @@ encoding: {
 - VENUS does not choose a data field for color automatically. Use `color.field` or a supported `color.metric` for data-driven color.
 - When color is not data-driven, all marks of that type use the configured constant `color.value`.
 - Source-target graph nodes can use `nodes.source.color` and `nodes.target.color` for role-specific color rules.
+- Size channels can also use metrics on supported marks (for example `nodes.size.metric: "degree"`). See [`size`](./size.md).

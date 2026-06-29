@@ -5,27 +5,11 @@ import { getEncodingTemplate, MARK_TYPES } from "@wimmics/venus-core";
 export class GraphEncodingManager extends EncodingManager {
 
     mergeEncoding(userEncoding) {
-        return this._mergeGraphEncoding()
-    }
+        const defaults = this.getDefaultEncoding();
+		console.log("user encoding = ", userEncoding)
+		console.log("default encoding = ", defaults)
 
-    getDefaultEncoding() {
-		return getEncodingTemplate(this.getChartType());
-	}
-
-    getMarks() {
-		return [ MARK_TYPES.NODES, MARK_TYPES.LINKS ]
-	}
-
-    validateVisSpecificEncoding(merged) {
-		this._validateGraphSpecificEncoding(merged)
-	}
-
-   
-
-    _mergeGraphEncoding(userEncoding) {
-		const defaults = this.getDefaultEncoding();
-
-		return {
+		const mergedEncoding = {
 			...defaults,
 			...userEncoding,
 			interactions: {
@@ -49,6 +33,35 @@ export class GraphEncodingManager extends EncodingManager {
 				}
 			}
 		};
+
+		// Add defaults for semantic and directional graphs, via source and target tags
+		if (mergedEncoding.links.type !== "cooccurrence") {
+			mergedEncoding.nodes = {
+				...mergedEncoding.nodes,
+				source: { 
+					...(defaults.nodes),
+					...(userEncoding.nodes?.source)
+				},
+				target: { 
+					...(defaults.nodes),
+					...(userEncoding.nodes?.target)
+				}
+			}
+		}
+
+		return mergedEncoding
+    }
+
+    getDefaultEncoding() {
+		return getEncodingTemplate(this.getChartType());
+	}
+
+    getMarks() {
+		return [ MARK_TYPES.NODES, MARK_TYPES.LINKS ]
+	}
+
+    validateVisSpecificEncoding(merged) {
+		this._validateGraphSpecificEncoding(merged)
 	}
 
     _validateSingleScaleConfig(encoding) {

@@ -225,14 +225,9 @@ export class ColorScaleCalculator {
 			}
 		}
 		
-		{
-			const warningMessage = `D3 color scheme "${input}" not found for type "${scaleType}". See available schemes at: https://d3js.org/d3-scale-chromatic`;
-			const warningKey = warningMessage;
-			if (!this.warningCache.has(warningKey)) {
-				console.warn(warningMessage);
-				this.warningCache.add(warningKey);
-			}
-		}
+		const warningMessage = `D3 color scheme "${input}" not found for type "${scaleType}". See available schemes at: https://d3js.org/d3-scale-chromatic`;
+		console.warn(warningMessage);
+				
 		return null;
 	}
 	

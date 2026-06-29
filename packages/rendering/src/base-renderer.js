@@ -256,6 +256,10 @@ export default class BaseRenderer {
 		return this._resolveScaleValue(d, this._resolveChannel(d, mark, CHANNEL_TYPES.STROKE_WIDTH), this._isPositiveNumber)
 	}
 
+	_getMarkOpacity(d, mark) {
+		return this._resolveScaleValue(d, this._resolveChannel(d, mark, CHANNEL_TYPES.OPACITY), this._isPositiveNumber)
+	}
+
 	_isPositiveNumber(value) { return Number.isFinite(value) && value > 0 }
 
 	_isValidString(value) { return typeof value === "string" && value.trim() }

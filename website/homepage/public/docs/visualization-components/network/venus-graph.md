@@ -50,13 +50,58 @@ For a minimal force-directed graph, the encoding must at least define `nodes` an
 
 | Encoding Property | Description | Documentation | Mandatory
 |---|---|---|:---:|
-| `nodes` | Defines node identity and node visual channels (color, size, labels, stroke). | [`nodes`](../encoding/nodes.md) | ✓ 
-| `links` | Defines how links are built and styled (type, relation/context, color, distance, width). | [`links`](../encoding/links.md) | ✓ 
-| `interactions` | Controls interaction behavior such as drag, zoom, tooltips, and node details panel. | [`interactions`](../encoding/interactions.md) | ✗ 
-| `color` | Provides color channel semantics used by both nodes and links. | [`color`](../encoding/color.md) | ✗ 
-| `scale` | Defines value-to-visual mapping for data-driven color/size channels. | [`scale`](../encoding/scale.md) | ✗ 
-| `legend` | Controls legend display, position, and compact mode for mapped channels. | [`legend`](../encoding/legend.md) | ✗ 
+| `nodes` | Defines node identity and node visual channels (color, size, labels, stroke, tooltip). | [`nodes`](../../encoding/marks/nodes.md) | ✓ 
+| `links` | Defines how links are built and styled (type, relation/context, color, distance, tooltip). | [`links`](../../encoding/marks/links.md) | ✓ 
+| `interactions` | Controls interaction behavior such as drag, zoom, tooltips, and node details panel. | [`interactions`](../../encoding/interactions.md) | ✗ 
+| `color` | Provides color channel semantics used by both nodes and links. | [`color`](../../encoding/color.md) | ✗ 
+| `size` | Provides node size channel semantics (`field` or `metric`). | [`size`](../../encoding/size.md) | ✗ 
+| `scale` | Defines value-to-visual mapping for data-driven color/size channels. | [`scale`](../../encoding/scale.md) | ✗ 
+| `legend` | Controls legend display, position, and compact mode for mapped channels. | [`legend`](../../encoding/legend.md) | ✗ 
 
 Directional and semantic source and target nodes use role blocks such as
 `nodes.source.field`, `nodes.target.field`, and role-specific color rules. See the
 [`nodes`](../../encoding/marks/nodes.md) encoding reference.
+
+## Graph Construction Modes
+
+`links.type` controls how links are built:
+
+- `directional`: uses `nodes.source.field` and `nodes.target.field`.
+- `semantic`: same source-target fields plus `links.relation.field`.
+- `cooccurrence`: uses `nodes.field` plus `links.context.field`.
+
+## Force-Graph Specific Options
+
+`<venus-graph>` supports force-layout-specific options:
+
+- `nodes.size.metric: "degree"` (also valid for `nodes.source.size` / `nodes.target.size`)
+- `links.distance.value` to tune force-link spacing
+- `interactions.drag` to enable/disable node drag-and-drop
+- `interactions.zoom` to enable/disable pan and zoom
+- `interactions.nodeDetailsPanel` to enable node metadata panel on right click
+
+Example:
+
+```js
+encoding: {
+  nodes: {
+    source: { field: "actorName" },
+    target: { field: "movieName" },
+    size: {
+      metric: "degree",
+      scale: { type: "linear", range: [5, 25] },
+      legend: { title: "Links Count" }
+    }
+  },
+  links: {
+    type: "directional",
+    distance: { value: 110 }
+  },
+  interactions: {
+    drag: true,
+    zoom: true,
+    nodeDetailsPanel: true,
+    tooltip: true
+  }
+}
+```

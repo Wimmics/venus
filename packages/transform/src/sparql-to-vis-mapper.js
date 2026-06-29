@@ -46,8 +46,8 @@ export class SparqlToVisMapper {
 	_resolveLabelFromBinding({ labelsConfig = null, fieldBindingValue = null, currentBinding = null }) {
 		return this._resolveLabelValue({
 			labelsConfig,
-			getFieldValue: (field) => this._bindingToValue(currentBinding?.[field]),
-			fallbackValue: this._bindingToValue(fieldBindingValue),
+			getFieldValue: (field) => currentBinding?.[field]?.value,
+			fallbackValue: fieldBindingValue.value,
 			coerceToString: false
 		});
 	}
@@ -90,12 +90,5 @@ export class SparqlToVisMapper {
 		}
 		
 		return coerceToString ? String(resolved) : resolved;
-	}
-
-	_bindingToValue(bindingValue) {
-		if (!bindingValue || bindingValue.value === undefined || bindingValue.value === null) {
-			return null;
-		}
-		return bindingValue.value;
 	}
 }

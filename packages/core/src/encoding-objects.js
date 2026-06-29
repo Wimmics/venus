@@ -2,7 +2,8 @@ export const CHANNEL_TYPES = {
 	COLOR: "color", 
 	SIZE: "size", 
 	STROKE: "stroke", 
-	STROKE_WIDTH: "strokeWidth"
+	STROKE_WIDTH: "strokeWidth",
+	OPACITY: "opacity"
 }
 
 export const MARK_TYPES = {
@@ -15,7 +16,10 @@ export const MARK_TYPES = {
 
 export const ATTRIBUTE_TYPES = {
 	LABELS: "labels",
-	DISTANCE: "distance"
+	DISTANCE: "distance",
+	ALIGN: "align",
+	WIDTH: "width",
+	PADDING: "padding"
 }
 
 export const SCALE_TYPES = {
@@ -30,6 +34,24 @@ export const SCALE_TYPES = {
 	THRESHOLD: "threshold",
 	BAND: "band",
 	POINT: "point"
+};
+
+export const SORT_BY = {
+	LAYOUT: "layout",
+	ALPHA: "alpha",
+	COUNT: "count",
+	VALUE: "value"
+};
+
+export const SORT_ORDER = {
+	ASC: "asc",
+	DESC: "desc"
+};
+
+export const SORT_MODE = {
+	TOTAL: "total",
+	IN: "in",
+	OUT: "out"
 };
 
 const QUANTITATIVE_TYPES = new Set([

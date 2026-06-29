@@ -1,4 +1,4 @@
-import { fetchJson, fetchText } from "./utils/http-utils.js";
+import { fetchJson, fetchJsonIfAvailable, fetchText } from "./utils/http-utils.js";
 import { resolvePath } from "./utils/path-utils.js";
 import { normalizeComponentTag } from "./utils/component-tag.js";
 
@@ -40,12 +40,17 @@ export class DemoControl {
 					const encodingPath = resolvePath(this.indexPath, entry.encodingPath);
 					const encoding = await fetchJson(encodingPath);
 					const queryPath = resolvePath(this.indexPath, entry.queryPath || "");
+					const cachePath = resolvePath(
+						this.indexPath,
+						entry.cachePath || `./cache/${entry.id}.json`
+					);
 					
 					return {
 						...entry,
 						id: entry.id,
 						encodingPath,
 						queryPath,
+						cachePath,
 						encoding,
 						component: normalizeComponentTag(entry.component || "venus-graph")
 					};
@@ -108,10 +113,19 @@ export class DemoControl {
 			throw new Error(`Unknown scenario: ${this.selectEl.value}`);
 		}
 		
-		this.activeScenario = scenario;
 		this.activeQueryText = await fetchText(scenario.queryPath);
+
+		const cachedSparqlResult = scenario.cachePath
+			? await fetchJsonIfAvailable(scenario.cachePath)
+			: null;
+
+		this.activeScenario = {
+			...scenario,
+			sparqlResult: cachedSparqlResult,
+			dataSource: "query"
+		};
 		sessionStorage.setItem(this.storageKey, scenario.id);
 		
-		return scenario;
+		return this.activeScenario;
 	}
 }

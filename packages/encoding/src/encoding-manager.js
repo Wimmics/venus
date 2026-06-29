@@ -47,7 +47,7 @@ export class EncodingManager {
 		this.validateVisSpecificEncoding(userEncoding);
 		this._validateMarks(userEncoding);
 
-		return userEncoding;
+		// return true
 	}
 	
 	validateReferencedFields(encoding, sparqlVars = []) {

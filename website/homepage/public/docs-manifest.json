@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-04T12:21:17.531Z",
+  "generatedAt": "2026-06-29T15:09:38.395Z",
   "root": {
     "type": "folder",
     "name": "docs",
@@ -26,6 +26,12 @@
                 "name": "venus-graph.md",
                 "title": "Force-directed graph",
                 "path": "visualization-components/network/venus-graph.md"
+              },
+              {
+                "type": "file",
+                "name": "venus-sankey.md",
+                "title": "Sankey diagram",
+                "path": "visualization-components/network/venus-sankey.md"
               }
             ]
           },
@@ -139,6 +145,12 @@
             "name": "color.md",
             "title": "Color Channel",
             "path": "encoding/color.md"
+          },
+          {
+            "type": "file",
+            "name": "size.md",
+            "title": "Size Channel",
+            "path": "encoding/size.md"
           },
           {
             "type": "file",

@@ -1,0 +1,21 @@
+PREFIX dbo: <http://dbpedia.org/ontology/>
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?fieldName ?countryName ?decade (COUNT(?person) AS ?count)
+WHERE {
+  ?person a dbo:Scientist ;
+          dbo:nationality ?country ;
+          dbo:birthDate ?birthDate ;
+          dct:subject ?field .
+
+  BIND(FLOOR(YEAR(?birthDate)/10)*10 AS ?decade)
+
+  ?field rdfs:label ?fieldName .
+  ?country rdfs:label ?countryName .
+
+  FILTER(LANG(?fieldName)="en")
+  FILTER(LANG(?countryName)="en")
+}
+GROUP BY ?fieldName ?countryName ?decade
+LIMIT 100

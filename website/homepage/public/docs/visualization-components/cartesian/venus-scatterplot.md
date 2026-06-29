@@ -39,12 +39,13 @@ A Scatter Plot represents individual observations as points positioned by two qu
 
 | Encoding Property | Description | Documentation | Mandatory |
 |---|---|---|:---:|
-| `x` | Defines the horizontal position field and axis settings. | [`x`](../encoding/x.md) | ✓ |
-| `y` | Defines the vertical position field, axis settings, and scale behavior. | [`y`](../encoding/y.md) | ✓ |
-| `points` | Configures point marks (`display`, `color`, `size`, tooltip settings). | - | ✗ |
-| `axis` | Controls axis title, label angle/offset, and tick formatting. | [`axis`](../encoding/types/axis.md) | ✗ |
-| `color` | Color channel semantics used in point-level mappings (`points.color`). | [`color`](../encoding/color.md) | ✗ |
-| `size` | Size channel semantics used in point-level mappings (`points.size`). | [`size`](../encoding/size.md) | ✗ |
-| `scale` | Defines how data values map to position/color/size scales. | [`scale`](../encoding/scale.md) | ✗ |
-| `legend` | Controls legend visibility, placement, and compact mode for mapped channels. | [`legend`](../encoding/legend.md) | ✗ |
-| `interactions` | Enables/disables interactions (including tooltips) at visualization level. | [`interactions`](../encoding/interactions.md) | ✗ |
+| `x` | Defines the horizontal position field and axis settings. | [`x`](../../encoding/x.md) | ✓ |
+| `y` | Defines the vertical position field, axis settings, and scale behavior. | [`y`](../../encoding/y.md) | ✓ |
+| `points` | Configures point marks (`display`, `color`, `size`, tooltip settings). | [`points`](../../encoding/marks/points.md) | ✗ |
+| `axis` | Controls axis title, label angle/offset, and tick formatting. | [`axis`](../../encoding/axis.md) | ✗ |
+| `color` | Color channel semantics used in point-level mappings (`points.color`). | [`color`](../../encoding/color.md) | ✗ |
+| `size` | Size channel semantics used in point-level mappings (`points.size`). | [`size`](../../encoding/size.md) | ✗ |
+| `scale` | Defines how data values map to position/color/size scales. | [`scale`](../../encoding/scale.md) | ✗ |
+| `legend` | Controls legend visibility, placement, and compact mode for mapped channels. | [`legend`](../../encoding/legend.md) | ✗ |
+| `direction` | Switches chart orientation between vertical and horizontal interpretation. | [`direction`](../../encoding/direction.md) | ✗ |
+| `interactions` | Enables/disables interactions (including tooltips) at visualization level. | [`interactions`](../../encoding/interactions.md) | ✗ |

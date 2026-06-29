@@ -13,7 +13,8 @@
     "visualization-components/network": {
       "files": [
         { "path": "visualization-components/network/start.md", "label": "Overview" },
-        { "path": "visualization-components/network/venus-graph.md", "label": "Force-directed graph" }
+        { "path": "visualization-components/network/venus-graph.md", "label": "Force-directed graph" },
+        { "path": "visualization-components/network/venus-sankey.md", "label": "Sankey diagram" }
       ]
     },
     "visualization-components/cartesian": {
@@ -36,6 +37,7 @@
         { "path": "encoding/groups.md", "label": "Groups"},
         { "path": "encoding/stack.md", "label": "Stack"},
         { "path": "encoding/color.md", "label": "Color Channel" },
+        { "path": "encoding/size.md", "label": "Size Channel" },
         { "path": "encoding/labels.md", "label": "Labels" },
         { "path": "encoding/scale.md", "label": "Scale Types" },
         { "path": "encoding/legend.md", "label": "Legends" },

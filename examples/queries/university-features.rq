@@ -1,0 +1,19 @@
+PREFIX dbo: <http://dbpedia.org/ontology/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?country ?city ?type ?affiliation (COUNT(*) AS ?count)
+WHERE {
+    ?u a dbo:University ;
+        dbo:country [ rdfs:label ?country ] ;
+        dbo:city [rdfs:label ?city] ;
+        dbo:type [rdfs:label ?type] ;
+        dbo:affiliation [rdfs:label ?affiliation] .
+
+
+    FILTER(lang(?country)="en")
+    FILTER(lang(?city)="en")
+    FILTER(lang(?type)="en")
+    FILTER (LANG(?affiliation) ="en")
+}
+GROUP BY ?country ?city ?type ?affiliation
+LIMIT 200

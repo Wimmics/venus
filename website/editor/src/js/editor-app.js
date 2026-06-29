@@ -169,7 +169,6 @@ export class EditorApp {
 				this.activateExampleWorkspace(loadedScenario);
 				
 				this.endpointInputEl.value = loadedScenario.endpoint || "";
-				this.resultsAsSourceToggleEl.checked = loadedScenario?.dataSource === "provided";
 				await this.applyResultsEditorMode();
 				
 				await this.sparqlPanelController.setText(queryText || "");
@@ -441,20 +440,29 @@ export class EditorApp {
 				
 				const endpoint = this._resolveEndpoint(this.isCustomWorkspace() ? "" : scenario?.endpoint);
 				const dataSource = this.getDataSourceMode();
+				const canUseScenarioCache =
+					!this.isCustomWorkspace() &&
+					dataSource === "query" &&
+					scenario?.sparqlResult != null;
+				const renderDataSource = canUseScenarioCache ? "provided" : dataSource;
 				const queryText = await this.sparqlPanelController.getText();
-				if (dataSource === "query" && !String(queryText || "").trim()) {
+				if (renderDataSource === "query" && !String(queryText || "").trim()) {
 					this.setStatus("Enter a SPARQL query to render the selected chart.", true);
 					return;
 				}
 				
 				let providedSparqlResult = null;
-				if (dataSource === "provided") {
-					const parsedResults = await this.resultsPanelController.parseJson();
-					if (parsedResults.error) {
-						this.setStatus(`Invalid SPARQL Results JSON: ${parsedResults.error.message}`, true);
-						return;
+				if (renderDataSource === "provided") {
+					if (canUseScenarioCache) {
+						providedSparqlResult = scenario.sparqlResult;
+					} else {
+						const parsedResults = await this.resultsPanelController.parseJson();
+						if (parsedResults.error) {
+							this.setStatus(`Invalid SPARQL Results JSON: ${parsedResults.error.message}`, true);
+							return;
+						}
+						providedSparqlResult = parsedResults.value;
 					}
-					providedSparqlResult = parsedResults.value;
 				}
 				
 				this.setStatus("Rendering...");
@@ -464,7 +472,7 @@ export class EditorApp {
 					endpoint,
 					queryText,
 					encoding: parsedEncoding.value,
-					dataSource,
+					dataSource: renderDataSource,
 					sparqlResult: providedSparqlResult
 				});
 				

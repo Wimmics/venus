@@ -1,0 +1,21 @@
+{
+  "title": "Flow of universities across countries and cities according to their type. Source: DBPedia.",
+  "nodes": {
+    "fields": [
+      "city",
+      "country",
+      {
+        "field": "affiliation",
+        "title": "Affiliation",
+        "color": {
+          "field": "type"
+        }
+      }
+    ]
+  },
+  "links": {
+    "value": {
+      "field": "count"
+    }
+  }
+}

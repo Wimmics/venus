@@ -51,4 +51,5 @@ A Line Chart displays how a quantitative variable evolves along an ordered dimen
 | `size` | Size/thickness channel semantics used in mark-level mappings (for example `lines.size`, `points.size`). | [`size`](../../encoding/size.md) | ✗ |
 | `scale` | Defines how data values map to position/color/size scales. | [`scale`](../../encoding/scale.md) | ✗ |
 | `legend` | Controls legend visibility, placement, and compact mode for mapped channels. | [`legend`](../../encoding/legend.md) | ✗ |
+| `direction` | Switches chart orientation between vertical and horizontal interpretation. | [`direction`](../../encoding/direction.md) | ✗ |
 | `interactions` | Enables/disables interactions (including tooltips) at visualization level. | [`interactions`](../../encoding/interactions.md) | ✗ |

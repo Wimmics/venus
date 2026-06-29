@@ -17,17 +17,50 @@ export class SparqlToSankey extends SparqlToGraphMapper {
     }
 
     _resolveSankeyEncoding() {
-        const stageFields = Array.isArray(this.encoding?.nodes?.fields)
-            ? this.encoding.nodes.fields.filter((field) => typeof field === "string" && field.trim())
-            : [];
+        const stageConfigs = this._normalizeStageFields(this.encoding?.nodes?.fields);
+        const stageFields = stageConfigs.map((item) => item.field);
 
-        const aggregate = (this.encoding?.links?.value?.aggregate || "count").toLowerCase();
+        const globalNodeColorField = this._resolveColorField(this.encoding?.nodes);
+        const stageNodeColorFields = stageConfigs.map((item) => this._resolveColorField(item));
+
+        // const aggregate = (this.encoding?.links?.value?.aggregate || "count").toLowerCase();
 
         return {
+            stageConfigs,
             stageFields,
             valueField: this.encoding?.links?.value?.field || null,
-            aggregate
+            globalNodeColorField,
+            stageNodeColorFields
+            // aggregate
         };
+    }
+
+    _resolveColorField(config) {
+        const field = config?.color?.field;
+        return typeof field === "string" && field.trim() ? field.trim() : null;
+    }
+
+    _normalizeStageFields(fieldsConfig) {
+        if (!Array.isArray(fieldsConfig)) return [];
+
+        return fieldsConfig
+            .map((item) => {
+                if (typeof item === "string") {
+                    const trimmed = item.trim();
+                    return trimmed ? { field: trimmed } : null;
+                }
+
+                if (!item || typeof item !== "object") return null;
+
+                const field = typeof item.field === "string" ? item.field.trim() : "";
+                if (!field) return null;
+
+                return {
+                    ...item,
+                    field
+                };
+            })
+            .filter(Boolean);
     }
 
     _mapBindingStages(binding) {
@@ -68,6 +101,8 @@ export class SparqlToSankey extends SparqlToGraphMapper {
     _upsertStageNode({ binding, field, level }) {
         const fieldBinding = binding?.[field];
         const nodeId = this._makeStageNodeId(level, fieldBinding?.value);
+        const stageRole = this._makeStageRole(level);
+        const stageConfig = this.resolvedEncoding?.stageConfigs?.[level] || { field };
 
         if (!this.nodesMap.has(nodeId)) {
             const node = this._makeNode({
@@ -81,16 +116,23 @@ export class SparqlToSankey extends SparqlToGraphMapper {
             node.level = level;
             node.field = field;
             node.value = fieldBinding?.value;
+            node.roles = [stageRole];
             node.label = this._resolveLabelFromBinding({
                 labelsConfig: this.encoding?.nodes?.labels,
                 fieldBindingValue: fieldBinding,
                 currentBinding: binding
             }) || String(fieldBinding?.value || "");
 
+            if (typeof stageConfig?.title === "string" && stageConfig.title.trim()) {
+                node.stageTitle = stageConfig.title.trim();
+            }
+
             this.nodesMap.set(nodeId, node);
         }
 
         const node = this.nodesMap.get(nodeId);
+        this._mergeNodeAssociatedFields(node, binding, level);
+
         const tooltipFields = this._getTooltipFields({
             config: this.encoding?.nodes?.tooltip,
             binding,
@@ -108,6 +150,28 @@ export class SparqlToSankey extends SparqlToGraphMapper {
         return node;
     }
 
+    _mergeNodeAssociatedFields(node, binding, level) {
+        const scopedFields = new Set();
+
+        const globalColorField = this.resolvedEncoding?.globalNodeColorField;
+        if (globalColorField) scopedFields.add(globalColorField);
+
+        const stageColorField = this.resolvedEncoding?.stageNodeColorFields?.[level];
+        if (stageColorField) scopedFields.add(stageColorField);
+
+        for (const associatedField of scopedFields) {
+            const associatedBinding = binding?.[associatedField];
+            const value = associatedBinding?.value;
+            if (value === undefined || value === null) continue;
+
+            node[associatedField] = this._mergeUniqueValue(node[associatedField], value);
+            node.tooltipData[associatedField] = this._mergeUniqueBinding(
+                node.tooltipData[associatedField],
+                associatedBinding
+            );
+        }
+    }
+
     _upsertSankeyLink({ sourceNode, targetNode, binding, sourceField, targetField }) {
         const key = this._makePairKey(sourceNode.id, targetNode.id, "sankey");
         const current = this.linksMap.get(key) || {
@@ -117,15 +181,18 @@ export class SparqlToSankey extends SparqlToGraphMapper {
             value: 0,
             values: [],
             label: "",
+            bindingCount: 0,
             tooltipData: {},
             sourceField,
             targetField
         };
 
+        current.bindingCount = (current.bindingCount || 0) + 1;
+
         const delta = this._resolveLinkIncrement(binding);
         current.value += delta;
 
-        const valueLabel = `${sourceNode.label} -> ${targetNode.label}`;
+        const valueLabel = `${sourceNode.label} → ${targetNode.label}`;
 
         this._addLinkValue(current, {
             key: `${sourceNode.id}->${targetNode.id}`,
@@ -142,31 +209,50 @@ export class SparqlToSankey extends SparqlToGraphMapper {
         });
 
         this._mergeLinkBindingValues(current, binding, tooltipFields);
-        current.label = `${sourceNode.label} -> ${targetNode.label}`;
+        current.label = `${sourceNode.label} → ${targetNode.label}`;
 
         this.linksMap.set(key, current);
     }
 
     _resolveLinkIncrement(binding) {
-        const { aggregate, valueField } = this.resolvedEncoding;
+        const { valueField } = this.resolvedEncoding;
 
-        if (aggregate === "sum" && valueField) {
-            const parsed = Number(binding?.[valueField]?.value);
-            if (Number.isFinite(parsed)) return parsed;
-            return 0;
-        }
-
+        const parsed = Number(binding?.[valueField]?.value);
+        if (Number.isFinite(parsed)) return parsed;
         return 1;
     }
 
     _normalizeLinkValues() {
+        const valueField = this.resolvedEncoding?.valueField;
+
         for (const link of this.linksMap.values()) {
             link.value = Number.isFinite(link.value) && link.value > 0 ? link.value : 0;
-            link.weight = link.value;
+
+            const bindingCount = Number.isFinite(link.bindingCount) && link.bindingCount > 0
+                ? link.bindingCount
+                : 0;
+
+            link.weight = link.value > 0
+                ? link.value
+                : Math.max(1, bindingCount || 1);
+
+            // Metric tooltip fields should reflect the aggregated link value,
+            // not an array of per-binding metric values.
+            if (valueField) {
+                link.tooltipData[valueField] = {
+                    type: "literal",
+                    value: String(link.value)
+                };
+                link[valueField] = link.value;
+            }
         }
     }
 
     _makeStageNodeId(level, value) {
         return `${level}::${String(value)}`;
+    }
+
+    _makeStageRole(level) {
+        return `stage-${level}`;
     }
 }

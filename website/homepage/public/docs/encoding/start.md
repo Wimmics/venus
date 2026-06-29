@@ -18,8 +18,8 @@ The encoding properties are designed to be transferable across visualizations, t
 
 | Visualization Type | Description |
 |---|---|
-| [Network-based](./graph/) | Used to represent relationships among entities. |
-| [Cartesian](./cartesian/) | Used to emphasize magnitude, ordering, and variation across dimensions. |
+| [Network-based](../visualization-components/network/start.md) | Used to represent relationships and flows among entities (force-directed graph and Sankey diagram). |
+| [Cartesian](../visualization-components/cartesian/start.md) | Used to emphasize magnitude, ordering, and variation across dimensions. |
 
 ### Common Properties
 

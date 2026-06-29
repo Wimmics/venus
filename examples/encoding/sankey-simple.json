@@ -1,12 +1,15 @@
 {
-  "title": "Film genres by country and decade. Source: Wikidata.",
+  "title": "People by country and decade of birth. Source: DBPedia.",
   "nodes": {
-    "fields": ["genreLabel", "countryLabel", "decade"]
+    "fields": [
+      "fieldName",
+      "countryName",
+      "decade"
+    ]
   },
   "links": {
     "value": {
-      "field": "count",
-      "aggregate": "sum"
+      "field": "count"
     }
   }
 }
