@@ -19,13 +19,22 @@ function escapeHtml(value) {
 }
 
 function renderInline(text) {
-  return escapeHtml(text)
+  const escaped = escapeHtml(text)
     .replace(/&lt;br\s*\/?&gt;/gi, "<br>")
     .replace(/`([^`]+)`/g, "<code>$1</code>")
     .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
     .replace(/(^|[^\w*])\*([^*\n]+)\*(?!\*)/g, "$1<em>$2</em>")
-    .replace(/(^|[^\w_])_([^_\n]+)_(?!_)/g, "$1<em>$2</em>")
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+    .replace(/(^|[^\w_])_([^_\n]+)_(?!_)/g, "$1<em>$2</em>");
+  
+  // Handle images BEFORE links (since images look like ![](url) which contains [](url))
+  let result = escaped.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (match, alt, src) => 
+    `<img src="${withBase(src)}" alt="${alt}" style="height:550px" />`
+  );
+  
+  // Then handle regular links
+  result = result.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+  
+  return result;
 }
 
 function slugify(text) {
@@ -42,26 +51,24 @@ function docPathToId(docPath) {
 
 function parseHashState() {
   const hash = window.location.hash.replace(/^#/, "");
-  const state = { section: "", anchor: "" };
+  const state = { doc: "", anchor: "", section: "", legacyAnchor: "" };
   if (!hash) return state;
 
-  if (hash.startsWith("doc=")) {
-    const docPath = decodeURIComponent(hash.slice(4));
-    const root = docPath.split("/")[0] || "";
-    state.section = root;
-    state.anchor = docPathToId(docPath);
+  const params = new URLSearchParams(hash);
+  state.doc = params.get("doc") || "";
+  state.anchor = params.get("anchor") || "";
+  if (state.doc) {
     return state;
   }
 
-  const params = new URLSearchParams(hash);
   state.section = params.get("section") || "";
-  state.anchor = params.get("anchor") || "";
+  state.legacyAnchor = params.get("anchor") || "";
   return state;
 }
 
-function setHashState(section, anchor = "") {
+function setHashState(docPath, anchor = "") {
   const params = new URLSearchParams();
-  params.set("section", section);
+  params.set("doc", docPath);
   if (anchor) params.set("anchor", anchor);
   const nextHash = `#${params.toString()}`;
   if (window.location.hash === nextHash) return;
@@ -72,17 +79,21 @@ function resolveDocLink(currentDocPath, href) {
   if (!href || href.startsWith("http://") || href.startsWith("https://") || href.startsWith("#")) {
     return null;
   }
-  if (!href.toLowerCase().endsWith(".md")) return null;
+  const [rawPath, rawAnchor = ""] = href.split("#");
+  if (!rawPath.toLowerCase().endsWith(".md")) return null;
 
-  if (href.startsWith("/")) {
-    return href.replace(/^\/+/, "");
+  if (rawPath.startsWith("/")) {
+    return {
+      docPath: rawPath.replace(/^\/+/, ""),
+      anchor: rawAnchor
+    };
   }
 
   const currentDir = currentDocPath.includes("/")
     ? currentDocPath.slice(0, currentDocPath.lastIndexOf("/"))
     : "";
 
-  const rawParts = `${currentDir}/${href}`.split("/");
+  const rawParts = `${currentDir}/${rawPath}`.split("/");
   const parts = [];
   for (const part of rawParts) {
     if (!part || part === ".") continue;
@@ -92,7 +103,10 @@ function resolveDocLink(currentDocPath, href) {
     }
     parts.push(part);
   }
-  return parts.join("/");
+  return {
+    docPath: parts.join("/"),
+    anchor: rawAnchor
+  };
 }
 
 function stripMarkdownComments(markdown) {
@@ -373,6 +387,46 @@ function collectDocPaths(node, out = []) {
   return out;
 }
 
+function findNodeByPath(node, targetPath) {
+  if (!node || !targetPath) return null;
+  if (node.type === "file" && node.path === targetPath) return node;
+  if (node.type === "folder") {
+    if (node.entry === targetPath) {
+      return {
+        type: "file",
+        path: node.entry,
+        title: node.title,
+        name: node.entry.split("/").pop() || node.title
+      };
+    }
+    for (const child of node.children || []) {
+      const match = findNodeByPath(child, targetPath);
+      if (match) return match;
+    }
+  }
+  return null;
+}
+
+function findDocPathByAnchorId(node, anchorId) {
+  if (!node || !anchorId) return "";
+  if (node.type === "folder") {
+    if (node.entry && docPathToId(node.entry) === anchorId) return node.entry;
+    for (const child of node.children || []) {
+      const match = findDocPathByAnchorId(child, anchorId);
+      if (match) return match;
+    }
+    return "";
+  }
+  return docPathToId(node.path) === anchorId ? node.path : "";
+}
+
+function getDefaultDocPath(node) {
+  if (!node) return "";
+  if (node.type === "file") return node.path;
+  const paths = collectDocPaths(node, []);
+  return paths[0] || "";
+}
+
 function scrollToAnchor(anchorId) {
   if (!anchorId) return;
   const el = document.getElementById(anchorId);
@@ -409,17 +463,21 @@ window.addEventListener("DOMContentLoaded", async () => {
     const findRoot = (section) => rootFolders.find((folder) => folder.name === section);
     const defaultRoot = rootFolders[0];
 
-    const renderToc = (activeRoot, activeAnchor) => {
+    const renderToc = (activeDocPath) => {
       tocEl.innerHTML = "";
+
+      const activeRoot = rootFolders.find((folder) => findNodeByPath(folder, activeDocPath)) || defaultRoot;
 
       const buildNode = (node, rootContext) => {
         const li = document.createElement("li");
         li.className = "docs-tree-item";
 
         if (node.type === "folder") {
+          const targetDocPath = node.entry || getDefaultDocPath(node);
+
           if (node === rootContext) {
             const rootLink = document.createElement("a");
-            rootLink.href = `#section=${encodeURIComponent(node.name)}`;
+            rootLink.href = `#doc=${encodeURIComponent(targetDocPath)}`;
             rootLink.className = "docs-tree-folder-link";
             if (node.name === activeRoot.name) {
               rootLink.classList.add("is-active");
@@ -427,29 +485,21 @@ window.addEventListener("DOMContentLoaded", async () => {
             rootLink.textContent = node.title;
             rootLink.addEventListener("click", (event) => {
               event.preventDefault();
-              const rootAnchor = node.entry ? docPathToId(node.entry) : "";
-              void renderSection(node.name, rootAnchor);
+              void renderDoc(targetDocPath);
             });
             li.appendChild(rootLink);
           } else {
-            if (node.entry) {
+            if (targetDocPath) {
               const folderLink = document.createElement("a");
-              const entryAnchorId = docPathToId(node.entry);
-              folderLink.href = `#section=${encodeURIComponent(rootContext.name)}&anchor=${encodeURIComponent(entryAnchorId)}`;
+              folderLink.href = `#doc=${encodeURIComponent(targetDocPath)}`;
               folderLink.className = "docs-tree-folder-link";
-              if (rootContext.name === activeRoot.name && entryAnchorId === activeAnchor) {
+              if (targetDocPath === activeDocPath) {
                 folderLink.classList.add("is-active");
               }
               folderLink.textContent = node.title;
               folderLink.addEventListener("click", (event) => {
                 event.preventDefault();
-                if (rootContext.name !== activeRoot.name) {
-                  void renderSection(rootContext.name, entryAnchorId);
-                  return;
-                }
-                setHashState(activeRoot.name, entryAnchorId);
-                scrollToAnchor(entryAnchorId);
-                renderToc(activeRoot, entryAnchorId);
+                void renderDoc(targetDocPath);
               });
               li.appendChild(folderLink);
             } else {
@@ -473,10 +523,9 @@ window.addEventListener("DOMContentLoaded", async () => {
         }
 
         const fileLink = document.createElement("a");
-        const anchorId = docPathToId(node.path);
-        fileLink.href = `#section=${encodeURIComponent(rootContext.name)}&anchor=${encodeURIComponent(anchorId)}`;
+        fileLink.href = `#doc=${encodeURIComponent(node.path)}`;
         fileLink.className = "docs-tree-link";
-        if (rootContext.name === activeRoot.name && anchorId === activeAnchor) {
+        if (node.path === activeDocPath) {
           fileLink.classList.add("is-active");
         }
 
@@ -484,13 +533,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         fileLink.textContent = node.title || fallbackName;
         fileLink.addEventListener("click", (event) => {
           event.preventDefault();
-          if (rootContext.name !== activeRoot.name) {
-            void renderSection(rootContext.name, anchorId);
-            return;
-          }
-          setHashState(activeRoot.name, anchorId);
-          scrollToAnchor(anchorId);
-          renderToc(activeRoot, anchorId);
+          void renderDoc(node.path);
         });
         li.appendChild(fileLink);
         return li;
@@ -504,41 +547,37 @@ window.addEventListener("DOMContentLoaded", async () => {
       tocEl.appendChild(ul);
     };
 
-    const wireDocLinks = (container, currentDocPath, activeRoot) => {
+    const wireDocLinks = (container, currentDocPath) => {
       const anchors = container.querySelectorAll("a[href]");
       anchors.forEach((anchor) => {
         const href = anchor.getAttribute("href") || "";
         const resolved = resolveDocLink(currentDocPath, href);
         if (!resolved) return;
 
-        const targetRoot = resolved.split("/")[0] || activeRoot.name;
-        const anchorId = docPathToId(resolved);
-        anchor.setAttribute("href", `#section=${encodeURIComponent(targetRoot)}&anchor=${encodeURIComponent(anchorId)}`);
+        anchor.setAttribute("href", `#doc=${encodeURIComponent(resolved.docPath)}${resolved.anchor ? `&anchor=${encodeURIComponent(resolved.anchor)}` : ""}`);
         anchor.addEventListener("click", (event) => {
           event.preventDefault();
-          void renderSection(targetRoot, anchorId);
+          void renderDoc(resolved.docPath, resolved.anchor || "");
         });
       });
     };
 
-    const renderSection = async (sectionName, anchorId) => {
-      const activeRoot = findRoot(sectionName) || defaultRoot;
-      const docPaths = collectDocPaths(activeRoot, []);
-
+    const renderDoc = async (docPath, anchorId = "") => {
+      const activeDocPath = docPath || getDefaultDocPath(defaultRoot);
+      const activeRoot = rootFolders.find((folder) => findNodeByPath(folder, activeDocPath)) || defaultRoot;
       contentEl.innerHTML = "";
-      for (const docPath of docPaths) {
-        const markdown = await loadDoc(docPath);
-        const sectionEl = document.createElement("section");
-        sectionEl.className = "docs-section";
-        sectionEl.id = docPathToId(docPath);
-        sectionEl.innerHTML = renderMarkdown(markdown);
-        wireDocLinks(sectionEl, docPath, activeRoot);
-        contentEl.appendChild(sectionEl);
-      }
+      const markdown = await loadDoc(activeDocPath);
+      const sectionEl = document.createElement("section");
+      sectionEl.className = "docs-section";
+      sectionEl.id = docPathToId(activeDocPath);
+      sectionEl.innerHTML = renderMarkdown(markdown);
+      wireDocLinks(sectionEl, activeDocPath);
+      contentEl.appendChild(sectionEl);
+
       highlightCodeBlocks(contentEl);
 
-      setHashState(activeRoot.name, anchorId || "");
-      renderToc(activeRoot, anchorId || "");
+      setHashState(activeDocPath, anchorId || "");
+      renderToc(activeDocPath);
       if (anchorId) {
         scrollToAnchor(anchorId);
       } else {
@@ -546,12 +585,28 @@ window.addEventListener("DOMContentLoaded", async () => {
       }
     };
 
+    const resolveInitialDoc = (state) => {
+      if (state.doc) return { docPath: state.doc, anchor: state.anchor || "" };
+
+      const legacyRoot = findRoot(state.section) || defaultRoot;
+      if (state.legacyAnchor) {
+        const legacyDocPath = findDocPathByAnchorId(legacyRoot, state.legacyAnchor);
+        if (legacyDocPath) {
+          return { docPath: legacyDocPath, anchor: "" };
+        }
+      }
+
+      return { docPath: getDefaultDocPath(legacyRoot), anchor: "" };
+    };
+
     const initState = parseHashState();
-    await renderSection(initState.section || defaultRoot.name, initState.anchor || "");
+    const initialDoc = resolveInitialDoc(initState);
+    await renderDoc(initialDoc.docPath, initialDoc.anchor || "");
 
     window.addEventListener("hashchange", async () => {
       const state = parseHashState();
-      await renderSection(state.section || defaultRoot.name, state.anchor || "");
+      const nextDoc = resolveInitialDoc(state);
+      await renderDoc(nextDoc.docPath, nextDoc.anchor || "");
     });
   } catch (error) {
     contentEl.innerHTML = `<h1>Documentation unavailable</h1><p>${escapeHtml(error.message)}</p>`;

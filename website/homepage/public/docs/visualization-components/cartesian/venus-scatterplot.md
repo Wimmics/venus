@@ -35,17 +35,27 @@ A Scatter Plot represents individual observations as points positioned by two qu
 </script>
 ```
 
-## Related Properties
+## Marks and Channels
 
-| Encoding Property | Description | Documentation | Mandatory |
-|---|---|---|:---:|
-| `x` | Defines the horizontal position field and axis settings. | [`x`](../../encoding/x.md) | ✓ |
-| `y` | Defines the vertical position field, axis settings, and scale behavior. | [`y`](../../encoding/y.md) | ✓ |
-| `points` | Configures point marks (`display`, `color`, `size`, tooltip settings). | [`points`](../../encoding/marks/points.md) | ✗ |
-| `axis` | Controls axis title, label angle/offset, and tick formatting. | [`axis`](../../encoding/axis.md) | ✗ |
-| `color` | Color channel semantics used in point-level mappings (`points.color`). | [`color`](../../encoding/color.md) | ✗ |
-| `size` | Size channel semantics used in point-level mappings (`points.size`). | [`size`](../../encoding/size.md) | ✗ |
-| `scale` | Defines how data values map to position/color/size scales. | [`scale`](../../encoding/scale.md) | ✗ |
-| `legend` | Controls legend visibility, placement, and compact mode for mapped channels. | [`legend`](../../encoding/legend.md) | ✗ |
-| `direction` | Switches chart orientation between vertical and horizontal interpretation. | [`direction`](../../encoding/direction.md) | ✗ |
-| `interactions` | Enables/disables interactions (including tooltips) at visualization level. | [`interactions`](../../encoding/interactions.md) | ✗ |
+Scatter plots are defined through the `points` mark. 
+
+The following visual channels are supported:
+
+| Channel | Description | Documentation  |
+|---|---|---|
+| `color` | Defines the color of points. | See [Color](../../encoding/color.md) |
+| `size`  | Defines the radious of points. | See [Size](../../encoding/size.md) |
+| `strokeWidth` | Defines the stroke width of points. | See [Stroke Width](../../encoding/stroke-width.md)
+| `stroke` | Defines the stroke color of points. | See [Stroke](../../encoding/stroke.md)
+
+
+## Bubble plots
+
+A bubble plot is a variation of a scatter plot in which the size of each point is mapped to a quantitative variable.
+
+To create a bubble plot, define the `size` channel using a data field.
+
+| Scatterplot | Bubble Plot |
+|---|---|
+|![Scatter Plot](/docs/figs/simple-scatter-plot.png) | ![Bubble Plot](/docs/figs/bubble-plot.png) |
+

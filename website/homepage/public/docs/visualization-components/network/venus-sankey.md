@@ -1,12 +1,25 @@
 # Sankey Diagram
 
-Also known as *Flow Diagram* or *Alluvial-style Flow Chart*.
+Sankey Diagrams display flows and their quantities in proportion to one another. Typically, Sankey Diagrams are used to visually represent the transfer of energy, money, materials, or the flow of any isolated system or process.
 
-A Sankey diagram represents flows across ordered stages. Nodes are grouped by stage (columns), and links connect adjacent stages. Link thickness represents magnitude, making Sankey diagrams useful to analyze transitions, funnels, and distribution of quantities across steps.
+The thickness of the lines shows their magnitudes or quantities. Flow lines can combine or split apart at each stage of a process.
 
-> **Visualization component:** `<venus-sankey>`
+Colour can be used to divide the diagram into different categories or to show the transition from one state of the process to another. 
+
+**Visualization component:** `<venus-sankey>`
+
+![Sankey Diagram](/docs/figs/sankey-simple.png)
 
 ## Minimal Template
+
+Sankey diagrams are defined using the `nodes` and `links` marks. The table below summarizes their purpose and links to the corresponding documentation, where all supported channels and attributes are described.
+
+| Marks | Description | Documentation | Mandatory
+|---|---|---|:---:|
+| `nodes` | Defines the different stages of the process. | See [Nodes](../../encoding/marks/nodes.md) | ✓ 
+| `links` | Defines and styles the flows between stages. | See [Links](../../encoding/marks/links.md) | ✓ |
+
+The code snippet below provides a minimal template for creating a sankey diagram. Additional channels and attributes may be required according to the level of styling desired, as explained hereafter.
 
 ```html
 <venus-sankey id="sankey" width="100%" height="520"></venus-sankey>
@@ -37,80 +50,135 @@ A Sankey diagram represents flows across ordered stages. Nodes are grouped by st
 </script>
 ```
 
-## Related Properties
+## Sankey stages
 
-| Encoding Property | Description | Documentation | Mandatory |
-|---|---|---|:---:|
-| `nodes.fields` | Defines ordered Sankey stages. Supports string entries and object entries with stage options. | [`nodes`](../../encoding/marks/nodes.md) | ✓ |
-| `links.value.field` | Defines the numeric metric used for link magnitude. When omitted, each binding contributes `1`. | [`links`](../../encoding/marks/links.md) | ✗ |
-| `nodes.sort` | Global fallback sort strategy for node order inside each stage. | [`nodes`](../../encoding/marks/nodes.md) | ✗ |
-| `nodes.fields[i].sort` | Stage-specific sort override for node order inside stage `i`. | [`nodes`](../../encoding/marks/nodes.md) | ✗ |
-| `nodes.align` | Controls stage alignment strategy (`justify`, `left`, `right`, `center`). | [`nodes`](../../encoding/marks/nodes.md) | ✗ |
-| `nodes.padding` | Vertical spacing between nodes inside each stage. | [`nodes`](../../encoding/marks/nodes.md) | ✗ |
-| `nodes.color` / `nodes.fields[i].color` | Node color mapping (global or stage-specific). | [`color`](../../encoding/color.md) | ✗ |
-| `links.color` | Link color mapping (constant or data-driven). | [`color`](../../encoding/color.md) | ✗ |
-| `links.opacity.value` | Constant link opacity (`0` to `1`). | [`links`](../../encoding/marks/links.md) | ✗ |
-| `labels` | Node and link label settings through `nodes.labels` and `links.labels`. | [`labels`](../../encoding/labels.md) | ✗ |
-| `scale` | Scale settings for data-driven color channels. | [`scale`](../../encoding/scale.md) | ✗ |
-| `legend` | Legend settings for mapped channels. | [`legend`](../../encoding/legend.md) | ✗ |
-| `interactions` | Enables/disables interactions, including tooltips through `interactions.tooltip`. | [`interactions`](../../encoding/interactions.md) | ✗ |
+Sankey stages are defined through the `nodes.fields` property, which accepts either string or object entries.
 
-## Sankey-Specific Values
+### String entries
 
-### `nodes.fields`
+A string entry specifies the SPARQL variable whose bindings define the nodes of a stage.
 
-`nodes.fields` must be an array with at least two stage definitions.
+```js
+nodes: {
+  fields: ["country", "city", "organization"]
+}
+````
 
-Allowed entry formats:
+### Object entries
 
-- `"fieldName"`
-- `{ "field": "fieldName", "title"?: string, "color"?: object, "sort"?: string|object }`
+An object entry provides additional configuration options for a stage.
+
+| Property | Description                                                                     |
+| -------- | ------------------------------------------------------------------------------- |
+| `field`  | SPARQL variable whose bindings define the stage nodes.                          |
+| `title`  | Custom label displayed below the stage.                                         |
+| `color`  | Color channel applied to the stage nodes. See [Color](../../encoding/color.md). |
+| `sort`   | Defines how the nodes within the stage are ordered.                             |
 
 Example:
 
 ```js
 nodes: {
   fields: [
-    { field: "affiliation", title: "Affiliation", sort: "alpha" },
-    { field: "country", sort: { by: "value", mode: "total", order: "desc" } },
-    "city"
+    {
+      field: "country",
+      title: "Country",
+      color: { field: "continent" },
+      sort: { by: "count" }
+    }
   ]
 }
 ```
 
-### `nodes.sort` and `nodes.fields[i].sort`
 
-Accepted sort values:
 
-- String shorthand: `"layout"`, `"alpha"`, `"count"`, `"value"`
-- Object form:
+### Stage sorting
+
+The `sort` property controls the ordering of nodes within a stage. 
+
+#### String values
+
+| Value                  | Description                                                           |
+| ---------------------- | --------------------------------------------------------------------- |
+| `"layout"` *(default)* | Uses the D3 Sankey layout algorithm to minimize link crossings.       |
+| `"alpha"`              | Sorts nodes alphabetically by label.                                  |
+| `"count"`              | Sorts nodes by the number of incoming, outgoing, or total links.      |
+| `"value"`              | Sorts nodes by the total value of incoming, outgoing, or total links. |
+
+#### Object form
 
 ```js
-{ by: "layout|alpha|count|value", order?: "asc|desc", mode?: "total|in|out" }
+sort: {
+  by: "layout" | "alpha" | "count" | "value",
+  order: "asc" | "desc",      // optional
+  mode: "total" | "in" | "out" // optional
+}
 ```
 
-Rules:
+##### Rules
 
-- `mode` is only valid for `by: "count"` or `by: "value"`.
-- Stage sort (`nodes.fields[i].sort`) overrides global sort (`nodes.sort`).
-- If no sort is defined, default behavior is layout-based ordering.
+* `mode` is only applicable when `by` is `"count"` or `"value"`.
+* A stage-specific sort (`nodes.fields[i].sort`) overrides the global sort (`nodes.sort`).
+* If no sort is specified, nodes are ordered using the default `"layout"` strategy.
 
-### `nodes.align`
+### Global stage properties
 
-Allowed values:
+Most stage properties can be defined either globally on the `nodes` mark or individually for each stage. When both are specified, stage-specific settings override the global configuration.
 
-- `"justify"` (default)
-- `"left"`
-- `"right"`
-- `"center"`
+- **Sorting**: Define a global sorting strategy using `nodes.sort`, or override it for a specific stage using `nodes.fields[i].sort`.
 
-### `links.value.field`
+- **Color**: Define a global color mapping using `nodes.color`, or specify a stage-specific mapping with `nodes.fields[i].color`.
 
-- Type: `string`
-- Must reference a SPARQL variable available in the result set.
-- If missing or non-numeric per row, VENUS falls back to row increment `1` for that row.
+- **Spacing**: The vertical spacing between nodes within a stage is controlled globally through `nodes.padding`, which accepts a numeric value.
+
+- **Width**: The width of stage nodes is controlled globally through `nodes.size.value`, which accepts a numeric value. In Sankey diagrams, node width is a visual styling property rather than a data encoding. To maintain consistency across visualization techniques, VENUS uses the `size` channel to control this property.
+
+## Sankey flows
+
+Flows are defined through the `links` mark, which controls both their appearance and magnitude.
+
+| Encoding Property | Description | Documentation  |
+|---|---|---|:---:|
+| `links.color` | Link color mapping (constant or data-driven). | See [Color](../../encoding/color.md) | 
+| `links.opacity.value` | Constant link opacity (`0` to `1`). | | 
+| `links.value` | Defines the magnitude of each flow. | | 
+
+### Flow magnitude
+
+The `links.value` property determines the width of Sankey flows. It accepts either:
+
+- a numeric constant, assigning the same magnitude to every flow;
+- an object specifying the SPARQL variable that provides the numeric value for each flow.
+
+If `links.value` is omitted, each binding contributes a value of `1`.
+
+**Example**
+
+```js
+links: {
+  value: {
+    field: "count"
+  }
+}
+```
+
+In this example, the width of each flow is proportional to the values returned by the `?count` variable in the SPARQL query.
+
+## Sankey layout
+
+The layout of Sankey stages is controlled by the `nodes.align` property, which specifies the stage alignment strategy used by the D3 Sankey layout algorithm. The supported values are:
+
+- `"justify"` *(default)*: aligns source nodes to the left and sink nodes to the right.
+- `"left"`: aligns all nodes as far left as possible.
+- `"right"`: aligns all nodes as far right as possible.
+- `"center"`: centers nodes between their incoming and outgoing links.
+
+See the [D3 Sankey alignment documentation](https://github.com/d3/d3-sankey#alignments) for additional details on each alignment strategy.
+
 
 ## Complete Sankey Encoding Template
+
+The example below provide complete, ready-to-use encodings for the sabkey diagram, including all default values. Only the properties required to identify the nodes and flow magnitude (`links.value`) are mandatory. All other properties correspond to default values automatically applied by VENUS and may be omitted unless customization is required.
 
 ```js
 encoding: {
@@ -160,9 +228,3 @@ encoding: {
 }
 ```
 
-## Allowed Values Summary
-
-- `nodes.align`: `justify`, `left`, `right`, `center`
-- `nodes.sort.by` / `nodes.fields[i].sort.by`: `layout`, `alpha`, `count`, `value`
-- `nodes.sort.order` / `nodes.fields[i].sort.order`: `asc`, `desc`
-- `nodes.sort.mode` / `nodes.fields[i].sort.mode`: `total`, `in`, `out` (only for `count` and `value`)

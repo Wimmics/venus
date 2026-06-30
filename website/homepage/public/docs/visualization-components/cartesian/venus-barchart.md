@@ -2,9 +2,7 @@
 
 Also known as *Bar Graph* or *Column Graph*.
 
-A Bar Chart uses either horizontal or vertical bars (column chart) to show discrete, numerical comparisons across categories. One axis of the chart shows the specific categories being compared and the other axis represents a discrete value scale.
-
-Bar Charts are distinguished from Histograms, as they do not display continuous developments over an interval. Instead, Bar Chart's discrete data is categorical and therefore answers the question of "how many?" in each category.
+A bar chart represents categorical data using rectangular bars whose length is proportional to a numeric value. Bars may be displayed vertically (column chart) or horizontally. Bar charts are well suited for comparing values across discrete categories.
 
 > **Visualization component:** `<venus-barchart>`
 
@@ -38,17 +36,65 @@ Bar Charts are distinguished from Histograms, as they do not display continuous 
 </script>
 ```
 
-## Related Properties
+## Marks and Channels
 
-| Encoding Property | Description | Documentation | Mandatory |
-|---|---|---|:---:|
-| `x` | Defines the categorical position field and horizontal axis options (`x.axis`). | [`x`](../../encoding/x.md) | ✓ |
-| `y` | Defines the quantitative position field, vertical axis options (`y.axis`), and scale. | [`y`](../../encoding/y.md) | ✓ |
-| `bars` | Configures bar marks: `groups`, `stack`, `color`, `size`, `tooltip`. | [`bars`](../../encoding/marks/bars.md) | ✗ |
-| `axis` | Axis options are configured inside `x.axis` and `y.axis` (titles, label angle/offset, tick formatting). | [`axis`](../../encoding/axis.md) | ✗ |
-| `color` | Color channel semantics used in `bars.color` (constant or data-driven). | [`color`](../../encoding/color.md) | ✗ |
-| `size` | Size/thickness channel semantics used in `bars.size` (constant or data-driven). | [`size`](../../encoding/size.md) | ✗ |
-| `scale` | Defines value-to-visual mapping for position/color/size channels. | [`scale`](../../encoding/scale.md) | ✗ |
-| `legend` | Controls legend visibility, placement, and compact mode for mapped channels. | [`legend`](../../encoding/legend.md) | ✗ |
-| `direction` | Switches chart orientation between vertical and horizontal bars. | [`direction`](../../encoding/direction.md) | ✗ |
-| `interactions` | Enables/disables interactions, including global tooltip toggle (`interactions.tooltip`). | [`interactions`](../../encoding/interactions.md) | ✗ |
+Bar charts are defined through the `bars` mark.
+
+The following visual channels are supported:
+
+| Channel | Description | Documentation  |
+|---|---|---|
+| `color` | Defines the color of bars. | See [Color](../../encoding/color.md) |
+| `size`  | Defines the width of bars via `size.value` sub-property, which accepts a numeric value. | See [Size](../../encoding/size.md) |
+| `strokeWidth` | Defines the stroke width of bars. | See [Stroke Width](../../encoding/stroke-width.md)
+| `stroke` | Defines the stroke color of bars. | See [Stroke](../../encoding/stroke.md)
+
+
+### Chart orientation
+
+Bars may be displayed vertically or horizontally using the global direction property.
+
+```js
+encoding: {
+  direction: "vertical"
+}
+```
+
+Supported values: 
+- `vertical` (default) 
+- `horizontal`
+
+| Vertical | Horizontal |
+|---|---|
+|![Vertical Bar Chart](/docs/figs/simple-bar-chart.png) | ![Horizontal Bar Chart](/docs/figs/simple-bar-chart-horizontal.png) |
+
+
+## Stacked Bar Chart
+
+VENUS supports both standard and stacked bar charts through the `bars.stack` property.
+
+| Value               | Description                                                                    |
+| ------------------- | ------------------------------------------------------------------------------ |
+| `false` *(default)* | Standard bar chart.                                                            |
+| `true`              | Stacked bar chart.                                                             |
+| `"normalize"`       | 100% stacked bar chart, where each bar represents proportions summing to 100%. |
+
+![Stacked Bar Chart](/docs/figs/stacked-bar-chart-vertical.png)
+
+## Grouped Bar Chart
+
+Grouped (or multi-set) bar charts display multiple bars for each category to compare different groups.
+
+Grouping is controlled by the `bars.groups` property, which specifies the SPARQL variable used to partition each category.
+
+```js
+bars: {
+  stack: false,
+  groups: {
+    field: "languageFamily"
+  }
+}
+```
+The values of `languageFamily` determine the grouped bars within each category.
+
+![Grouped Bar Chart](/docs/figs/grouped-bar-chart.png)

@@ -443,7 +443,7 @@ export class EditorApp {
 				const canUseScenarioCache =
 					!this.isCustomWorkspace() &&
 					dataSource === "query" &&
-					scenario?.sparqlResult != null;
+					scenario?.hasCachedResult === true;
 				const renderDataSource = canUseScenarioCache ? "provided" : dataSource;
 				const queryText = await this.sparqlPanelController.getText();
 				if (renderDataSource === "query" && !String(queryText || "").trim()) {

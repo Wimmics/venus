@@ -214,6 +214,22 @@ async function walk(srcDir, config, relDir = "") {
   return { children, entry };
 }
 
+async function copyRecursive(src, dest) {
+  const entries = await fs.readdir(src, { withFileTypes: true });
+  await ensureDir(dest);
+  
+  for (const entry of entries) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+    
+    if (entry.isDirectory()) {
+      await copyRecursive(srcPath, destPath);
+    } else {
+      await fs.copyFile(srcPath, destPath);
+    }
+  }
+}
+
 async function main() {
   const config = await loadConfig();
   await ensureDir(srcRoot);
@@ -221,6 +237,17 @@ async function main() {
   await ensureDir(outRoot);
 
   const root = await walk(srcRoot, config, "");
+
+  // Copy static assets (images, etc.)
+  const figsDir = path.join(srcRoot, "figs");
+  try {
+    const figsStats = await fs.stat(figsDir);
+    if (figsStats.isDirectory()) {
+      await copyRecursive(figsDir, path.join(outRoot, "figs"));
+    }
+  } catch {
+    // figs directory doesn't exist, skip
+  }
 
   const manifest = {
     generatedAt: new Date().toISOString(),

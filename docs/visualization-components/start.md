@@ -12,7 +12,9 @@ A component can be instantiated in an HTML page as follows:
 <venus-scatterplot id="scatter" width="100%" height="500"></venus-scatterplot>
 ```
 
-## Shared Attributes
+
+
+## Attributes
 
 Each component supports standard HTML attributes such as `id`, `width`, `height`, as well as an additional `resize` attribute to improve visualization portability.
 
@@ -22,7 +24,7 @@ Each component supports standard HTML attributes such as `id`, `width`, `height`
 | `height` | number or string | CSS size (e.g. `500px`, `100%`, `90vh`) or any number | Controls component height. |
 | `resize` | boolean | `true` / `false` | Auto-resize behavior on container/window changes. |
 
-## Shared Properties
+## Properties
 
 All components expose the following properties to configure data access and visual encoding.
 
@@ -34,8 +36,6 @@ All components expose the following properties to configure data access and visu
 | `proxy` | string | URL | Routes SPARQL requests through a proxy. See [`proxy`](../data/proxy.md) for details. |
 | `encoding` | object | see [`encoding`](../encoding/start.md) | Defines the visual mappings and styling. |
 
-
-
 ## Public Methods
 
 | Method | Function |
@@ -46,7 +46,17 @@ All components expose the following properties to configure data access and visu
 
 ## Typical Flow
 
-1. Create component element.
-2. Set `sparqlEndpoint` + `sparqlQuery` or provide `sparqlResult`.
+1. Create (and select) component HTML element.
+2. Set `sparqlEndpoint` + `sparqlQuery` or `sparqlResult`.
 3. Set `encoding`.
 4. Call `launch()`.
+
+
+## Visualization Types
+
+VENUS components currently supports two categories of visualization techniques, summarized in the table below and described hereafter.
+
+| Visualization Type | Description |
+|---|---|
+| [Network-based](../visualization-components/network/start.md) | Used to represent relationships and flows among entities. |
+| [Cartesian](../visualization-components/cartesian/start.md) | Used to emphasize magnitude, ordering, and variation across dimensions. |

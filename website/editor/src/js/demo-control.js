@@ -118,11 +118,13 @@ export class DemoControl {
 		const cachedSparqlResult = scenario.cachePath
 			? await fetchJsonIfAvailable(scenario.cachePath)
 			: null;
+		const hasCachedResult = cachedSparqlResult != null;
 
 		this.activeScenario = {
 			...scenario,
 			sparqlResult: cachedSparqlResult,
-			dataSource: "query"
+			hasCachedResult,
+			dataSource: hasCachedResult ? "provided" : "query"
 		};
 		sessionStorage.setItem(this.storageKey, scenario.id);
 		

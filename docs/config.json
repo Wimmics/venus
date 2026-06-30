@@ -1,6 +1,6 @@
 {
   "root": {
-    "folders": ["visualization-components", "data", "encoding"]
+    "folders": ["visualization-components", "encoding", "data"]
   },
   "folders": {
     "visualization-components": {
@@ -13,36 +13,24 @@
     "visualization-components/network": {
       "files": [
         { "path": "visualization-components/network/start.md", "label": "Overview" },
-        { "path": "visualization-components/network/venus-graph.md", "label": "Force-directed graph" },
-        { "path": "visualization-components/network/venus-sankey.md", "label": "Sankey diagram" }
+        { "path": "visualization-components/network/venus-graph.md", "label": "Node-link Diagram" },
+        { "path": "visualization-components/network/venus-sankey.md", "label": "Sankey Diagram" }
       ]
     },
     "visualization-components/cartesian": {
        "files": [
         { "path": "visualization-components/cartesian/start.md", "label": "Overview" },
-        { "path": "visualization-components/cartesian/venus-barchart.md", "label": "Bar chart" },
-        { "path": "visualization-components/cartesian/venus-linechart.md", "label": "Line chart" },
-        { "path": "visualization-components/cartesian/venus-scatterplot.md", "label": "Scatterplot" }
+        { "path": "visualization-components/cartesian/venus-barchart.md", "label": "Bar Chart" },
+        { "path": "visualization-components/cartesian/venus-linechart.md", "label": "Line Chart" },
+        { "path": "visualization-components/cartesian/venus-scatterplot.md", "label": "Scatter Plot" }
       ]
     },
     "encoding": {
       "items": [
         { "path": "encoding/start.md", "label": "Overview" },
-        { "path": "encoding/title.md", "label": "Chart Title" },
         { "path": "encoding/field.md", "label": "Data Fields" },
-        { "path": "encoding/x.md", "label": "X Axis"},
-        { "path": "encoding/y.md", "label": "Y Axis"},
-        { "path": "encoding/axis.md", "label": "Axes"},
-        { "path": "encoding/direction.md", "label": "Orientation" },
-        { "path": "encoding/groups.md", "label": "Groups"},
-        { "path": "encoding/stack.md", "label": "Stack"},
-        { "path": "encoding/color.md", "label": "Color Channel" },
-        { "path": "encoding/size.md", "label": "Size Channel" },
-        { "path": "encoding/labels.md", "label": "Labels" },
         { "path": "encoding/scale.md", "label": "Scale Types" },
-        { "path": "encoding/legend.md", "label": "Legends" },
-        { "path": "encoding/interactions.md", "label": "User Interactions" },
-        { "path": "encoding/marks", "label": "Marks" }
+        { "path": "encoding/interactions.md", "label": "User Interactions" }
       ]
     },
     "data": {
@@ -50,15 +38,6 @@
         { "path": "data/start.md", "label": "Overview" },
         { "path": "data/sparql.md", "label": "SPARQL Queries" },
         { "path": "data/proxy.md", "label": "SPARQL Proxy" }
-      ]
-    },
-    "encoding/marks": {
-      "files": [
-        { "path": "encoding/marks/nodes.md", "label": "Nodes" },
-        { "path": "encoding/marks/links.md", "label": "Links" },
-        { "path": "encoding/marks/points.md", "label": "Points" },
-        { "path": "encoding/marks/bars.md", "label": "Bars" },
-        { "path": "encoding/marks/lines.md", "label": "Lines" }
       ]
     }
   }

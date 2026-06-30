@@ -2,7 +2,7 @@
 
 Also known as *Line Graph*.
 
-A Line Chart displays how a quantitative variable evolves along an ordered dimension. Values are connected by line segments, making it easier to read trends, slopes, and turning points over time or sequence.
+A line chart represents the evolution of a quantitative variable along an ordered dimension. Data values are connected by line segments, making it suitable for visualizing trends, changes, and comparisons over time or other ordered sequences.
 
 > **Visualization component:** `<venus-linechart>`
 
@@ -27,7 +27,7 @@ A Line Chart displays how a quantitative variable evolves along an ordered dimen
     x: { field: "year" },
     y: { field: "birthRate" },
     lines: {
-      group: { field: "countryLabel" },
+      groups: { field: "countryLabel" },
       color: { field: "continentLabel" },
       size: { value: 2 }
     },
@@ -38,18 +38,49 @@ A Line Chart displays how a quantitative variable evolves along an ordered dimen
 </script>
 ```
 
-## Related Properties
+## Mark and Channels
 
-| Encoding Property | Description | Documentation | Mandatory |
-|---|---|---|:---:|
-| `x` | Defines the horizontal position field and axis settings. | [`x`](../../encoding/x.md) | ✓ |
-| `y` | Defines the vertical position field, axis settings, and scale behavior. | [`y`](../../encoding/y.md) | ✓ |
-| `lines` | Configures line marks (`group`, `color`, `size`, `tooltip`). | [`lines`](../../encoding/marks/lines.md) | ✗ |
-| `points` | Controls optional point marks on top of lines (`display`, `color`, `size`, `tooltip`). | [`points`](../../encoding/marks/points.md) | ✗ |
-| `axis` | Controls axis title, label angle/offset, and tick formatting. | [`axis`](../../encoding/axis.md) | ✗ |
-| `color` | Color channel semantics used in mark-level mappings (for example `lines.color`, `points.color`). | [`color`](../../encoding/color.md) | ✗ |
-| `size` | Size/thickness channel semantics used in mark-level mappings (for example `lines.size`, `points.size`). | [`size`](../../encoding/size.md) | ✗ |
-| `scale` | Defines how data values map to position/color/size scales. | [`scale`](../../encoding/scale.md) | ✗ |
-| `legend` | Controls legend visibility, placement, and compact mode for mapped channels. | [`legend`](../../encoding/legend.md) | ✗ |
-| `direction` | Switches chart orientation between vertical and horizontal interpretation. | [`direction`](../../encoding/direction.md) | ✗ |
-| `interactions` | Enables/disables interactions (including tooltips) at visualization level. | [`interactions`](../../encoding/interactions.md) | ✗ |
+Line charts are defined through the `lines` mark. Optionally, the `points` mark may be used to display individual data values along each line.
+
+Both marks support the following visual channels:
+
+| Channel | Description | Documentation  |
+|---|---|---|
+| `color` | Defines the color of lines/points. | See [Color](../../encoding/color.md) |
+| `size`  | Defines the line tickness or points radius. | See [Size](../../encoding/size.md) |
+| `strokeWidth` | Defines the stroke width of points/lines. | See [Stroke Width](../../encoding/stroke-width.md)
+| `stroke` | Defines the stroke color of points/lines. | See [Stroke](../../encoding/stroke.md)
+
+| Simple Line Chart | Line Chart with Points |
+|---|---|
+|![Simple Line Chart](/docs/figs/simple-line-chart.png) | ![Simple Line Chart with Points](/docs/figs/simple-line-chart-points.png) |
+
+### Displaying Points
+
+The `points` mark controls whether points are displayed on top of the lines.
+
+```js
+points: {
+  display: true
+}
+```
+
+By default, points are displayed. To hide them, set `points.display` to false.
+
+## Multi-line Chart
+
+Multi-line charts display several lines within the same chart to compare multiple groups.
+
+Grouping is controlled by the `lines.groups` property, which specifies the SPARQL variable used to partition the data into distinct series.
+
+```js
+lines: {
+  groups: {
+    field: "countryLabel"
+  }
+}
+```
+Each distinct value of `countryLabel` produces a separate line.
+
+![Multi-line Chart](/docs/figs/multiline-line-chart.png) 
+

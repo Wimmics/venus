@@ -7,11 +7,15 @@ export async function fetchJson(path) {
 }
 
 export async function fetchJsonIfAvailable(path) {
-  const response = await fetch(path);
-  if (!response.ok) {
+  try {
+    const response = await fetch(path);
+    if (!response.ok) {
+      return null;
+    }
+    return await response.json();
+  } catch {
     return null;
   }
-  return response.json();
 }
 
 export async function fetchText(path) {
