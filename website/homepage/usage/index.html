@@ -36,15 +36,15 @@
 				For quick experiments, you can import Venus Web Components directly from a CDN inside a module script.
 			</p>
 			<pre class="venus-code-block"><code>&lt;script type="module"&gt;
-	import "https://cdn.jsdelivr.net/npm/@wimmics/venus-elements@0.1.0/dist/index.js";
+	import "https://cdn.jsdelivr.net/npm/@wimmics/venus@latest/dist/index.js";
 &lt;/script&gt;</code></pre>
 				
 				<h3>NPM</h3>
 				<p>
 					For production or app builds (Vite, Webpack, etc.), install from npm and import from your app entry file.
 				</p>
-				<pre class="venus-code-block"><code>npm install @wimmics/venus-elements</code></pre>
-				<pre class="venus-code-block"><code>import "@wimmics/venus-elements";</code></pre>
+				<pre class="venus-code-block"><code>npm install @wimmics/venus</code></pre>
+				<pre class="venus-code-block"><code>import "@wimmics/venus";</code></pre>
 			</div>
 		</section>
 		
@@ -67,7 +67,7 @@
 	&lt;venus-graph id="vis" width="100%" height="520"&gt;&lt;/venus-graph&gt;
 
 	&lt;script type="module"&gt;
-		import "@wimmics/venus-elements";
+		import \"@wimmics/venus\";
 
 		const graph = document.querySelector("#vis");
 		
@@ -116,7 +116,7 @@
 &lt;/head&gt;
 &lt;body&gt;
 	&lt;script type="module"&gt;
-		import "@wimmics/venus-elements";
+		import \"@wimmics/venus\";
 	&lt;/script&gt;
 
 	&lt;!-- Configure entirely in HTML attributes --&gt;
@@ -174,7 +174,7 @@
 	&lt;/label&gt;
 
 	&lt;script type="module"&gt;
-		import "@wimmics/venus-elements";
+		import \"@wimmics/venus\";
 
 		const graph = document.querySelector("#vis");
 		const searchInput = document.querySelector("#search");

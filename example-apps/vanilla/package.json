@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@wimmics/venus-elements": "latest"
+    "@wimmics/venus": "latest"
   },
   "devDependencies": {
     "vite": "^5.4.21"

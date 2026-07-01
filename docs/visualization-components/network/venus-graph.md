@@ -18,7 +18,7 @@ The code snippet below provides a minimal template for creating a node-link diag
 <venus-graph id="graph" width="100%" height="520"></venus-graph>
 
 <script type="module">
-  import "@wimmics/venus-elements";
+  import "@wimmics/venus";
 
   const graph = document.querySelector("#graph");
 

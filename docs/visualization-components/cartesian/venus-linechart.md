@@ -12,7 +12,7 @@ A line chart represents the evolution of a quantitative variable along an ordere
 <venus-linechart id="line" width="100%" height="500"></venus-linechart>
 
 <script type="module">
-  import "@wimmics/venus-elements";
+  import "@wimmics/venus";
 
   const line = document.querySelector("#line");
 

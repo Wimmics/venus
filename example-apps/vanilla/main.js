@@ -1,4 +1,4 @@
-import "@wimmics/venus-elements";
+import "@wimmics/venus";
 
 const graph = document.querySelector("#graph");
 

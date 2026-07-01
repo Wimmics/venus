@@ -18,7 +18,7 @@ This repository contains the source code for:
 The library is defined in the [`packages`](./packages/) folder and includes the following packages.
 
 NPM published package:
-- `packages/components`: defines the [`@wimmics/venus-elements`](https://www.npmjs.com/package/@wimmics/venus-elements) package, which provides custom elements (`venus-graph`, `venus-barchart`) and the integration layer.
+- `packages/components`: defines the [`@wimmics/venus`](https://www.npmjs.com/package/@wimmics/venus) package, which provides custom elements (`venus-graph`, `venus-barchart`) and the integration layer.
 
 Internal packages:
 - `packages/core`: shared low-level utilities (`VIS_TYPES`).

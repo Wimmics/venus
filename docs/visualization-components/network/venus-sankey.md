@@ -18,7 +18,7 @@ The code snippet below provides a minimal template for creating a sankey diagram
 <venus-sankey id="sankey" width="100%" height="520"></venus-sankey>
 
 <script type="module">
-  import "@wimmics/venus-elements";
+  import "@wimmics/venus";
 
   const sankey = document.querySelector("#sankey");
 

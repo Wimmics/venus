@@ -1,8 +1,8 @@
-# @wimmics/venus-elements
+# @wimmics/venus
 
 VENUS is a JavaScript library for creating interactive visualizations and dashboards from SPARQL queries.
 
-The `@wimmics/venus-elements` package provides five web components for different visualization techniques. Each component accepts either a SPARQL query or a SPARQL JSON result set, together with a declarative JSON encoding specification. The component retrieves the data, transforms it into visualization-specific structures, and renders the output as interactive SVG visualizations.
+The `@wimmics/venus` package provides five web components for different visualization techniques. Each component accepts either a SPARQL query or a SPARQL JSON result set, together with a declarative JSON encoding specification. The component retrieves the data, transforms it into visualization-specific structures, and renders the output as interactive SVG visualizations.
 
 ## Visualization Types
 
@@ -17,7 +17,7 @@ The `@wimmics/venus-elements` package provides five web components for different
 ## Installation
 
 ```bash
-npm install @wimmics/venus-elements
+npm install @wimmics/venus
 ```
 
 ## Quick Start

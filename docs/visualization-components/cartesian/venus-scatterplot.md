@@ -12,7 +12,7 @@ A Scatter Plot represents individual observations as points positioned by two qu
 <venus-scatterplot id="scatter" width="100%" height="500"></venus-scatterplot>
 
 <script type="module">
-  import "@wimmics/venus-elements";
+  import "@wimmics/venus";
 
   const scatter = document.querySelector("#scatter");
 

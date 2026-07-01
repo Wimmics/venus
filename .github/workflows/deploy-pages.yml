@@ -30,8 +30,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build venus-elements package
-        run: npm -w @wimmics/venus-elements run build
+      - name: Build @wimmics/venus package
+        run: npm -w @wimmics/venus run build
 
       - name: Resolve base paths
         id: base

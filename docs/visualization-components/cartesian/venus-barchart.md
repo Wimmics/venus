@@ -12,7 +12,7 @@ A bar chart represents categorical data using rectangular bars whose length is p
 <venus-barchart id="bar" width="100%" height="500"></venus-barchart>
 
 <script type="module">
-  import "@wimmics/venus-elements";
+  import "@wimmics/venus";
 
   const bar = document.querySelector("#bar");
 
