@@ -1,6 +1,35 @@
 import { SparqlToGraphMapper } from "./sparql-to-graph.js";
 import { VIS_TYPES } from "@wimmics/venus-core";
 
+/**
+ * Transforms SPARQL results into Sankey diagram visualization format.
+ * 
+ * Extends SparqlToGraphMapper with Sankey-specific logic for flow visualization.
+ * Transforms SPARQL results into canonical node-link format optimized for
+ * hierarchical flow representation.
+ * 
+ * Output format: { nodes: [...], links: [...] }
+ * - nodes: Array of node objects with id, label, color, and other properties
+ * - links: Array of link objects with source, target, value, opacity, and encoded properties
+ * 
+ * Sankey diagrams visualize flows between categories. Unlike force graphs, nodes are
+ * positioned vertically and links flow horizontally with widths proportional to values.
+ * 
+ * @extends SparqlToGraphMapper
+ * 
+ * @example
+ * const mapper = createSparqlMapper(VIS_TYPES.VENUS_SANKEY);
+ * const sparqlResults = { 
+ *   head: { vars: ['source', 'target', 'value', 'type'] }, 
+ *   results: {...} 
+ * };
+ * const encoding = { 
+ *   nodes: { color: { field: 'type' }, label: { field: 'label' } },
+ *   links: { opacity: { field: 'value', scale: { type: 'sqrt', range: [0.1, 1] } } }
+ * };
+ * const mapped = mapper.map(sparqlResults, { encoding });
+ * // Returns { nodes: [...], links: [...] }
+ */
 export class SparqlToSankey extends SparqlToGraphMapper {
     constructor(options = {}) {
         super({ ...options, visType: VIS_TYPES.VENUS_SANKEY });

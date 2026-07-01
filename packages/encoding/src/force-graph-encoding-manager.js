@@ -1,13 +1,30 @@
 /**
-* Force-Graph Encoding Manager
-* 
-* Handles encoding logic specific to force-directed graph visualization:
-* - Node/link field mappings
-* - Adaptive encoding from SPARQL variables
-* - Link type resolution (directional, semantic, or co-occurrence)
-* - Domain calculation for nodes and links
-* - D3 scale creation
-*/
+ * Encoding manager for force-directed graph visualizations.
+ * 
+ * Validates and merges force graph-specific encoding specifications. Force graphs
+ * support node and link encodings with physics simulation. Manages node-link field
+ * mappings, visual properties, and interaction settings. Extends GraphEncodingManager
+ * with force graph-specific defaults.
+ * 
+ * @extends GraphEncodingManager
+ * 
+ * @example
+ * const manager = createEncodingManager(VIS_TYPES.VENUS_GRAPH);
+ * 
+ * const encoding = {
+ *   nodes: {
+ *     color: { field: 'type', scale: { type: 'ordinal', range: 'Set2' } },
+ *     size: { field: 'degree', scale: { type: 'sqrt', range: [8, 50] } },
+ *     label: { field: 'name' }
+ *   },
+ *   links: {
+ *     color: { value: '#ccc' },
+ *     stroke: { width: { field: 'weight', scale: { type: 'sqrt', range: [1, 3] } } }
+ *   },
+ *   interactions: { drag: true, zoom: true, tooltip: true }
+ * };
+ * const merged = manager.mergeEncoding(encoding);
+ */
 import { GraphEncodingManager } from "./graph-encoding-manager";
 import { VIS_TYPES } from "@wimmics/venus-core";
 

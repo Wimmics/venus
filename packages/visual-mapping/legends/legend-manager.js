@@ -1,13 +1,63 @@
 import { createLegends } from './legend-factory'
 
+/**
+ * Manages legend rendering and positioning for visualizations.
+ * 
+ * LegendManager handles creating, positioning, and destroying legends based on visual
+ * artifact specifications. Legends are rendered as custom web components and positioned
+ * relative to the visualization container (top, bottom, left, right).
+ * 
+ * @example
+ * const legendMgr = new LegendManager({ container: chartElement });
+ * 
+ * // After visualization data is transformed and compiled
+ * legendMgr.createLegends({
+ *   data: rowData,
+ *   visualArtifacts: artifacts
+ * });
+ * 
+ * // Later, update legends
+ * legendMgr.destroyLegends();
+ * legendMgr.createLegends({ data: newData, visualArtifacts: newArtifacts });
+ */
 export class LegendManager {
+    /**
+     * Creates a new LegendManager.
+     * 
+     * @param {Object} options - Configuration object.
+     * @param {HTMLElement} options.container - The container element where legends will be appended.
+     *   Should be the root container of the visualization (web component or div).
+     */
     constructor({ container }) {
         this._legends = [] // Rendered legends
 
         this.chartContainer = container // web component to which the legends are attached
     }
 
-    // Public methods
+    /**
+     * Creates and renders legends based on visual artifacts.
+     * 
+     * Generates legend DOM elements for each legend specified in visual artifacts,
+     * positions them relative to the container, and applies styling. Legends listen
+     * for toggle events to trigger re-layout.
+     * 
+     * @param {Object} options - Configuration for legend creation.
+     * @param {Array} options.data - The visualization data (used for legend item values).
+     * @param {Object} options.visualArtifacts - Visual artifacts with legend configurations.
+     *   @param {Array} options.visualArtifacts.legends - List of legend configurations.
+     *   @param {Map} options.visualArtifacts.scales - Map of scale functions indexed by ID.
+     * 
+     * @example
+     * legendMgr.createLegends({
+     *   data: transformedData,
+     *   visualArtifacts: {
+     *     legends: [
+     *       { id: 'color-legend', field: 'type', scale: 'colorScale', position: 'bottom' }
+     *     ],
+     *     scales: new Map([['colorScale', scaleFunction]])
+     *   }
+     * });
+     */
     createLegends({ data = [], visualArtifacts = {} }) {
         this.destroyLegends() // reset rendered legends
 
@@ -43,6 +93,15 @@ export class LegendManager {
 
     }
 
+    /**
+     * Destroys all rendered legends and removes them from the DOM.
+     * 
+     * Call this before creating new legends to ensure clean state, or when the
+     * visualization is being destroyed.
+     * 
+     * @example
+     * legendMgr.destroyLegends(); // All legend elements removed
+     */
     destroyLegends() {
         this._legends.forEach((legend) => legend.remove());
         this._legends = [];

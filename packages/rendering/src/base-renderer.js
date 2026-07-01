@@ -2,10 +2,45 @@ import * as d3 from "d3";
 
 import { ATTRIBUTE_TYPES, CHANNEL_TYPES, MARK_ATTRIBUTES, MARK_CHANNELS, MARK_TYPES } from "@wimmics/venus-core";
 
+/**
+ * Base class for D3-based visualization renderers.
+ * 
+ * Provides the core rendering lifecycle for converting data into SVG visualizations.
+ * Handles SVG creation, state management, dimension handling, and event callbacks.
+ * Subclasses (BarChartRenderer, LineChartRenderer, etc.) implement visualization-specific
+ * rendering logic by overriding abstract methods.
+ * 
+ * @abstract
+ * 
+ * @example
+ * import { createRenderer } from '@wimmics/venus-rendering';
+ * import { VIS_TYPES } from '@wimmics/venus-core';
+ * 
+ * const renderer = createRenderer(VIS_TYPES.VENUS_BARCHART, {
+ *   container: document.querySelector('#chart'),
+ *   width: 800,
+ *   height: 600,
+ *   callbacks: {
+ *     onHover: (datum) => console.log('Hovered:', datum),
+ *     onClick: (datum) => console.log('Clicked:', datum)
+ *   }
+ * });
+ * 
+ * renderer.render(payload, visualArtifacts);
+ */
 export default class BaseRenderer {
 	/**
-	* Initialize renderer-level shared dependencies and mutable rendering state.
-	*/
+	 * Creates a new BaseRenderer.
+	 * 
+	 * @param {Object} [opts={}] - Configuration options.
+	 * @param {HTMLElement} opts.container - Container element where SVG will be appended.
+	 * @param {number} [opts.width=800] - Visualization width in pixels.
+	 * @param {number} [opts.height=600] - Visualization height in pixels.
+	 * @param {Object} [opts.callbacks={}] - Interaction callbacks.
+	 *   @param {Function} [opts.callbacks.onHover] - Called on mark hover, receives datum.
+	 *   @param {Function} [opts.callbacks.onOut] - Called when mouse leaves mark, receives datum.
+	 *   @param {Function} [opts.callbacks.onClick] - Called on mark click, receives datum.
+	 */
 	constructor(opts = {}) {
 		this.container = opts.container || null;
 		this.width = opts.width || 800;
@@ -19,8 +54,24 @@ export default class BaseRenderer {
 	}
 	
 	/**
-	* Main render lifecycle: ingest payload, validate, prepare state, render, then finalize.
-	*/
+	 * Main render lifecycle: ingest payload, validate, prepare state, render, finalize.
+	 * 
+	 * Performs the complete rendering process:
+	 * 1. Parses incoming data payload (subclass-specific)
+	 * 2. Validates container exists
+	 * 3. Clears and recreates SVG structure
+	 * 4. Prepares renderer-specific state
+	 * 5. Executes subclass-specific rendering logic
+	 * 
+	 * @param {Object} [payload={}] - Visualization data payload (structure depends on visualization type).
+	 * @param {Object} [visualArtifacts=null] - Pre-compiled visual artifacts (scales, legends, etc.).
+	 * @returns {*} Subclass-specific return value (often void or rendered element references).
+	 * @throws {Error} If container is not set or payload is invalid.
+	 * 
+	 * @example
+	 * const payload = { rows: [...], chart: {...} };
+	 * renderer.render(payload, visualArtifacts);
+	 */
 	render(payload = {}, visualArtifacts = null) {
 		this._ingestRenderPayload(payload);
 		this.visualArtifacts = visualArtifacts || this.visualArtifacts || {}
@@ -41,8 +92,20 @@ export default class BaseRenderer {
 	}
 	
 	/**
-	* Update container dimensions and trigger a full render pass.
-	*/
+	 * Updates container dimensions and triggers a full re-render.
+	 * 
+	 * Use this when the container size changes (window resize, responsive layout change).
+	 * The full render is necessary because D3 scales, layouts, and positions depend on dimensions.
+	 * 
+	 * @param {number} width - New width in pixels.
+	 * @param {number} height - New height in pixels.
+	 * @param {Object} [payload=null] - Optional new data payload. Uses previous payload if omitted.
+	 * @param {Object} [visualArtifacts=null] - Optional new visual artifacts.
+	 * 
+	 * @example
+	 * renderer.resize(1000, 700);  // Resize with existing data
+	 * renderer.resize(1000, 700, newPayload, newArtifacts);  // Resize with new data
+	 */
 	resize(width, height, payload = null, visualArtifacts = null) {
 		this.width = width || this.width;
 		this.height = height || this.height;
@@ -50,8 +113,14 @@ export default class BaseRenderer {
 	}
 	
 	/**
-	* Tear down rendered SVG output and transient state.
-	*/
+	 * Destroys the rendered visualization and cleans up state.
+	 * 
+	 * Removes all SVG elements from the container and clears internal references.
+	 * Call this when disposing of the renderer or before major updates.
+	 * 
+	 * @example
+	 * renderer.destroy();  // SVG cleared, state reset
+	 */
 	destroy() {
 		if (this.svg) this.svg.selectAll("*").remove();
 		this.svg = null;

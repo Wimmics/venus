@@ -1,28 +1,288 @@
 # @wimmics/venus-encoding
 
-Encoding engine that turns user encoding into validated domains and D3-ready scales.
+Encoding specification system and validation for VENUS visualizations.
 
-## What This Package Does
-- Resolves visualization-specific encoding for force graph and bar chart.
-- Computes or validates domains from data (`DomainCalculator`).
-- Builds color ranges/palettes (`ColorScaleCalculator`).
-- Normalizes size ranges (`SizeRangeCalculator`).
-- Computes bin breaks for quantitative binning (`BinBreaksCalculator`).
-- Creates and caches D3 scales in the encoding manager.
+The encoding module validates user-provided visual encoding specifications and transforms them into visualization-ready configurations with merged defaults. Each visualization type has its own encoding manager that implements type-specific validation rules and defaults.
 
-## Encoding Model
-- Optional top-level `title`: when provided, components render it above the chart area.
-- Optional top-level `background`: chart background color (`"#ffffff"`, `"white"`, etc.).
-- Force graph: `nodes` / `links` channels (`color`, `size`, `stroke`, `labels`, `interactions`).
-- Bar chart: `x`, `y`, `bars`, `direction`.
-- Color legends are `display: true` by default when color is data-driven (`color.field`).
-- If `color.field` is provided without `color.scale`, a default palette is used: `{ type: "ordinal", range: "Accent" }`.
-- No color field is inferred from SPARQL variables. Marks keep their constant default color until the encoding defines `color.field` or a supported `color.metric`.
+## Responsibilities
 
-## Force-Graph Example
+- **Encoding Specification**: Defines encoding schema for visual channels (color, size, opacity, labels, etc.)
+- **Encoding Validation**: Validates user encodings against visualization-specific rules and constraints
+- **Default Merging**: Merges user encoding with visualization-specific defaults
+- **Field Validation**: Ensures referenced fields exist in SPARQL query results
+- **Factory Functions**: Provides factory for creating visualization-specific encoding managers
+- **Scale Type Support**: Supports specification of multiple scale types (linear, ordinal, sqrt, log, threshold, etc.)
+
+## Installation
+
+```bash
+npm install @wimmics/venus-encoding
+```
+
+## Quick Start
+
+### Creating an Encoding Manager
+
+Use the factory function to get an encoding manager for your visualization type:
+
 ```js
-graph.encoding = {
+import { createEncodingManager } from '@wimmics/venus-encoding';
+import { VIS_TYPES } from '@wimmics/venus-core';
+
+// Create a manager for bar charts
+const manager = createEncodingManager(VIS_TYPES.VENUS_BARCHART);
+
+// Define user encoding
+const userEncoding = {
+  x: { field: 'category' },
+  y: { field: 'value' },
+  bars: { 
+    color: { field: 'region', scale: { type: 'ordinal', range: 'Set2' } },
+    stack: true 
+  }
+};
+
+// Validate encoding
+try {
+  manager.validateEncoding(userEncoding);
+  console.log('✓ Encoding is valid');
+} catch (error) {
+  console.error('✗ Encoding error:', error.message);
+}
+
+// Merge with defaults and validate fields
+const sparqlVars = ['category', 'value', 'region'];
+manager.validateReferencedFields(userEncoding, sparqlVars);
+
+// Get merged encoding with all defaults applied
+const finalEncoding = manager.mergeEncoding(userEncoding);
+```
+
+## Visualization Types
+
+All 5 VENUS visualization types are supported with type-specific encoding:
+
+| Type | Component | Encoding Structure | Example Use Case |
+|------|-----------|-------------------|------------------|
+| Bar Chart | `venus-barchart` | `{ x, y, bars, ... }` | Categorical comparisons |
+| Line Chart | `venus-linechart` | `{ x, y, lines, points, ... }` | Time series data |
+| Scatter Plot | `venus-scatterplot` | `{ x, y, points, ... }` | Bivariate correlations |
+| Force Graph | `venus-graph` | `{ nodes, links, ... }` | Network relationships |
+| Sankey | `venus-sankey` | `{ nodes, links, ... }` | Flow/hierarchies |
+
+## Encoding Managers
+
+Each visualization type has its own manager with type-specific validation:
+
+```js
+// BarChartEncodingManager
+createEncodingManager(VIS_TYPES.VENUS_BARCHART)
+  // Validates: x.field, y.field required; bars.stack is boolean/"normalize"
+
+// LineChartEncodingManager  
+createEncodingManager(VIS_TYPES.VENUS_LINECHART)
+  // Validates: x.field, y.field required; lines.group field
+
+// ScatterPlotEncodingManager
+createEncodingManager(VIS_TYPES.VENUS_SCATTERPLOT)
+  // Validates: x.field, y.field required; supports color, size encoding
+
+// ForceGraphEncodingManager
+createEncodingManager(VIS_TYPES.VENUS_GRAPH)
+  // Validates: nodes and links specifications
+
+// SankeyEncodingManager
+createEncodingManager(VIS_TYPES.VENUS_SANKEY)
+  // Validates: flow structure with optional sorting
+```
+
+## Common Encoding Pattern
+
+Most encodings follow a similar structure:
+
+```js
+{
+  // Optional title shown above visualization
+  title: "Sales by Region",
+  
+  // Optional background color
+  background: "#ffffff",
+  
+  // Mark-specific encoding (bars, points, nodes, links)
+  bars: {
+    // Data field mapping (depends on visualization type)
+    x: { field: 'month' },
+    y: { field: 'revenue' },
+    
+    // Visual channel mappings
+    color: {
+      field: 'region',                    // Map to this data field
+      value: '#999',                      // Constant color fallback
+      scale: { 
+        type: 'ordinal',                  // Scale type
+        range: 'Set2',                    // Color palette
+        domain: ['East', 'West']          // Optional explicit domain
+      },
+      legend: { 
+        title: 'Region',
+        position: 'bottom',
+        display: true
+      }
+    },
+    
+    size: {
+      field: 'count',
+      scale: { type: 'sqrt', range: [5, 20] },
+      legend: { title: 'Count', display: true }
+    },
+    
+    // Display options
+    stroke: { value: '#000', width: 2, display: true },
+    opacity: { value: 1 },
+    
+    // Labels on marks
+    labels: { display: true, field: 'label' },
+    
+    // Interactions
+    tooltip: { fields: ['month', 'revenue', 'region'] }
+  },
+  
+  // Interactions (varies by visualization type)
   interactions: {
+    tooltip: true,
+    drag: true,    // Graph only
+    zoom: true     // Graph only
+  }
+}
+```
+
+## Scale Types
+
+Supported scale types for encoding:
+
+| Scale Type | Use Case | Example |
+|------------|----------|---------|
+| `linear` | Continuous numeric data | Revenue values |
+| `sqrt` | Continuous with emphasis on smaller values | Sizes/areas |
+| `log` | Continuous data spanning multiple orders of magnitude | Populations |
+| `pow` | Power transformation (configurable exponent) | Custom emphasis |
+| `ordinal` | Categorical/discrete data | Regions, categories |
+| `band` | Categorical with spacing (for axes) | Axis positions |
+| `point` | Categorical without spacing | Point positioning |
+| `threshold` | Discrete binning of continuous data | Risk levels, quartiles |
+| `quantitative` | Auto-detect continuous scale | Auto choice |
+| `sequential` | Color progression | Heatmaps |
+
+### Scale Configuration
+
+```js
+color: {
+  field: 'value',
+  scale: {
+    type: 'threshold',
+    domain: [0, 100, 200],      // Bin boundaries
+    range: ['green', 'yellow', 'red', 'darkred']
+  }
+}
+
+size: {
+  field: 'count',
+  scale: {
+    type: 'sqrt',
+    domain: [1, 100],           // Input range
+    range: [5, 50]              // Output pixel range
+  }
+}
+```
+
+## API Reference
+
+### Main Export
+
+```js
+export function createEncodingManager(visType) -> EncodingManager
+```
+
+Returns an encoding manager instance for the specified visualization type.
+
+**Parameters:**
+- `visType` (string): Visualization type (e.g., `VIS_TYPES.VENUS_BARCHART`)
+
+**Returns:** EncodingManager instance (type-specific subclass)
+
+### EncodingManager API
+
+#### `validateEncoding(userEncoding)`
+Validates encoding against visualization-specific rules.
+
+**Throws:** Error with descriptive message if validation fails.
+
+#### `validateReferencedFields(encoding, sparqlVars)`
+Ensures all field references exist in SPARQL results.
+
+**Parameters:**
+- `encoding`: The validated encoding
+- `sparqlVars`: Array of variable names from SPARQL query
+
+**Throws:** Error if any field reference not found.
+
+#### `mergeEncoding(userEncoding)`
+Merges user encoding with visualization defaults.
+
+**Returns:** Complete encoding with all defaults applied.
+
+#### `getDefaultEncoding()`
+Returns the default encoding for this visualization type.
+
+**Returns:** Default encoding object.
+
+## Legend Configuration
+
+Visual legends are automatically created for encoded channels:
+
+```js
+color: {
+  field: 'category',
+  legend: {
+    title: 'Category',
+    position: 'bottom',      // 'top', 'bottom', 'left', 'right'
+    display: true
+  }
+}
+```
+
+If legend is not specified but color is field-mapped, default legend is created.
+
+## Tooltip Configuration
+
+Tooltips show data values on mark hover:
+
+```js
+bars: {
+  tooltip: {
+    title: 'Sales Data',           // Optional constant title
+    fields: ['month', 'revenue']   // Query field names to show
+  }
+}
+```
+
+If tooltip.fields is omitted, all SPARQL variables are shown.
+
+## Related Packages
+
+- [@wimmics/venus-core](../core) - Shared types (VIS_TYPES, MARK_TYPES)
+- [@wimmics/venus-rendering](../rendering) - Uses merged encodings for rendering
+- [@wimmics/venus-visual-mapping](../visual-mapping) - Compiles encodings to visual artifacts
+- [@wimmics/venus-transform](../transform) - Accesses encoding for data mapping
+
+## See Also
+
+- [Full Visualization Documentation](https://wimmics.github.io/venus/)
+- [Encoding Specification Reference](https://wimmics.github.io/venus/docs/encoding/)
+
+## License
+
+See LICENSE in the repository root.
     enabled: true,
     drag: true,
     zoom: true,

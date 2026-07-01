@@ -86,9 +86,10 @@ example-apps/angular
 examples/cache/*.json
 
 #####################
-# IA audit files
+# IA audit/journal files
 #####################
 DOCUMENTATION_CODE_COMPARISON.md 
 INTERACTIONS_VERIFICATION_REPORT.md 
 DEVELOPER_DOCUMENTATION_AUDIT.md
 DEVELOPER_DOCUMENTATION_STATUS.md
+JSDOC_IMPLEMENTATION_STATUS.md

@@ -2,6 +2,32 @@
 import { SORT_BY, SORT_MODE, SORT_ORDER, VIS_TYPES } from "@wimmics/venus-core";
 import { GraphEncodingManager } from "./graph-encoding-manager.js";
 
+/**
+ * Encoding manager for Sankey diagram visualizations.
+ * 
+ * Validates and merges Sankey-specific encoding specifications. Sankey diagrams
+ * visualize flow between categories with node and link structure. Supports opacity
+ * encoding for links and sorting configurations for node/link ordering.
+ * Extends GraphEncodingManager with Sankey-specific defaults and sort normalization.
+ * 
+ * @extends GraphEncodingManager
+ * 
+ * @example
+ * const manager = createEncodingManager(VIS_TYPES.VENUS_SANKEY);
+ * 
+ * const encoding = {
+ *   nodes: {
+ *     color: { field: 'type', scale: { type: 'ordinal', range: 'Pastel1' } },
+ *     label: { field: 'name' }
+ *   },
+ *   links: {
+ *     color: { value: '#ccc' },
+ *     opacity: { field: 'weight', scale: { type: 'sqrt', range: [0.1, 1] } }
+ *   },
+ *   sort: { by: 'size', order: 'descending' }
+ * };
+ * const merged = manager.mergeEncoding(encoding);
+ */
 export class SankeyEncodingManager extends GraphEncodingManager {
     
     getChartType() {

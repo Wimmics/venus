@@ -1,6 +1,15 @@
 import { EncodingManager } from "./encoding-manager.js";
 import { getEncodingTemplate } from "@wimmics/venus-core";
 
+/**
+ * Base encoding manager for Cartesian (coordinate-based) visualizations.
+ * 
+ * Provides common encoding logic for 2D chart types (bar, line, scatter plots).
+ * Validates and merges X/Y axis encodings with mark-specific properties.
+ * Subclasses include BarChartEncodingManager, LineChartEncodingManager, and ScatterPlotEncodingManager.
+ * 
+ * @extends EncodingManager
+ */
 export class CartesianEncodingManager extends EncodingManager {
 
     getDefaultEncoding() {

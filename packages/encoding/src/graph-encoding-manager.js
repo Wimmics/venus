@@ -2,6 +2,15 @@ import { EncodingManager } from "./encoding-manager";
 
 import { getEncodingTemplate, MARK_TYPES } from "@wimmics/venus-core";
 
+/**
+ * Base encoding manager for network/graph visualizations (graphs and sankeys).
+ * 
+ * Provides common encoding logic for node-link diagram types. Validates and merges
+ * node and link encoding specifications. Subclasses include ForceGraphEncodingManager
+ * and SankeyEncodingManager.
+ * 
+ * @extends EncodingManager
+ */
 export class GraphEncodingManager extends EncodingManager {
 
     mergeEncoding(userEncoding) {

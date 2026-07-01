@@ -25,6 +25,27 @@ export function createVisualArtifactsCompiler(visType) {
 	}
 }
 
+/**
+ * Create an empty visual artifacts object with the required structure.
+ * Use this to initialize visual artifacts before compilation or as a fallback.
+ *
+ * @returns {Object} An empty visual artifacts object with the following structure:
+ *   - `scales` {Map} - Empty map for scale functions (scale ID → d3 scale)
+ *   - `channels` {Array} - Empty array of visual channel specifications
+ *   - `legends` {Array} - Empty array of legend definitions
+ *   - `attributes` {Array} - Empty array of attribute mappings
+ *
+ * @example
+ * import { emptyVisualArtifacts } from '@wimmics/venus-visual-mapping';
+ *
+ * const empty = emptyVisualArtifacts();
+ * // {
+ * //   scales: Map(0),
+ * //   channels: [],
+ * //   legends: [],
+ * //   attributes: []
+ * // }
+ */
 export function emptyVisualArtifacts() {
 	return {
 		scales: new Map(),

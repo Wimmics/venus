@@ -1,8 +1,34 @@
 /**
-* Base EncodingManager class
-* 
-* Validate user encoding before mapping to visual artifacts.
-*/
+ * Base class for visual encoding managers.
+ * 
+ * Encoding managers validate and transform user-provided encoding specifications into
+ * valid configurations for visualization rendering. Each visualization type (bar chart,
+ * line chart, graph, etc.) has its own EncodingManager subclass that implements
+ * visualization-specific validation and merging logic.
+ * 
+ * Responsibilities:
+ * - Validate user encoding against visualization-specific rules
+ * - Merge user encoding with visualization-specific defaults
+ * - Provide metadata about supported marks and visual channels
+ * - Validate that referenced data fields exist in SPARQL query results
+ * 
+ * @example
+ * import { createEncodingManager } from '@wimmics/venus-encoding';
+ * import { VIS_TYPES } from '@wimmics/venus-core';
+ * 
+ * const manager = createEncodingManager(VIS_TYPES.VENUS_BARCHART);
+ * 
+ * // Validate encoding
+ * const userEncoding = { bars: { x: { field: 'category' }, y: { field: 'value' } } };
+ * const result = manager.validateEncoding(userEncoding);
+ * 
+ * // Get merged encoding with defaults
+ * const finalEncoding = manager.mergeEncoding(userEncoding);
+ * 
+ * // Check field references against SPARQL variables
+ * const sparqlVars = ['category', 'value', 'region'];
+ * manager.validateReferencedFields(finalEncoding, sparqlVars);
+ */
 export class EncodingManager {
 	constructor() { }
 
@@ -27,14 +53,50 @@ export class EncodingManager {
 	}
 	
 	/**
-	* Get the default encoding template for this visualization type.
-	* Must be implemented by subclasses.
-	* @returns {Object} Default encoding config
-	*/
+	 * Returns the default encoding template for this visualization type.
+	 * 
+	 * Default encodings include all required marks and sensible defaults for optional
+	 * properties (e.g., default colors, default scales, default interaction settings).
+	 * 
+	 * Must be implemented by subclasses.
+	 * 
+	 * @abstract
+	 * @returns {Object} The default encoding specification for this visualization type.
+	 * @throws {Error} If not implemented by subclass.
+	 * 
+	 * @example
+	 * const defaults = manager.getDefaultEncoding();
+	 * // {
+	 * //   bars: { color: { value: '#ccc' }, stroke: { display: false } },
+	 * //   interactions: { enabled: true, tooltip: true }
+	 * // }
+	 */
 	getDefaultEncoding() {
 		throw new Error("getDefaultEncoding must be implemented by subclass");
 	}
 	
+	/**
+	 * Validates a user-provided encoding specification.
+	 * 
+	 * Checks that the encoding conforms to visualization-specific rules:
+	 * - All required marks are present and valid
+	 * - All field references are valid
+	 * - All scale configurations are valid
+	 * - Tooltip configurations are well-formed
+	 * - Interaction settings are valid
+	 * 
+	 * @param {Object} userEncoding - The user-provided encoding specification.
+	 * @throws {Error} If encoding is invalid. Error message describes the specific problem.
+	 * 
+	 * @example
+	 * try {
+	 *   manager.validateEncoding(userEncoding);
+	 *   console.log('Encoding is valid');
+	 * } catch (error) {
+	 *   console.error('Encoding error:', error.message);
+	 *   // "Encoding error: Invalid encoding: bars.x field is required"
+	 * }
+	 */
 	validateEncoding(userEncoding) {
 		if (!userEncoding || typeof userEncoding !== "object") {
 			throw new Error(
@@ -50,14 +112,72 @@ export class EncodingManager {
 		// return true
 	}
 	
+	/**
+	 * Validates that all field references in the encoding exist in the SPARQL query results.
+	 * 
+	 * Checks every field reference in the encoding against the list of available SPARQL
+	 * variables. This ensures that when data is fetched, all referenced fields will exist.
+	 * 
+	 * @param {Object} encoding - The validated encoding specification.
+	 * @param {string[]} [sparqlVars=[]] - List of variable names from SPARQL query results.
+	 * @throws {Error} If any field reference is not found in sparqlVars.
+	 * 
+	 * @example
+	 * const sparqlQuery = "SELECT ?category ?value ?region { ... }";
+	 * const sparqlVars = ['category', 'value', 'region'];
+	 * manager.validateReferencedFields(encoding, sparqlVars);
+	 * // Throws if encoding references a field like 'nonexistent_field'
+	 */
 	validateReferencedFields(encoding, sparqlVars = []) {
 		this._validateReferencedFieldsExist(encoding, sparqlVars);
 	}
 	
+	/**
+	 * Merges user-provided encoding with visualization-specific defaults.
+	 * 
+	 * Combines user encoding with the default encoding for this visualization type,
+	 * ensuring all required fields have values. The user encoding takes precedence
+	 * over defaults. Performs deep merging for nested objects (marks, scales, interactions).
+	 * 
+	 * Must be implemented by subclasses.
+	 * 
+	 * @abstract
+	 * @param {Object} userEncoding - The user-provided encoding specification (already validated).
+	 * @returns {Object} The merged encoding with all defaults applied and all required fields populated.
+	 * @throws {Error} If not implemented by subclass.
+	 * 
+	 * @example
+	 * // For a bar chart visualization
+	 * const userEncoding = { bars: { color: { field: 'region' } } };
+	 * const merged = manager.mergeEncoding(userEncoding);
+	 * // merged = {
+	 * //   bars: {
+	 * //     color: { field: 'region', scale: { type: 'ordinal', range: 'Set2' } },
+	 * //     stroke: { display: false, color: '#000', width: 1 },
+	 * //     opacity: { value: 1 }
+	 * //   },
+	 * //   x: { field: 'category', scale: { type: 'band' } },
+	 * //   y: { field: 'value', scale: { type: 'linear' } },
+	 * //   interactions: { drag: false, zoom: false, tooltip: true }
+	 * // }
+	 */
  	mergeEncoding(userEncoding) {
 		throw new Error("mergeEncoding must be implemented by subclass");
 	}
 	
+	/**
+	 * Validates visualization-specific encoding requirements.
+	 * 
+	 * This abstract method is implemented by subclasses to check visualization-specific
+	 * constraints. For example, a bar chart might validate that required axis fields are
+	 * present, while a graph visualization might validate node/link specifications.
+	 * 
+	 * Must be implemented by subclasses.
+	 * 
+	 * @abstract
+	 * @param {Object} merged - The merged encoding specification (with defaults applied).
+	 * @throws {Error} If visualization-specific validation fails.
+	 */
 	validateVisSpecificEncoding(merged) {
 		throw new Error("validateEncoding must be implemented by subclass");
 	}

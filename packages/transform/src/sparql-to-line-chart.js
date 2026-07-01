@@ -1,6 +1,31 @@
 import { isQuantitativeScaleType, MARK_TYPES, SCALE_TYPES, VIS_TYPES } from "@wimmics/venus-core";
 import { SparqlToCartesianMapper } from "./sparql-to-cartesian.js";
 
+/**
+ * Transforms SPARQL results into line chart visualization format.
+ * 
+ * Extends SparqlToCartesianMapper with line chart-specific logic for handling
+ * multi-series lines and points. Transforms SPARQL rows into canonical line chart
+ * format with proper x/y field mappings and series grouping.
+ * 
+ * Output format: { rows: [...], chart: {...} }
+ * - rows: Array of data objects with x, y, series, and other encoded fields
+ * - chart: Configuration object with series field and other metadata
+ * 
+ * @extends SparqlToCartesianMapper
+ * 
+ * @example
+ * const mapper = createSparqlMapper(VIS_TYPES.VENUS_LINECHART);
+ * const sparqlResults = { head: { vars: ['date', 'sales', 'region'] }, results: {...} };
+ * const encoding = { 
+ *   x: { field: 'date', scale: { type: 'time' } }, 
+ *   y: { field: 'sales' },
+ *   lines: { color: { field: 'region' } },
+ *   points: { display: true }
+ * };
+ * const mapped = mapper.map(sparqlResults, { encoding });
+ * // Returns { rows: [...], chart: { seriesField: 'region', ... } }
+ */
 export class SparqlToLineChartMapper extends SparqlToCartesianMapper {
 	constructor(options = {}) {
 		super({ ...options, visType: VIS_TYPES.VENUS_LINECHART });

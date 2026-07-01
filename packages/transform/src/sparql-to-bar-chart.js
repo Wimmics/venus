@@ -1,6 +1,30 @@
 import { VIS_TYPES } from "@wimmics/venus-core";
 import { SparqlToCartesianMapper } from "./sparql-to-cartesian.js";
 
+/**
+ * Transforms SPARQL results into bar chart visualization format.
+ * 
+ * Extends SparqlToCartesianMapper with bar chart-specific logic for handling
+ * stacking, grouping, and aggregation. Transforms SPARQL rows into canonical
+ * bar chart format with proper x/y field mappings and stack/group configuration.
+ * 
+ * Output format: { rows: [...], chart: {...} }
+ * - rows: Array of data objects with x, y, color, label, and other encoded fields
+ * - chart: Configuration object with stack mode, group field, and other metadata
+ * 
+ * @extends SparqlToCartesianMapper
+ * 
+ * @example
+ * const mapper = createSparqlMapper(VIS_TYPES.VENUS_BARCHART);
+ * const sparqlResults = { head: { vars: ['year', 'revenue', 'region'] }, results: {...} };
+ * const encoding = { 
+ *   x: { field: 'year' }, 
+ *   y: { field: 'revenue' },
+ *   bars: { color: { field: 'region' }, stack: true }
+ * };
+ * const mapped = mapper.map(sparqlResults, { encoding });
+ * // Returns { rows: [...], chart: { stack: true, groupField: 'region', ... } }
+ */
 export class SparqlToBarChartMapper extends SparqlToCartesianMapper {
 	constructor(options = {}) {
 		super({ ...options, visType: VIS_TYPES.VENUS_BARCHART });

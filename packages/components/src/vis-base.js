@@ -4,7 +4,50 @@ import { LegendManager } from "../../visual-mapping";
 import { emptyVisualArtifacts, createVisualArtifactsCompiler } from "../../visual-mapping";
 
 
+/**
+ * Base class for all VENUS visualization web components.
+ * 
+ * VenusBase provides the core lifecycle and API for creating interactive web components
+ * that visualize data from SPARQL endpoints. Subclasses (VenusGraph, VenusBarchart, etc.)
+ * implement visualization-specific logic by overriding abstract methods.
+ *
+ * @extends HTMLElement
+ *
+ * @example
+ * // As a web component in HTML
+ * <venus-graph
+ *   sparqlEndpoint="https://dbpedia.org/sparql"
+ *   sparqlQuery="SELECT ?source ?target WHERE { ?source dbo:starring ?target . } LIMIT 30"
+ *   encoding='{"nodes": {"color": {"field": "type"}}, "links": {"color": {"value": "#ccc"}}}'
+ *   width="100%"
+ *   height="600px"
+ * ></venus-graph>
+ *
+ * @example
+ * // Programmatic usage with property API
+ * const graph = document.querySelector('venus-graph');
+ * graph.sparqlEndpoint = 'https://dbpedia.org/sparql';
+ * graph.sparqlQuery = 'SELECT ?source ?target { ... }';
+ * graph.encoding = { nodes: { color: { field: 'type' } } };
+ * graph.launch(); // Fetch data and render
+ */
 export class VenusBase extends HTMLElement {
+	/**
+	 * Specifies which HTML attributes should trigger attributeChangedCallback.
+	 * 
+	 * Observed attributes are converted to properties. For complex values (encoding, sparqlResult),
+	 * use JSON stringified attribute values.
+	 * 
+	 * @returns {string[]} List of attribute names to monitor:
+	 *   - 'width': Component width (string like '800px' or '100%')
+	 *   - 'height': Component height (string like '600px' or '100%')
+	 *   - 'resize': Enable/disable responsive resize behavior ('true' or 'false')
+	 *   - 'sparqlQuery': SPARQL SELECT query string
+	 *   - 'sparqlEndpoint': SPARQL endpoint URL
+	 *   - 'sparqlResult': Pre-computed SPARQL JSON result (as JSON string)
+	 *   - 'encoding': Visual encoding specification (as JSON string)
+	 *   - 'proxy': CORS proxy URL for SPARQL requests
+	 */
 	static get observedAttributes() {
 		return ["width", "height", "resize", "sparqlQuery", "sparqlEndpoint", "sparqlResult", "encoding", "proxy"];
 	}
@@ -111,6 +154,17 @@ export class VenusBase extends HTMLElement {
 		}
 	}
 	
+	/**
+	 * Gets or sets the SPARQL SELECT query used to fetch visualization data.
+	 * 
+	 * Setting this property invalidates previously mapped data, causing a re-render on next `launch()` call.
+	 * 
+	 * @type {string}
+	 * @default undefined
+	 * 
+	 * @example
+	 * component.sparqlQuery = "SELECT ?category ?value { ... }";
+	 */
 	set sparqlQuery(query) {
 		const data = this.internalData.get(this) || {};
 
@@ -125,6 +179,17 @@ export class VenusBase extends HTMLElement {
 		return this.internalData.get(this)?.sparqlQuery;
 	}
 	
+	/**
+	 * Gets or sets the SPARQL endpoint URL.
+	 * 
+	 * The endpoint is used to execute SPARQL queries when no pre-computed `sparqlResult` is provided.
+	 * 
+	 * @type {string}
+	 * @default undefined
+	 * 
+	 * @example
+	 * component.sparqlEndpoint = "https://dbpedia.org/sparql";
+	 */
 	set sparqlEndpoint(endpoint) {
 		const data = this.internalData.get(this) || {};
 		data.sparqlEndpoint = endpoint;
@@ -134,6 +199,24 @@ export class VenusBase extends HTMLElement {
 		return this.internalData.get(this)?.sparqlEndpoint;
 	}
 	
+	/**
+	 * Gets or sets pre-computed SPARQL JSON result data.
+	 * 
+	 * When `sparqlResult` is set, it is used instead of executing `sparqlQuery` against `sparqlEndpoint`.
+	 * This is useful for pre-fetching data or integrating with server-side SPARQL execution.
+	 * 
+	 * Setting this property invalidates previously mapped data, causing a re-render on next `render()` call.
+	 * 
+	 * @type {Object}
+	 * @default undefined
+	 * 
+	 * @example
+	 * const results = { 
+	 *   head: { vars: ['category', 'value'] },
+	 *   results: { bindings: [ ... ] }
+	 * };
+	 * component.sparqlResult = results;
+	 */
 	set sparqlResult(jsonData) {
 		const data = this.internalData.get(this) || {};
 
@@ -148,6 +231,27 @@ export class VenusBase extends HTMLElement {
 		return this.internalData.get(this)?.sparqlResult;
 	}
 	
+	/**
+	 * Gets or sets the visual encoding specification.
+	 * 
+	 * The encoding object defines how data fields map to visual channels (color, size, shape, etc.).
+	 * Setting this property validates and merges the encoding with defaults, then triggers a re-render.
+	 * 
+	 * @type {Object}
+	 * @default {} (uses encoding manager defaults)
+	 * 
+	 * @example
+	 * component.encoding = {
+	 *   nodes: {
+	 *     color: { field: 'type', scale: { type: 'ordinal', range: 'Set1' } },
+	 *     size: { field: 'degree', scale: { type: 'sqrt', range: [5, 20] } }
+	 *   },
+	 *   links: { color: { value: '#ccc' } },
+	 *   interactions: { drag: true, zoom: true }
+	 * };
+	 * 
+	 * @throws {Error} If encoding is invalid (missing required fields, unknown field names, etc.)
+	 */
 	set encoding(mapping) {
 		const data = this.internalData.get(this) || {};
 		data.encoding = mapping;
@@ -158,6 +262,18 @@ export class VenusBase extends HTMLElement {
 		return this.internalData.get(this)?.encoding;
 	}
 	
+	/**
+	 * Gets or sets the CORS proxy URL for SPARQL requests.
+	 * 
+	 * Use this when the SPARQL endpoint does not support CORS. The proxy will forward 
+	 * SPARQL requests from the browser to the endpoint server-side.
+	 * 
+	 * @type {string}
+	 * @default undefined
+	 * 
+	 * @example
+	 * component.proxy = "http://localhost:3001/sparql-proxy";
+	 */
 	set proxy(url) {
 		const data = this.internalData.get(this) || {};
 		data.proxy = url;
@@ -167,10 +283,45 @@ export class VenusBase extends HTMLElement {
 		return this.internalData.get(this)?.proxy;
 	}
 	
+	/**
+	 * Returns a deep copy of the current visual encoding specification.
+	 * 
+	 * Use this to inspect the active encoding after merging with defaults.
+	 * Modifications to the returned object do not affect the component's encoding.
+	 * 
+	 * @returns {Object} A cloned copy of the merged visual encoding specification.
+	 * 
+	 * @example
+	 * const currentEncoding = component.getEncoding();
+	 * console.log(currentEncoding.nodes.color.scale.type); // 'ordinal'
+	 */
 	getEncoding() {
 		return JSON.parse(JSON.stringify(this.visualEncoding));
 	}
 	
+	/**
+	 * Fetches data from the SPARQL endpoint and triggers visualization rendering.
+	 * 
+	 * This is the main entry point for interactive visualization. It:
+	 * 1. Fetches data from the configured endpoint using the SPARQL query
+	 * 2. Transforms raw SPARQL results into visualization-specific data structures
+	 * 3. Validates data against the visual encoding specification
+	 * 4. Renders the visualization
+	 * 
+	 * Alternatively, pre-computed SPARQL results can be provided via `sparqlResult` property,
+	 * in which case `launch()` will use those results instead of executing the query.
+	 * 
+	 * @async
+	 * @returns {Promise<void>} Resolves when rendering completes.
+	 * 
+	 * @throws {Error} If data fetching fails, data transformation fails, or encoding validation fails.
+	 * 
+	 * @example
+	 * component.sparqlEndpoint = "https://dbpedia.org/sparql";
+	 * component.sparqlQuery = "SELECT ?category ?value { ... }";
+	 * component.encoding = { bars: { x: { field: 'category' }, y: { field: 'value' } } };
+	 * await component.launch(); // Fetch and render
+	 */
 	async launch() {
 		this._resetVisualizationState({ keepEncoding: true });
 
@@ -192,14 +343,11 @@ export class VenusBase extends HTMLElement {
 
 			const raw = fetchResult.raw;
 
-			console.log("fetched data = ", raw)
-
 			if (raw?.head?.vars)
 				this.encodingManager.validateReferencedFields(this.visualEncoding, raw.head.vars);
 
 			const mapped = this.mapper.map(raw, { encoding: this.visualEncoding })
 
-			console.log("mapped data = ", mapped)
 
 			this._setDataFromBuildResult(mapped);
 			this.sparqlData = raw;
@@ -211,11 +359,27 @@ export class VenusBase extends HTMLElement {
 		}
 	}
 	
+	/**
+	 * Updates the visual encoding specification and re-renders the visualization.
+	 * 
+	 * This method validates the encoding, merges it with visualization-specific defaults,
+	 * re-transforms data according to the new encoding, and re-renders.
+	 * 
+	 * Use this to update visual mappings after the initial render, e.g., to change colors,
+	 * sizes, or interaction settings without re-fetching data.
+	 * 
+	 * @param {Object} encoding - The visual encoding specification.
+	 * @throws {Error} If encoding validation fails.
+	 * 
+	 * @example
+	 * component.setEncoding({
+	 *   nodes: { color: { field: 'type', scale: { type: 'ordinal', range: 'Dark2' } } }
+	 * }); // Updates node colors and re-renders
+	 */
 	setEncoding(encoding) {
 		this.encodingManager.validateEncoding(encoding) // If anything goes wrong here an error will be thrown
 
 		this.visualEncoding = this.encodingManager.mergeEncoding(encoding) // If encoding is valid, we merge it with the defaults to cover optional fields
-		console.log('final encoding = ', this.visualEncoding)
 
 		this._visualArtifacts = emptyVisualArtifacts()
 		this.legendManager?.destroyLegends()
