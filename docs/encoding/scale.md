@@ -24,12 +24,32 @@ These properties apply to all scale types.
 
 | Property | Type | Description |
 |---|---|---|
-| `type` | `string` | Scale algorithm. Possible values: `ordinal`, `linear`, `sqrt`, `log`, `pow`, `count`, `quantitative`, `sequential`.<br>**Default:** channel-dependent (usually auto). |
+| `type` | `string` | Scale algorithm. Possible values: `ordinal`, `linear`, `sqrt`, `log`, `pow`, `count`, `quantitative`, `sequential`, `threshold`, `band`, `point`.<br>**Default:** channel-dependent (usually auto). |
 | `domain` | `array` | Input extent or categories for mapping. Possible values: numeric pair (`[min, max]`) or categorical value list.<br>**Default:** auto-computed from data. |
 | `range` | `array` / `string` | Output visual range. Interpretation depends on the visual channel (see below).<br>**Default:** adaptive range from renderer. |
+| `exponent` | `number` | Exponent value for `pow` scale type (e.g., `0.5` for square root, `2` for quadratic).<br>**Default:** `1`. |
+| `padding` | `number` | Padding factor for `band` and `point` scale types, controlling spacing. Valid range: 0 to 1.<br>**Default:** `0.1` for band, `0.5` for point. |
 | `binning.method` | `string` | Automatic threshold method. Possible values: `jenks`, `quartiles`.<br>**Default:** `jenks`. |
 | `binning.bins` | `number` | Number of bins for auto-thresholding. Must be a positive integer.<br>**Default:** `5`. |
 | `binning.breaks` | `number[]` | Manual bin boundaries in ascending order.<br>**Default:** none (auto method used). |
+
+### Scale Type Descriptions
+
+The following scale types are available:
+
+| Scale Type | Use Case | Example |
+|---|---|---|
+| `ordinal` | Categorical data mapping to discrete categories | `{ type: "ordinal", range: "Set3" }` maps distinct categories to color palette |
+| `linear` | Continuous numeric data with proportional mapping | `{ type: "linear", range: [0, 100] }` maps data range linearly |
+| `sqrt` | Continuous data emphasizing smaller values | `{ type: "sqrt", range: [5, 20] }` maps area proportionally for size encoding |
+| `log` | Continuous data spanning multiple orders of magnitude | `{ type: "log", range: [1, 1000] }` compresses large ranges |
+| `pow` | Continuous data with custom exponent | `{ type: "pow", exponent: 2, range: [0, 100] }` applies power function |
+| `count` | Aggregated count data | `{ type: "count", range: [1, 20] }` maps occurrence frequency to visual value |
+| `quantitative` | Automatic type selection for quantitative data | Used internally for color scale normalization |
+| `sequential` | Continuous data for color gradients | Used internally for sequential color schemes |
+| `threshold` | Binned data with discrete intervals | Used with `binning` configuration for categorized ranges |
+| `band` | Categorical positioning with equal spacing | Used internally for cartesian axis layout |
+| `point` | Point positioning with minimal spacing | Used internally for cartesian axis layout |
 
 
 ## Color Scales

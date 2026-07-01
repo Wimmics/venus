@@ -12,13 +12,6 @@ Colour can be used to divide the diagram into different categories or to show th
 
 ## Minimal Template
 
-Sankey diagrams are defined using the `nodes` and `links` marks. The table below summarizes their purpose and links to the corresponding documentation, where all supported channels and attributes are described.
-
-| Marks | Description | Documentation | Mandatory
-|---|---|---|:---:|
-| `nodes` | Defines the different stages of the process. | See [Nodes](../../encoding/marks/nodes.md) | ✓ 
-| `links` | Defines and styles the flows between stages. | See [Links](../../encoding/marks/links.md) | ✓ |
-
 The code snippet below provides a minimal template for creating a sankey diagram. Additional channels and attributes may be required according to the level of styling desired, as explained hereafter.
 
 ```html
@@ -50,11 +43,13 @@ The code snippet below provides a minimal template for creating a sankey diagram
 </script>
 ```
 
+Sankey diagrams are defined using the `nodes` and `links` marks. 
+
 ## Sankey stages
 
 Sankey stages are defined through the `nodes.fields` property, which accepts either string or object entries.
 
-### String entries
+#### String entries
 
 A string entry specifies the SPARQL variable whose bindings define the nodes of a stage.
 
@@ -62,9 +57,9 @@ A string entry specifies the SPARQL variable whose bindings define the nodes of 
 nodes: {
   fields: ["country", "city", "organization"]
 }
-````
+```
 
-### Object entries
+#### Object entries
 
 An object entry provides additional configuration options for a stage.
 
@@ -89,8 +84,6 @@ nodes: {
   ]
 }
 ```
-
-
 
 ### Stage sorting
 

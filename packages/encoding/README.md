@@ -26,7 +26,6 @@ graph.encoding = {
     enabled: true,
     drag: true,
     zoom: true,
-    nodeDetailsPanel: false,
     tooltip: true
   },
   nodes: {
@@ -64,7 +63,6 @@ graph.encoding = {
 - `enabled`: `true | false` global interaction switch (default `true`)
 - `drag`: enable/disable node drag and drop (default `true`)
 - `zoom`: enable/disable pan and zoom (default `true`)
-- `nodeDetailsPanel`: enable/disable internal node details panel (`venus-uri-meta`) lifecycle in `venus-graph` (default `false`)
 - `tooltip`: `true | false` global tooltip toggle (default `true`)
 
 Tooltip field selection is now defined at mark level:

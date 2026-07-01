@@ -9,8 +9,6 @@ export class CartesianEncodingManager extends EncodingManager {
     
     mergeEncoding(userEncoding) {
         const defaults = this.getDefaultEncoding();
-        console.log('user encoding = ', userEncoding)
-        console.log("default encoding = ", defaults)
         const merged = {
             ...defaults,
             ...(userEncoding || {}),
@@ -31,8 +29,6 @@ export class CartesianEncodingManager extends EncodingManager {
         for (const mark of this.getMarks()) {
             merged[mark] = this._mergeMark(defaults, userEncoding, mark);
         }
-
-        console.log("merged encoding = ", merged)
         
         return merged;
     }

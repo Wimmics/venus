@@ -9,7 +9,6 @@ const registry = new Map([
 ]);
 
 function assertNonEmptyString(name, v) {
-  console.log(name, v)
   if (typeof v !== "string" || v.trim() === "") {
     throw new Error(`${name} must be a non-empty string`);
   }

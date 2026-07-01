@@ -311,7 +311,6 @@ export class SparqlToBarChartMapper extends SparqlToCartesianMapper {
 			}
 		}
 
-		console.log("stacked bars = ", bars)
 		return bars;
 	}
 

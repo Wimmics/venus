@@ -22,7 +22,7 @@ graph.sparqlQuery = "SELECT ?source ?target WHERE { ?source dbo:starring ?target
 
 graph.encoding = {
   title: "Actors Co-starring Graph",
-  interactions: { nodeDetailsPanel: true }
+  interactions: { drag: true, zoom: true }
 };
 
 graph.launch();

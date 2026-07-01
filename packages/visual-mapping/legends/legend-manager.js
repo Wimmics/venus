@@ -5,7 +5,6 @@ export class LegendManager {
         this._legends = [] // Rendered legends
 
         this.chartContainer = container // web component to which the legends are attached
-        console.log("chartContainer = ", this.chartContainer)
     }
 
     // Public methods
@@ -62,7 +61,6 @@ export class LegendManager {
         
         const groups = new Map();
         this._legends.forEach((legend) => {
-            console.log("legend = ", legend)
             const legendPosition = legend?._encoding?.legend?.position || position;
             if (!groups.has(legendPosition)) groups.set(legendPosition, []);
             groups.get(legendPosition).push(legend);

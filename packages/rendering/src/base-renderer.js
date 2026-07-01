@@ -24,8 +24,6 @@ export default class BaseRenderer {
 	render(payload = {}, visualArtifacts = null) {
 		this._ingestRenderPayload(payload);
 		this.visualArtifacts = visualArtifacts || this.visualArtifacts || {}
-
-		console.log("visual artifacts =", this.visualArtifacts)
 		
 		if (!this.container) throw new Error(`${this.constructor.name} requires a container element`);
 		

@@ -38,8 +38,8 @@ export class VenusSankey extends VenusBase {
 	_hasData() {
 		return Array.isArray(this.nodes) && this.nodes.length > 0;
 	}
-	
-	// TODO: check if these methods are useful and whether we can merge them
+
+	// NOTE: _getRenderPayload is called by vis-base during render lifecycle
 	_getRenderPayload() {
 		return this._getData()
 	}

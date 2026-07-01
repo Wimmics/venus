@@ -486,8 +486,6 @@ export class D3ScaleFactory {
 				}
 		}
 
-		console.log("[resolveDomain] domainResult = ", domainResult)
-			
 		return domainResult;
 	}
 		

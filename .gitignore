@@ -84,3 +84,11 @@ Thumbs.db
 example-apps/react
 example-apps/angular
 examples/cache/*.json
+
+#####################
+# IA audit files
+#####################
+DOCUMENTATION_CODE_COMPARISON.md 
+INTERACTIONS_VERIFICATION_REPORT.md 
+DEVELOPER_DOCUMENTATION_AUDIT.md
+DEVELOPER_DOCUMENTATION_STATUS.md

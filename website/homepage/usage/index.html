@@ -50,38 +50,18 @@
 		
 		<section id="usage" class="w3-row-padding w3-light-grey w3-padding-64 w3-container top-gap">
 			<div class="w3-content">
-				<h2>Start Using Venus</h2>
-				<p>Create a target element in your HTML:</p>
-				<pre class="venus-code-block"><code>&lt;venus-graph id="vis" width="100%" height="520"&gt;&lt;/venus-graph&gt;</code></pre>
+				<h2>Configuration Approaches</h2>
+				<p>VENUS components support two complementary configuration approaches: <strong>Property-Based</strong> (via JavaScript) and <strong>Attribute-Based</strong> (via HTML). Choose based on your use case, or combine both for flexibility.</p>
 				
-				<p>Then configure and launch it from JavaScript:</p>
-				<pre class="venus-code-block"><code>const graph = document.querySelector("#vis");
-					
-graph.sparqlEndpoint = "https://dbpedia.org/sparql";
-
-graph.sparqlQuery = `
-SELECT ?source ?target WHERE {
-	?source dbo:starring ?target .
-} LIMIT 30
-`;
-
-graph.encoding = {
-	title: "Actors Co-starring Graph",
-	interactions: { nodeDetailsPanel: true }
-};
-
-graph.launch();</code></pre>
-				</div>
-			</section>
-			<section id="usage" class="w3-row-padding w3-light-grey w3-padding-64 w3-container top-gap">
-				<div class="w3-content">
-					<h2>Complete HTML Example</h2>
-					<pre class="venus-code-block"><code>&lt;!doctype html&gt;
+				<h3>Approach 1: Property-Based API (Recommended for Dynamic Applications)</h3>
+				<p>Configure components programmatically via JavaScript properties. This approach is most flexible and recommended for interactive applications:</p>
+				
+				<pre class="venus-code-block"><code>&lt;!doctype html&gt;
 &lt;html&gt;
 &lt;head&gt;
 	&lt;meta charset="utf-8" /&gt;
 	&lt;meta name="viewport" content="width=device-width,initial-scale=1" /&gt;
-	&lt;title&gt;Embedding Venus&lt;/title&gt;
+	&lt;title&gt;Venus Property-Based API&lt;/title&gt;
 &lt;/head&gt;
 &lt;body&gt;
 	&lt;venus-graph id="vis" width="100%" height="520"&gt;&lt;/venus-graph&gt;
@@ -91,25 +71,186 @@ graph.launch();</code></pre>
 
 		const graph = document.querySelector("#vis");
 		
+		// Set data endpoints
 		graph.sparqlEndpoint = "https://dbpedia.org/sparql";
-		
 		graph.sparqlQuery = `
-		SELECT ?source ?target WHERE {
-			?source dbo:starring ?target .
-		} LIMIT 30
+			SELECT ?source ?target 
+			WHERE {
+				?source dbo:starring ?target
+			} LIMIT 30
 		`;
-
+		
+		// Configure visual encoding as a JavaScript object
 		graph.encoding = {
-			title: "Actors Co-starring Graph",
-			interactions: { nodeDetailsPanel: true }
+			nodes: { field: "source" },
+			links: { type: "directional" },
+			interactions: { tooltip: true }
 		};
 
+		// Launch the visualization
 		graph.launch();
 	&lt;/script&gt;
 &lt;/body&gt;
 &lt;/html&gt;</code></pre>
-					</div>
-				</section>
+
+				<p><strong>Advantages:</strong></p>
+				<ul>
+					<li>Clean, intuitive API</li>
+					<li>Full control via JavaScript</li>
+					<li>Complex objects (encoding) are easier to define</li>
+					<li>Perfect for reactive/dynamic configurations</li>
+					<li>Better IDE support and type checking</li>
+				</ul>
+
+				<hr style="margin: 40px 0;">
+
+				<h3>Approach 2: Attribute-Based API (Recommended for Static HTML)</h3>
+				<p>Configure components directly in HTML using attributes. This approach is ideal for static pages and server-side rendering:</p>
+				
+				<pre class="venus-code-block"><code>&lt;!doctype html&gt;
+&lt;html&gt;
+&lt;head&gt;
+	&lt;meta charset="utf-8" /&gt;
+	&lt;meta name="viewport" content="width=device-width,initial-scale=1" /&gt;
+	&lt;title&gt;Venus Attribute-Based API&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+	&lt;script type="module"&gt;
+		import "@wimmics/venus-elements";
+	&lt;/script&gt;
+
+	&lt;!-- Configure entirely in HTML attributes --&gt;
+	&lt;venus-graph 
+		id="vis"
+		width="100%" 
+		height="520"
+		sparqlEndpoint="https://dbpedia.org/sparql"
+		sparqlQuery="SELECT ?source ?target WHERE { ?source dbo:starring ?target } LIMIT 30"
+		encoding='{"nodes":{"field":"source"},"links":{"type":"directional"},"interactions":{"tooltip":true}}'&gt;
+	&lt;/venus-graph&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+				<p><strong>Advantages:</strong></p>
+				<ul>
+					<li>Declarative HTML configuration</li>
+					<li>No JavaScript needed for basic usage</li>
+					<li>Suitable for static pages and server-side rendering</li>
+					<li>Follows web component conventions</li>
+					<li>Configuration visible in HTML source</li>
+				</ul>
+
+				<p><strong>Important Considerations for Attribute-Based API:</strong></p>
+				<ul style="color: #d9534f;">
+					<li><strong>JSON Escaping:</strong> Complex objects must be valid JSON strings. Use single quotes for the attribute value and double quotes for JSON keys, or escape properly.</li>
+					<li><strong>Character Limits:</strong> While HTML attributes have no hard limit, very long JSON strings can be unwieldy. Consider using properties for complex encodings.</li>
+					<li><strong>String Values Only:</strong> Attribute values are always strings. JSON objects and arrays must be passed as JSON strings and will be parsed internally.</li>
+					<li><strong>Error Handling:</strong> Invalid JSON in attributes will be logged to console. Check browser dev tools if visualization doesn't render.</li>
+				</ul>
+
+				<hr style="margin: 40px 0;">
+
+				<h3>Approach 3: Hybrid API (Best of Both Worlds)</h3>
+				<p>Combine both approaches for maximum flexibility. Configure static data via attributes, then update dynamically via properties:</p>
+				
+				<pre class="venus-code-block"><code>&lt;!doctype html&gt;
+&lt;html&gt;
+&lt;head&gt;
+	&lt;meta charset="utf-8" /&gt;
+	&lt;meta name="viewport" content="width=device-width,initial-scale=1" /&gt;
+	&lt;title&gt;Venus Hybrid API&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+	&lt;!-- Configure basic settings in HTML --&gt;
+	&lt;venus-graph 
+		id="vis"
+		width="100%" 
+		height="520"
+		sparqlEndpoint="https://dbpedia.org/sparql"&gt;
+	&lt;/venus-graph&gt;
+
+	&lt;label&gt;
+		Search: &lt;input type="text" id="search" placeholder="Enter actor name" /&gt;
+	&lt;/label&gt;
+
+	&lt;script type="module"&gt;
+		import "@wimmics/venus-elements";
+
+		const graph = document.querySelector("#vis");
+		const searchInput = document.querySelector("#search");
+
+		// Initial setup via properties
+		graph.encoding = {
+			nodes: { field: "source" },
+			links: { type: "directional" }
+		};
+
+		// Handle user input
+		searchInput.addEventListener("keyup", (e) => {
+			const query = `
+				SELECT ?source ?target 
+				WHERE {
+					?source dbo:starring ?target ;
+							foaf:name "${e.target.value}"
+				} LIMIT 30
+			`;
+			
+			// Update via property
+			graph.sparqlQuery = query;
+			graph.launch();
+		});
+	&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+				<p><strong>Advantages:</strong></p>
+				<ul>
+					<li>Declarative defaults in HTML</li>
+					<li>Dynamic updates via JavaScript</li>
+					<li>Cleanest code for interactive applications</li>
+					<li>Separates configuration from behavior</li>
+				</ul>
+			</div>
+		</section>
+
+		<section id="usage" class="w3-row-padding w3-light-grey w3-padding-64 w3-container top-gap">
+			<div class="w3-content">
+				<h2>API Recommendations</h2>
+
+				<table class="w3-table w3-striped w3-border">
+					<tr style="background-color: #f1f1f1;">
+						<th>Use Case</th>
+						<th>Recommended Approach</th>
+						<th>Example</th>
+					</tr>
+					<tr>
+						<td><strong>Static web page</strong></td>
+						<td>Attribute-Based</td>
+						<td>Render component in server template with all settings in HTML</td>
+					</tr>
+					<tr>
+						<td><strong>Interactive dashboard</strong></td>
+						<td>Property-Based</td>
+						<td>Update visualization on user interaction or data changes</td>
+					</tr>
+					<tr>
+						<td><strong>React/Vue/Angular app</strong></td>
+						<td>Property-Based</td>
+						<td>Set properties in component lifecycle (onMounted, useEffect)</td>
+					</tr>
+					<tr>
+						<td><strong>Server-side rendering</strong></td>
+						<td>Attribute-Based</td>
+						<td>Generate HTML with attributes from server; enhance with JavaScript</td>
+					</tr>
+					<tr>
+						<td><strong>Simple query tool</strong></td>
+						<td>Hybrid</td>
+						<td>Endpoint in attributes, query input via JavaScript</td>
+					</tr>
+				</table>
+			</div>
+		</section>
 				
 				<div data-include="/templates/footer.html"></div>
 			</body>

@@ -6,7 +6,7 @@ import { emptyVisualArtifacts, createVisualArtifactsCompiler } from "../../visua
 
 export class VenusBase extends HTMLElement {
 	static get observedAttributes() {
-		return ["width", "height", "resize"];
+		return ["width", "height", "resize", "sparqlQuery", "sparqlEndpoint", "sparqlResult", "encoding", "proxy"];
 	}
 	
 	constructor({ componentName, visType, defaultWidth = 800, defaultHeight = 600 } = {}) {
@@ -46,6 +46,9 @@ export class VenusBase extends HTMLElement {
 		this.resizeEnabled = this._parseBooleanAttributeValue(this.getAttribute("resize"), true);
 		this._applyResizeBehavior();
 
+		// Parse data attributes from HTML
+		this._initializeDataAttributesFromHTML();
+
 		this.legendManager = new LegendManager({ container: this._getContainerElement() }) // Init legend manager after container was created
 
 		this.render();
@@ -74,6 +77,37 @@ export class VenusBase extends HTMLElement {
 			this.resizeEnabled = this._parseBooleanAttributeValue(newValue, true);
 			this._applyResizeBehavior();
 			this.render();
+			return;
+		}
+		if (name === "sparqlQuery") {
+			this.sparqlQuery = newValue;
+			return;
+		}
+		if (name === "sparqlEndpoint") {
+			this.sparqlEndpoint = newValue;
+			return;
+		}
+		if (name === "sparqlResult") {
+			try {
+				const parsed = JSON.parse(newValue);
+				this.sparqlResult = parsed;
+			} catch (e) {
+				console.error("Invalid sparqlResult JSON attribute:", e.message);
+			}
+			return;
+		}
+		if (name === "encoding") {
+			try {
+				const parsed = JSON.parse(newValue);
+				this.encoding = parsed;
+			} catch (e) {
+				console.error("Invalid encoding JSON attribute:", e.message);
+			}
+			return;
+		}
+		if (name === "proxy") {
+			this.proxy = newValue;
+			return;
 		}
 	}
 	
@@ -345,9 +379,41 @@ export class VenusBase extends HTMLElement {
 	_setDataFromBuildResult() {
 		throw new Error("_setDataFromBuildResult must be implemented by subclass");
 	}
-	
+
+	_initializeDataAttributesFromHTML() {
+		// Parse data attributes from HTML if present
+		const queryAttr = this.getAttribute("sparqlQuery");
+		if (queryAttr) this.sparqlQuery = queryAttr;
+
+		const endpointAttr = this.getAttribute("sparqlEndpoint");
+		if (endpointAttr) this.sparqlEndpoint = endpointAttr;
+
+		const resultAttr = this.getAttribute("sparqlResult");
+		if (resultAttr) {
+			try {
+				const parsed = JSON.parse(resultAttr);
+				this.sparqlResult = parsed;
+			} catch (e) {
+				console.error("Invalid sparqlResult JSON attribute:", e.message);
+			}
+		}
+
+		const encodingAttr = this.getAttribute("encoding");
+		if (encodingAttr) {
+			try {
+				const parsed = JSON.parse(encodingAttr);
+				this.encoding = parsed;
+			} catch (e) {
+				console.error("Invalid encoding JSON attribute:", e.message);
+			}
+		}
+
+		const proxyAttr = this.getAttribute("proxy");
+		if (proxyAttr) this.proxy = proxyAttr;
+	}
+
 	_resetDataState() {
-		throw new Error ("_resetDataState must be implemented by subclass")
+		throw new Error("_resetDataState must be implemented by subclass");
 	}
 
 	_hasData() {

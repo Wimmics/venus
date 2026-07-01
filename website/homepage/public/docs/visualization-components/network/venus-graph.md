@@ -8,14 +8,6 @@ Nodes are drawn as circles and links are displayed as simple lines connected bet
 
 By mapping out connected systems, node-link diagrams can be used to interpret the structure of a graph by looking for any clustering of the nodes, how densely nodes are connected or how the diagram layout is arranged.
 
-
-Node-link diagrams are defined using the `nodes` and `links` marks. The table below summarizes their purpose and links to the corresponding documentation, where all supported channels and attributes are described.
-
-| Encoding Property | Description | Documentation | Mandatory
-|---|---|---|:---:|
-| `nodes` | Defines node identity and node visual channels (color, size, labels, stroke, tooltip). | See [Nodes](../../encoding/marks/nodes.md) | ✓ 
-| `links` | Defines how links are built and styled (type, relation/context, color, distance, tooltip). | See [Links](../../encoding/marks/links.md) | ✓ (except directional)
-
 **Visualization component:** `<venus-graph>`
 
 ## Minimal template
@@ -46,7 +38,9 @@ The code snippet below provides a minimal template for creating a node-link diag
   graph.launch();
 </script>
 ```
-## Marks and Properties
+## Marks and Channels
+
+Node-link diagrams are defined using the `nodes` and `links` marks. 
 
 ### Nodes
 
@@ -298,8 +292,7 @@ encoding: {
   interactions: {
     tooltip: true,
     drag: true,
-    zoom: true,
-    nodeDetailsPanel: true
+    zoom: true
   }
 }
 ```
@@ -343,8 +336,7 @@ encoding: {
   interactions: {
     tooltip: true,
     drag: true,
-    zoom: true,
-    nodeDetailsPanel: false
+    zoom: true
   }
 }
 ```

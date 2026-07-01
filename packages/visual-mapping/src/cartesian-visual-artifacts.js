@@ -24,7 +24,6 @@ export class CartesianVisualArtifacts extends VisualArtifacts {
 
 		// Resolve domains
 		const domainResult = this._getAxesDomain({ encoding: layoutEncoding, data: rows, chart, isHorizontal })
-		console.log("domainResult = ", domainResult)
 
 		// Build axis specs from resolved domains
 		const specsResult = this._getAxesSpecs({ encoding: layoutEncoding, domainResult })

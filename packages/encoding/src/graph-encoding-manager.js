@@ -6,8 +6,6 @@ export class GraphEncodingManager extends EncodingManager {
 
     mergeEncoding(userEncoding) {
         const defaults = this.getDefaultEncoding();
-		console.log("user encoding = ", userEncoding)
-		console.log("default encoding = ", defaults)
 
 		const mergedEncoding = {
 			...defaults,

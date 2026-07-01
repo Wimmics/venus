@@ -16,6 +16,6 @@ Network-based visualizations are appropriate when:
 
 VENUS currently supports the following network-based visualization techniques:
 
-- **Node-link Diagram (`venus-graph`):** General-purpose network layout where node positions are computed using physical simulation to reveal structure and clusters.
-- **Sankey diagram (`venus-sankey`):** Flow-oriented network layout where entities are organized into ordered stages and link thickness encodes magnitude.
+- **Node-link Diagram ([`venus-graph`](./venus-graph.md)):** General-purpose network layout where node positions are computed using physical simulation to reveal structure and clusters.
+- **Sankey diagram ([`venus-sankey`](./venus-sankey.md)):** Flow-oriented network layout where entities are organized into ordered stages and link thickness encodes magnitude.
 
