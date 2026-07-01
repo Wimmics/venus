@@ -1,0 +1,71 @@
+.menu-container{
+    padding: 10px;
+}
+
+.menu-section {
+    margin-bottom: 20px;
+}
+
+.section-title {
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.section-rows {
+    display: grid;
+    row-gap: 8px;
+}
+
+.sector {
+    display: grid;
+    grid-template-columns: 90px 1fr 32px;
+    align-items: center;
+    column-gap: 10px;
+}
+
+.sector-label {
+    font-weight: 500;
+}
+
+.sector select {
+    width: 100%;
+    min-width: 120px;
+    padding: 4px 6px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #f8f8f8;
+}
+
+.add-button {
+    width: 28px;
+    height: 28px;
+
+    border: 1px solid #bbb;
+    border-radius: 4px;
+
+    background: #f8f8f8;
+    cursor: pointer;
+}
+
+.add-button:hover {
+    background: #ececec;
+}
+
+.options {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.options label {
+    font-size: 0.9em;
+    color: #666;
+    min-width: 45px;
+}
+
+.options select {
+    padding: 4px 8px;
+    border: 1px solid #cfcfcf;
+    border-radius: 4px;
+    background: white;
+}

@@ -83,7 +83,7 @@ Thumbs.db
 
 example-apps/react
 example-apps/angular
-examples/cache/*.json
+examples/cache
 
 #####################
 # IA audit/journal files
@@ -93,3 +93,9 @@ INTERACTIONS_VERIFICATION_REPORT.md
 DEVELOPER_DOCUMENTATION_AUDIT.md
 DEVELOPER_DOCUMENTATION_STATUS.md
 JSDOC_IMPLEMENTATION_STATUS.md
+
+EDITOR_ARCHITECTURE.md
+EDITOR_QUICK_REFERENCE.md
+ENCODING_SYSTEM.md
+README_DOCUMENTATION.md
+VISUAL_DIAGRAMS.md

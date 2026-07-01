@@ -54,6 +54,17 @@ export const SORT_MODE = {
 	OUT: "out"
 };
 
+export const LEGEND_POSITIONS = {
+	TOP: "top",
+	BOTTOM: "bottom",
+	LEFT: "left",
+	RIGHT: "right",
+	TOPLEFT: "top-left",
+	TOPRIGHT: "top-right",
+	BOTTOMLEFT: "bottom-left",
+	BOTTOMRIGHT: "bottom-right"
+}
+
 const QUANTITATIVE_TYPES = new Set([
 	SCALE_TYPES.LINEAR,
 	SCALE_TYPES.SQRT,

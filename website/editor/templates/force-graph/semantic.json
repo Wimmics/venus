@@ -1,0 +1,16 @@
+{
+  "nodes": {
+    "source": {
+      "field": "source"
+    },
+    "target": {
+      "field": "target"
+    }
+  },
+  "links": {
+    "type": "semantic",
+    "relation": {
+        "field": "predicate"
+    }
+  }
+}

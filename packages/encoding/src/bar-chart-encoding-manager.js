@@ -1,5 +1,5 @@
 import { CartesianEncodingManager } from "./cartesian-encoding-manager.js";
-import { getEncodingTemplate, MARK_TYPES, VIS_TYPES } from "@wimmics/venus-core/";
+import { getEncodingTemplate, MARK_TYPES, VIS_TYPES } from "@wimmics/venus-core";
 
 /**
  * Encoding manager for bar chart visualizations.

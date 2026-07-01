@@ -1,0 +1,10 @@
+{
+  "nodes": {
+    "fields": ["node"],
+    "label": { "field": "node" }
+  },
+  "links": {
+    "type": "flow",
+    "value": { "field": "value" }
+  }
+}
