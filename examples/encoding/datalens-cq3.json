@@ -1,0 +1,57 @@
+{
+  "title": "Provenance relationship between ML resources.",
+  "nodes": {
+    "source": {
+      "field": "model",
+      "color": { "value": "orange" },
+      "size": {
+        "metric": "degree",
+        "legend": { "display": false }
+      },
+      "labels": {
+        "display": true,
+        "field": "modelName"
+      }
+    },
+    "target": {
+      "field": "resource",
+      "labels": {
+        "display": true,
+        "field": "resourceName"
+      },
+      "color": {
+        "field": "resourceType",
+        "scale": {
+          "range": "Category10"
+        },
+        "legend": {
+          "position": "top-right"
+        }
+      },
+      "size": {
+        "metric": "degree",
+        "scale": {
+          "type": "linear",
+          "range": [20, 55]
+        },
+        "legend": {
+          "display": false
+        }
+      }
+    }
+  },
+  "links": {
+    "color": {
+      "field": "relationship",
+      "scale": {
+        "range": "Set3"
+      },
+      "legend": {
+        "position": "top-right"
+      }
+    },
+    "size": {
+      "value": 4
+    }
+  }
+}

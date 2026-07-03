@@ -60,11 +60,11 @@ export class SparqlToGraphMapper extends SparqlToVisMapper {
             node[field] = binding[field]?.value
         }
 
-        // Copy fields necessary for the tooltips
+        // Copy fields necessary for the tooltips (include encoding fields + entityVar)
         const tooltipFields = this._getTooltipFields({
             config: nodeConfig?.tooltip, 
             binding, 
-            primaryFields: [ entityVar ]})
+            primaryFields: [ entityVar, ...associatedFields ]})
 
         for (const field of tooltipFields) {
             if (binding?.[field]) {

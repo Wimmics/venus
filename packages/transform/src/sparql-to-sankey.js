@@ -1,5 +1,5 @@
 import { SparqlToGraphMapper } from "./sparql-to-graph.js";
-import { VIS_TYPES } from "@wimmics/venus-core";
+import { VIS_TYPES, MARK_CHANNELS, MARK_ATTRIBUTES, MARK_TYPES } from "@wimmics/venus-core";
 
 /**
  * Transforms SPARQL results into Sankey diagram visualization format.
@@ -182,6 +182,20 @@ export class SparqlToSankey extends SparqlToGraphMapper {
     _mergeNodeAssociatedFields(node, binding, level) {
         const scopedFields = new Set();
 
+        // Include all encoding fields (color, size, opacity, labels, etc.)
+        const nodeConfig = this.encoding?.nodes;
+        if (nodeConfig) {
+            const encodingFieldNames = (MARK_CHANNELS[MARK_TYPES.NODES] || []).concat(MARK_ATTRIBUTES[MARK_TYPES.NODES] || []);
+            
+            for (const fieldName of encodingFieldNames) {
+                const field = nodeConfig[fieldName]?.field;
+                if (field && field !== undefined) {
+                    scopedFields.add(field);
+                }
+            }
+        }
+
+        // Legacy: also include explicit color fields if configured
         const globalColorField = this.resolvedEncoding?.globalNodeColorField;
         if (globalColorField) scopedFields.add(globalColorField);
 

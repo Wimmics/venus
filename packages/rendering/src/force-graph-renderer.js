@@ -96,6 +96,7 @@ export default class ForceGraphRenderer extends BaseRenderer {
 		
 		this._drawLinks()
 		this._drawNodes()
+		this._buildAdjacencyIndex()
 		this._setInitialLabelsOpacity()
 
 		// Handle interactive behavior
@@ -383,14 +384,20 @@ export default class ForceGraphRenderer extends BaseRenderer {
 	 */
 	_setZoomBehavior() {
 		if (this.interactions.zoom) {
+			let _zoomRaf = null;
 			this.zoomBehavior = d3
 				.zoom()
 				.scaleExtent([0.1, 8])
 				.on("zoom", (event) => {
 					this.chartGroup.attr("transform", event.transform);	
-					// Update labels' opacity according to zoom level
-					this.nodeLabels.style("opacity", (d) => this._computeLabelOpacity(d, MARK_TYPES.NODES, event.transform.k));
-					this.linkLabels.style("opacity", (d) => this._computeLabelOpacity(d, MARK_TYPES.LINKS, event.transform.k));
+					// Throttle label opacity updates with requestAnimationFrame
+					const k = event.transform.k;
+					if (_zoomRaf) return; // Skip if already scheduled
+					_zoomRaf = requestAnimationFrame(() => {
+						_zoomRaf = null;
+						this.nodeLabels.style("opacity", (d) => this._computeLabelOpacity(d, MARK_TYPES.NODES, k));
+						this.linkLabels.style("opacity", (d) => this._computeLabelOpacity(d, MARK_TYPES.LINKS, k));
+					});
 				});
 			this.svg.call(this.zoomBehavior);
 		} else {
@@ -491,19 +498,27 @@ export default class ForceGraphRenderer extends BaseRenderer {
 	/**
 	 * Highlight the active node or link while downplaying unrelated marks.
 	 */
+	/**
+	 * Pre-compute adjacency map for O(1) neighbor lookups during hover.
+	 */
+	_buildAdjacencyIndex() {
+		this._nodeNeighbors = new Map();
+		for (const link of this.renderedLinks) {
+			const s = link.baseLink.source.id;
+			const t = link.baseLink.target.id;
+			if (!this._nodeNeighbors.has(s)) this._nodeNeighbors.set(s, new Set([s]));
+			if (!this._nodeNeighbors.has(t)) this._nodeNeighbors.set(t, new Set([t]));
+			this._nodeNeighbors.get(s).add(t);
+			this._nodeNeighbors.get(t).add(s);
+		}
+	}
+
 	_focusMark({ mark, activeDatum } = {}) {
 		if (!activeDatum) return;
 
 		if (mark === MARK_TYPES.NODES){
 			const activeNodeId = activeDatum.id;
-			
-			const relatedLinks = this.renderedLinks.filter((link) =>
-				link.baseLink.source.id === activeNodeId || link.baseLink.target.id === activeNodeId
-			);
-
-			const relatedNodeIds = new Set(
-				relatedLinks.flatMap((link) => [ link.baseLink.source.id, link.baseLink.target.id])
-			);
+			const relatedNodeIds = this._nodeNeighbors?.get(activeNodeId) || new Set([activeNodeId]);
 
 			this.nodeGroups?.classed(
 				"node-downplayed",
