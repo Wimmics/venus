@@ -96,7 +96,6 @@ export default class ForceGraphRenderer extends BaseRenderer {
 		
 		this._drawLinks()
 		this._drawNodes()
-		this._buildAdjacencyIndex()
 		this._setInitialLabelsOpacity()
 
 		// Handle interactive behavior
@@ -165,11 +164,6 @@ export default class ForceGraphRenderer extends BaseRenderer {
 	 * Render node containers, circles, and optional labels.
 	 */
 	_drawNodes() {
-		// Cache node sizes once — _getMarkSize() involves a scale lookup and must not run on every tick
-		for (const node of this.nodes) {
-			node._r = this._getMarkSize(node, MARK_TYPES.NODES);
-		}
-
 		// Create nodes group
 		this.nodeGroups = this.chartGroup
 			.append("g")
@@ -182,7 +176,7 @@ export default class ForceGraphRenderer extends BaseRenderer {
 		// Draw nodes
 		this.nodeGroups
 			.append("circle")
-			.attr("r", (d) => d._r)
+			.attr("r", (d) => this._getMarkSize(d, MARK_TYPES.NODES))
 			.attr("fill", (d) => this._getMarkColor(d, MARK_TYPES.NODES) )
 			.attr("stroke", (d) => this._getMarkStroke(d, MARK_TYPES.NODES))
 			.attr("stroke-width", (d) => this._getMarkStrokeWidth(d, MARK_TYPES.NODES));
@@ -389,19 +383,14 @@ export default class ForceGraphRenderer extends BaseRenderer {
 	 */
 	_setZoomBehavior() {
 		if (this.interactions.zoom) {
-			let _zoomRaf = null;
 			this.zoomBehavior = d3
 				.zoom()
 				.scaleExtent([0.1, 8])
 				.on("zoom", (event) => {
-					this.chartGroup.attr("transform", event.transform);
-					const k = event.transform.k;
-					if (_zoomRaf) return;
-					_zoomRaf = requestAnimationFrame(() => {
-						_zoomRaf = null;
-						this.nodeLabels?.style("opacity", (d) => this._computeLabelOpacity(d, MARK_TYPES.NODES, k));
-						this.linkLabels?.style("opacity", (d) => this._computeLabelOpacity(d, MARK_TYPES.LINKS, k));
-					});
+					this.chartGroup.attr("transform", event.transform);	
+					// Update labels' opacity according to zoom level
+					this.nodeLabels.style("opacity", (d) => this._computeLabelOpacity(d, MARK_TYPES.NODES, event.transform.k));
+					this.linkLabels.style("opacity", (d) => this._computeLabelOpacity(d, MARK_TYPES.LINKS, event.transform.k));
 				});
 			this.svg.call(this.zoomBehavior);
 		} else {
@@ -500,21 +489,6 @@ export default class ForceGraphRenderer extends BaseRenderer {
 	}
 	
 	/**
-	 * Build node→neighbors and node→links index for O(1) hover lookups.
-	 */
-	_buildAdjacencyIndex() {
-		this._nodeNeighbors = new Map();
-		for (const link of this.renderedLinks) {
-			const s = link.baseLink.source.id;
-			const t = link.baseLink.target.id;
-			if (!this._nodeNeighbors.has(s)) this._nodeNeighbors.set(s, new Set([s]));
-			if (!this._nodeNeighbors.has(t)) this._nodeNeighbors.set(t, new Set([t]));
-			this._nodeNeighbors.get(s).add(t);
-			this._nodeNeighbors.get(t).add(s);
-		}
-	}
-
-	/**
 	 * Highlight the active node or link while downplaying unrelated marks.
 	 */
 	_focusMark({ mark, activeDatum } = {}) {
@@ -522,7 +496,14 @@ export default class ForceGraphRenderer extends BaseRenderer {
 
 		if (mark === MARK_TYPES.NODES){
 			const activeNodeId = activeDatum.id;
-			const relatedNodeIds = this._nodeNeighbors?.get(activeNodeId) ?? new Set([activeNodeId]);
+			
+			const relatedLinks = this.renderedLinks.filter((link) =>
+				link.baseLink.source.id === activeNodeId || link.baseLink.target.id === activeNodeId
+			);
+
+			const relatedNodeIds = new Set(
+				relatedLinks.flatMap((link) => [ link.baseLink.source.id, link.baseLink.target.id])
+			);
 
 			this.nodeGroups?.classed(
 				"node-downplayed",
@@ -575,7 +556,7 @@ export default class ForceGraphRenderer extends BaseRenderer {
 			.force("link", d3.forceLink(this.links).id((d) => d.id).distance(() => this._getLinkDistance()))
 			.force("charge", d3.forceManyBody().strength(-200))
 			.force("center", d3.forceCenter(this._state.width / 2, this._state.height / 2))
-			.force("collision", d3.forceCollide().radius((d) => (d._r ?? this._getMarkSize(d, MARK_TYPES.NODES)) + 5))
+			.force("collision", d3.forceCollide().radius((d) => this._getMarkSize(d, MARK_TYPES.NODES) + 5))
 			.force("x", d3.forceX(this._state.width / 2).strength(0.1))
 			.force("y", d3.forceY(this._state.height / 2).strength(0.1));
 
@@ -586,7 +567,7 @@ export default class ForceGraphRenderer extends BaseRenderer {
 			const nodeY = Number.isNaN(d?.y) ? centerY : d.y;
 			const dx = nodeX - centerX;
 			const dy = nodeY - centerY;
-			const offset = (d._r ?? this._getMarkSize(d, MARK_TYPES.NODES)) + 8;
+			const offset = this._getMarkSize(d, MARK_TYPES.NODES) + 8;
 			
 			if (Math.abs(dx) >= Math.abs(dy)) {
 				if (dx >= 0) {
@@ -602,7 +583,7 @@ export default class ForceGraphRenderer extends BaseRenderer {
 		};
 
 		const constrainNode = (d) => {
-			const r = d._r ?? this._getMarkSize(d, MARK_TYPES.NODES);
+			const r = this._getMarkSize(d, MARK_TYPES.NODES);
 			d.x = Math.max(r, Math.min(this._state.width - r, d.x));
 			d.y = Math.max(r, Math.min(this._state.height - r, d.y));
 		};
@@ -665,7 +646,7 @@ export default class ForceGraphRenderer extends BaseRenderer {
 			for (const node of this.nodes) {
 				const x = Number.isNaN(node?.x) ? this._state.width / 2 : node.x;
 				const y = Number.isNaN(node?.y) ? this._state.height / 2 : node.y;
-				const r = node._r ?? this._getMarkSize(node, MARK_TYPES.NODES);
+				const r = this._getMarkSize(node, MARK_TYPES.NODES);
 				minX = Math.min(minX, x - r);
 				minY = Math.min(minY, y - r);
 				maxX = Math.max(maxX, x + r);
