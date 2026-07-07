@@ -2,7 +2,10 @@ import { basicSetup } from "codemirror";
 import { Compartment, EditorState } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { html } from "@codemirror/lang-html";
-import { json } from "@codemirror/lang-json";
+// For JSON and syntax/error highlighting
+import { lintGutter, linter } from "@codemirror/lint";
+import { json, jsonParseLinter } from "@codemirror/lang-json";
+
 import { javascript } from "@codemirror/lang-javascript";
 import { sparql } from "codemirror-lang-sparql";
 
@@ -26,7 +29,11 @@ export class CodeMirrorPanel {
 
     holderEl.innerHTML = "";
     const languageMap = {
-      json: json(),
+      json: [
+        json(),
+        linter(jsonParseLinter()),
+        lintGutter()
+      ],
       html: html(),
       javascript: javascript(),
       sparql: sparql()
@@ -38,7 +45,7 @@ export class CodeMirrorPanel {
         doc: String(initialText || ""),
         extensions: [
           basicSetup,
-          languageExt,
+          ...(Array.isArray(languageExt) ? languageExt : [languageExt]),
           this.readOnlyCompartment.of(EditorState.readOnly.of(this.readOnly)),
           this.editableCompartment.of(EditorView.editable.of(!this.readOnly)),
           EditorView.lineWrapping,
@@ -61,6 +68,18 @@ export class CodeMirrorPanel {
 
     this.view.dispatch({
       changes: { from: 0, to: this.view.state.doc.length, insert: value }
+    });
+  }
+
+  async insertAtCursor(text){
+    if (!this.view) return
+
+    this.view.dispatch({
+      changes: {
+        from: this.view.state.selection.main.from,
+        to: this.view.state.selection.main.to, // replace selection if any
+        insert: text
+      }
     });
   }
 

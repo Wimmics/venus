@@ -20,16 +20,9 @@ export class EditorPanelController {
 			throw new Error(`${this.constructor.name} must initialize an editor instance.`);
 		}
 		await this.editor.init(initialText);
-		this._bindEditorChange();
 		this._initToolbar();
 	}
-	
-	_bindEditorChange() {
-		if (!this.editor) return;
-		this.editor.onChange = () => {
-			this.onContentChanged?.();
-		};
-	}
+
 	
 	_initToolbar() {
 		this.toolbar = new TabToolbar({

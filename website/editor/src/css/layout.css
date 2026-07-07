@@ -145,6 +145,7 @@
   flex: 0 0 auto;
 }
 
+/* Style of toolbar for each editor */
 .tab-toolbar {
   position: absolute;
   top: 0.5rem;
@@ -177,6 +178,24 @@
   font-size: 0.9rem;
 }
 
+/* Run button on encoding panel */
+.tab-run {
+    position: absolute;
+    bottom: 0.5rem;
+    right: 0.5rem;
+    z-index: 5;
+}
+
+.tab-run .btn {
+    opacity: 0.8;
+    transition: opacity 140ms ease-in-out;
+}
+
+.tab-run .btn:hover {
+    opacity: 1;
+}
+
+/* Encoding builder menu */
 .encoding-add-dropdown {
   position: static;
   flex: 0 0 auto;
@@ -187,11 +206,11 @@
   top: calc(100% + 0.35rem);
   right: 0;
   
-  width: 280px;
-  max-width: min(280px, calc(100vw - 2rem));
+  width: 350px;
+  max-width: min(350px, calc(100vw - 2rem));
   box-sizing: border-box;
 
-  max-height: min(420px, calc(100vh - 10rem));
+  max-height: min(600px, calc(100vh - 10rem));
   overflow: auto;
   
   z-index: 10;

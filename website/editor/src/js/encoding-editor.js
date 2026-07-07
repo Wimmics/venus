@@ -3,13 +3,9 @@ import { CodeMirrorPanel } from "./codemirror-panel.js";
 export class EncodingEditor {
 	constructor({ holderId }) {
 		this.panel = new CodeMirrorPanel({ holderId, readOnly: false, language: "json" });
-		this.onChange = null;
 	}
 	
 	async init() {
-		this.panel.onChange = () => {
-			this.onChange?.();
-		};
 		await this.panel.init("");
 	}
 	
@@ -35,5 +31,9 @@ export class EncodingEditor {
 	
 	async getText() {
 		return this.panel.getText();
+	}
+
+	async insertAtCursor(text) {
+		this.panel.insertAtCursor(text)
 	}
 }

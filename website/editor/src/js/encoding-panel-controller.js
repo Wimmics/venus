@@ -1,12 +1,10 @@
 import { EditorPanelController } from "./editor-panel-controller.js";
 import { EncodingEditor } from "./encoding-editor.js";
-import { insertEncodingSnippet } from "./encoding-authoring/encoding-insertion.js";
-import { getEncodingAddPicker } from "./encoding-authoring/encoding-snippets.js";
 import { safeRun, updateStatus } from "./utils/safe-run.js";
 
 import * as d3 from "d3"
 
-import { getMenuStructure } from "./constants.js";
+import { getMenuStructure } from "./encoding-snippets.js";
 
 export class EncodingPanelController extends EditorPanelController {
 	constructor({
@@ -16,6 +14,7 @@ export class EncodingPanelController extends EditorPanelController {
 		getActiveComponent = null,
 		onContentChanged,
 		onAfterReset,
+		onRun, 
 		statusSelector = "#status"
 	}) {
 		super({ demoControl, onContentChanged, onAfterReset, statusSelector });
@@ -25,6 +24,14 @@ export class EncodingPanelController extends EditorPanelController {
 		this.getActiveComponent = getActiveComponent;
 		this.addMenuEl = null;
 		this.addMenuButtonEl = null;
+		this.onRun = onRun;
+
+		this._setEncodingRun()
+	}
+
+	_setEncodingRun() {
+		document.querySelector("#encodingRunButton")
+			.addEventListener("click", this.onRun)
 	}
 	
 	getToolbarActions() {
@@ -50,6 +57,8 @@ export class EncodingPanelController extends EditorPanelController {
 	async parseValue() {
 		return this.editor.parseValue();
 	}
+
+	
 	
 	createAddMenu() {
 		// Create the encoding add + button
@@ -102,14 +111,8 @@ export class EncodingPanelController extends EditorPanelController {
 	 * @param {*} menu The DOM element containing the menu, which has been defined at init 
 	 */
 	async displayEncodingOptions(menu) {
-		const parsed = await this.parseValue();
-		console.log("parsed =", parsed)
-		console.log('activeComponent = ', this.getActiveComponent())
-		// const picker = getEncodingAddPicker(
-		// 	this.getActiveComponent?.(),
-		// 	parsed.error ? {} : parsed.value
-		// );
-		// console.log("picker = ", picker)
+		const _this = this;
+
 		menu.innerHTML = "";
 
 		const container = d3.select(menu)
@@ -121,11 +124,12 @@ export class EncodingPanelController extends EditorPanelController {
 			.data(getMenuStructure())
 			.enter()
 			.append("div")
-			.classed("menu-section", true);
+			.classed("menu-section", true)
+			.style("display", d => typeof d.display === "function" ? d.display(this.getActiveComponent()) : "grid")
 
 		sections.append("div")
 			.classed("section-title", true)
-			.text(d => d.label);
+			.text(d => d.label)
 
 		const rows = sections.append("div")
 			.classed("section-rows", true)
@@ -133,100 +137,36 @@ export class EncodingPanelController extends EditorPanelController {
 			.data(d => d.values)
 			.enter()
 			.append("div")
-			.classed("sector", true);
+			.classed("sector", true)
+			.style("display", d => typeof d.display === "function" ? d.display(this.getActiveComponent()) : "grid")
 
 		rows.append("span")
 			.classed("sector-label", true)
 			.text(d => d.label);
 
 		const select = rows.filter(d => d.options)
-			.append("select");
+			.append("select")
+			.attr("id", d => d.key)
 
 		select.selectAll("option")
 			.data(d => d.options)
 			.enter()
 			.append("option")
-			.attr("value", d => d.key)
-			.text(d => d.label)
-			.property("selected", d => d.selected)
-			.property("disabled", (d,i) => i === 0)
+			.attr("value", d => d.value ?? "")
+			.text(d => d.label ?? d.value)
+			.each(function(d) {
+				const disabled = typeof d.disabled === "function"
+					? d.disabled(_this.getActiveComponent())
+					: !!d.disabled;
+
+				this.disabled = disabled;
+				this.selected = !disabled && !!d.selected;
+			});
 
 		rows.append("button")
 			.classed("add-button", true)
-			.text("+");
-			
-		
-		
-
-
-
-		
-		// const createBranch = (label, className) => {
-		// 	const branch = document.createElement("details");
-		// 	branch.className = `encoding-add-tree-branch ${className}`.trim();
-			
-		// 	const summary = document.createElement("summary");
-		// 	summary.textContent = label;
-			
-		// 	const children = document.createElement("div");
-		// 	children.className = "encoding-add-tree-children";
-		// 	branch.append(summary, children);
-		// 	return { branch, children };
-		// };
-		
-		// const createAction = (label, snippet, className = "") => {
-		// 	const button = document.createElement("button");
-		// 	button.type = "button";
-		// 	button.className = `encoding-add-tree-action ${className}`.trim();
-		// 	button.textContent = label;
-		// 	button.addEventListener("click", async () => {
-		// 		await this.addSnippet(snippet);
-		// 		this.closeAddMenu();
-		// 	});
-		// 	return button;
-		// };
-		
-		// const appendProperties = (holder, properties = []) => {
-		// 	for (const item of properties) {
-		// 		if (item.variants.length === 1 && item.variants[0].label === "Add") {
-		// 			holder.appendChild(createAction(item.label, item.variants[0].snippet));
-		// 			continue;
-		// 		}
-				
-		// 		const property = createBranch(item.label, "encoding-add-tree-property");
-		// 		for (const option of item.variants) {
-		// 			property.children.appendChild(
-		// 				createAction(option.label, option.snippet, "encoding-add-tree-variant")
-		// 			);
-		// 		}
-		// 		holder.appendChild(property.branch);
-		// 	}
-		// };
-		
-		// const tree = document.createElement("div");
-		// tree.className = "encoding-add-tree";
-		// for (const scope of picker.scopes) {
-		// 	if (scope.variants) {
-		// 		appendProperties(tree, [scope]);
-		// 		continue;
-		// 	}
-			
-		// 	const scopeBranch = createBranch(scope.label, "encoding-add-tree-scope");
-			
-		// 	if (scope.roles) {
-		// 		for (const role of scope.roles) {
-		// 			const roleBranch = createBranch(`${role.label} nodes`, "encoding-add-tree-role");
-		// 			appendProperties(roleBranch.children, role.properties);
-		// 			scopeBranch.children.appendChild(roleBranch.branch);
-		// 		}
-		// 	} else {
-		// 		appendProperties(scopeBranch.children, scope.properties);
-		// 	}
-			
-		// 	tree.appendChild(scopeBranch.branch);
-		// }
-		
-		// menu.appendChild(tree);
+			.text("+")
+			.on("click", (event, d) => this.addSnippet(d))
 	}
 	
 	closeAddMenu() {
@@ -235,42 +175,11 @@ export class EncodingPanelController extends EditorPanelController {
 		this.addMenuButtonEl.setAttribute("aria-expanded", "false");
 	}
 	
-	async addSnippet(snippet) {
-		await safeRun(
-			async () => {
-				const parsed = await this.parseValue();
-				if (parsed.error) {
-					updateStatus(`Invalid encoding JSON: ${parsed.error.message}`, {
-						isError: true,
-						statusSelector: this.statusSelector
-					});
-					return;
-				}
-				
-				const insertion = insertEncodingSnippet(parsed.value, snippet);
-				if (!insertion.changed) {
-					updateStatus(`${snippet.label} is already present.`, {
-						statusSelector: this.statusSelector
-					});
-					return;
-				}
-				
-				await this.setValue(insertion.value);
-				const action =
-				insertion.status === "removed"
-				? "removed from"
-				: insertion.status === "completed"
-				? "completed in"
-				: insertion.status === "replaced"
-				? "updated in"
-				: "added to";
-				updateStatus(
-					`${snippet.label} ${action} encoding.`,
-					{ statusSelector: this.statusSelector }
-				);
-			},
-			{ fallbackMessage: "Failed to add encoding property", statusSelector: this.statusSelector }
-		);
+	async addSnippet(d) {
+		const selectedValue = document.querySelector(`#${d.key}`).value
+		const snippet = d.action(selectedValue, this.getActiveComponent())
+
+		this.editor.insertAtCursor(snippet)
 	}
 	
 	async resetToScenarioEncoding() {

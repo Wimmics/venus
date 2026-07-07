@@ -1,9 +1,9 @@
 import {
 	DEFAULT_CUSTOM_TEMPLATE_ID,
 	SCENARIO_INDEX_PATH,
-	STORAGE_KEY,
-	VISUALIZATION_TEMPLATES
+	STORAGE_KEY
 } from "./constants.js";
+import { VISUALIZATION_TEMPLATES } from "./encoding-snippets.js"
 import { DemoControl } from "./demo-control.js";
 import { SnippetGenerator } from "./snippet-generator.js";
 import { VisualizationView } from "./visualization-view.js";
@@ -57,8 +57,6 @@ export class EditorApp {
 			}
 		});
 		
-		this.autoRenderDelayMs = 350;
-		this.autoRenderTimer = null;
 		this.lastRenderedSparqlData = null;
 		this.isScenarioLoading = false;
 		this.workspace = {
@@ -70,10 +68,6 @@ export class EditorApp {
 		this.sparqlPanelController = new SparqlPanelController({
 			demoControl: this.demoControl,
 			isCustomWorkspace: () => this.isCustomWorkspace(),
-			onContentChanged: () => {
-				this.scheduleAutoRender();
-				void this.updateGeneratedCode();
-			},
 			onAfterReset: async () => {
 				await this.updateGeneratedCode();
 				await this.render();
@@ -85,23 +79,18 @@ export class EditorApp {
 			isCustomWorkspace: () => this.isCustomWorkspace(),
 			getCustomDefaultEncoding: () => this.fetchEncodingForActiveTemplate(),
 			getActiveComponent: () => this.getActiveComponent(),
-			onContentChanged: () => {
-				this.scheduleAutoRender();
-				void this.updateGeneratedCode();
-			},
 			onAfterReset: async () => {
+				await this.updateGeneratedCode();
+				await this.render();
+			},
+			onRun: async () => {
 				await this.updateGeneratedCode();
 				await this.render();
 			}
 		});
 		
 		this.resultsPanelController = new ResultsPanelController({
-			demoControl: this.demoControl,
-			onContentChanged: () => {
-				if (this.getDataSourceMode() !== "provided") return;
-				this.scheduleAutoRender();
-				void this.updateGeneratedCode();
-			}
+			demoControl: this.demoControl
 		});
 		
 		this.snippetPanelController = new SnippetPanelController({
@@ -136,15 +125,9 @@ export class EditorApp {
 			this.syncExamplesDropdownState();
 		});
 		
-		this.endpointInputEl.addEventListener("input", () => {
-			this.scheduleAutoRender();
-			void this.updateGeneratedCode();
-		});
-		
 		this.resultsAsSourceToggleEl.addEventListener("change", async () => {
 			await this.applyResultsEditorMode();
-			this.scheduleAutoRender();
-			void this.updateGeneratedCode();
+			this.updateGeneratedCode();
 		});
 		
 		this.visualizationTabButton.addEventListener("shown.bs.tab", () => {
@@ -154,10 +137,6 @@ export class EditorApp {
 	}
 	
 	async loadScenarioAndRefresh() {
-		if (this.autoRenderTimer) {
-			clearTimeout(this.autoRenderTimer);
-			this.autoRenderTimer = null;
-		}
 		
 		this.isScenarioLoading = true;
 		await this.safeRun(
@@ -371,10 +350,10 @@ export class EditorApp {
 	}
 	
 	async startCustomWorkspace(templateId = DEFAULT_CUSTOM_TEMPLATE_ID) {
-		if (this.autoRenderTimer) {
-			clearTimeout(this.autoRenderTimer);
-			this.autoRenderTimer = null;
-		}
+		// if (this.autoRenderTimer) {
+		// 	clearTimeout(this.autoRenderTimer);
+		// 	this.autoRenderTimer = null;
+		// }
 		
 		await this.safeRun(
 			async () => {
@@ -535,16 +514,16 @@ export class EditorApp {
 		await this.resultsPanelController.setReadOnly(!useResultsAsSource);
 	}
 	
-	scheduleAutoRender() {
-		if (this.isScenarioLoading) return;
-		if (this.autoRenderTimer) {
-			clearTimeout(this.autoRenderTimer);
-		}
-		this.autoRenderTimer = setTimeout(() => {
-			this.autoRenderTimer = null;
-			void this.render();
-		}, this.autoRenderDelayMs);
-	}
+	// scheduleAutoRender() {
+	// 	if (this.isScenarioLoading) return;
+	// 	if (this.autoRenderTimer) {
+	// 		clearTimeout(this.autoRenderTimer);
+	// 	}
+	// 	this.autoRenderTimer = setTimeout(() => {
+	// 		this.autoRenderTimer = null;
+	// 		void this.render();
+	// 	}, this.autoRenderDelayMs);
+	// }
 	
 	refreshVisualizationTab() {
 		const { scenario } = this.demoControl.getActiveContext();
