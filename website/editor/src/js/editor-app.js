@@ -48,11 +48,9 @@ export class EditorApp {
 			containerEl: document.getElementById("workspaceRow"),
 			panes: {
 				config: document.getElementById("configPane"),
-				data: document.getElementById("dataPane"),
 				result: document.getElementById("resultPane")
 			},
 			splitters: {
-				configData: document.getElementById("splitterConfigData"),
 				dataResult: document.getElementById("splitterDataResult")
 			}
 		});

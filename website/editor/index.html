@@ -84,121 +84,117 @@
 <div class="container-fluid editor-root">
 	<section class="workspace-row" id="workspaceRow">
 		<div class="workspace-pane workspace-pane-config d-flex" id="configPane">
-			<article class="card shadow-sm flex-fill d-flex">
-				<div class="card-header p-2">
-					<ul class="nav nav-pills panel-tabs panel-tabs-fill m-0" id="configTabs" role="tablist">
-						<li class="nav-item flex-fill" role="presentation">
-							<button
-							class="nav-link active w-100"
-							id="sparql-tab"
-							data-bs-toggle="tab"
-							data-bs-target="#sparql-pane"
-							type="button"
-							role="tab"
-							aria-controls="sparql-pane"
-							aria-selected="true"
+
+			<div class="editor-workspace">
+			
+				<div class="editor-columns">
+
+					<!-- Panel with SPARQL query and results -->
+					<article class="card shadow-sm d-flex">
+						<!-- Tabs -->
+						<div class="card-header p-2">
+							<ul class="nav nav-pills panel-tabs panel-tabs-fill m-0" id="configTabs" role="tablist">
+								<li class="nav-item flex-fill" role="presentation">
+									<button
+									class="nav-link active w-100"
+									id="sparql-tab"
+									data-bs-toggle="tab"
+									data-bs-target="#sparql-pane"
+									type="button"
+									role="tab"
+									aria-controls="sparql-pane"
+									aria-selected="true"
+									> SPARQL 
+									<i class="fa-solid fa-circle-info" title="SPARQL SELECT query defining the visualization; both the query and the endpoint can be replaced with your own."></i></button>
+								</li>
+								<li class="nav-item flex-fill" role="presentation">
+									<button
+									class="nav-link w-100"
+									id="results-tab"
+									data-bs-toggle="tab"
+									data-bs-target="#results-pane"
+									type="button"
+									role="tab"
+									aria-controls="results-pane"
+									aria-selected="false"
+									> SPARQL Results <i class="fa-solid fa-circle-info" title="SPARQL JSON results produced by the VENUS pipeline from the specified query; these can also be replaced and used directly as visualization input."></i></button>
+								</li>
+							</ul>
+						</div>
+
+						<div class="card-body tab-content tab-content-fill flex-fill pt-2" id="configTabsContent">
+							<div
+							class="tab-pane fade show active h-100"
+							id="sparql-pane"
+							role="tabpanel"
+							aria-labelledby="sparql-tab"
+							tabindex="0"
 							>
-							SPARQL <i class="fa-solid fa-circle-info" title="SPARQL SELECT query defining the visualization; both the query and the endpoint can be replaced with your own."></i>
-						</button>
-					</li>
-					<li class="nav-item flex-fill" role="presentation">
-						<button
-						class="nav-link w-100"
-						id="results-tab"
-						data-bs-toggle="tab"
-						data-bs-target="#results-pane"
-						type="button"
-						role="tab"
-						aria-controls="results-pane"
-						aria-selected="false"
-						>
-						SPARQL Results <i class="fa-solid fa-circle-info" title="SPARQL JSON results produced by the VENUS pipeline from the specified query; these can also be replaced and used directly as visualization input."></i>
-					</button>
-				</li>
-			</ul>
-		</div>
-		<div class="card-body tab-content tab-content-fill flex-fill pt-2" id="configTabsContent">
-			<div
-			class="tab-pane fade show active h-100"
-			id="sparql-pane"
-			role="tabpanel"
-			aria-labelledby="sparql-tab"
-			tabindex="0"
-			>
-			<div class="sparql-pane-layout">
-				<div class="mb-2">
-					<label class="form-label fw-semibold mb-1" for="endpointInput">Endpoint</label>
-					<input
-					class="form-control form-control-sm"
-					id="endpointInput"
-					type="text"
-					placeholder="SPARQL endpoint URL"
-					/>
-				</div>
-				<div class="sparql-query-block">
-					<label class="form-label fw-semibold mb-1" for="sparqlEditor">Query</label>
-					<div class="tab-editor-shell">
-						<div class="tab-toolbar d-flex justify-content-end gap-1" id="sparqlToolbar"></div>
-						<div class="code cm-panel h-100" id="sparqlEditor"></div>
-					</div>
-				</div>
-			</div>
-		</div>
-		<div
-		class="tab-pane fade h-100"
-		id="results-pane"
-		role="tabpanel"
-		aria-labelledby="results-tab"
-		tabindex="0"
-		>
-		<div class="results-controls-row d-flex justify-content-end align-items-center mb-2">
-			<div class="form-check form-switch m-0">
-				<input class="form-check-input" type="checkbox" role="switch" id="resultsAsSourceToggle" />
-				<label class="form-check-label small fw-semibold" for="resultsAsSourceToggle">
-					Use As Source
-				</label>
-			</div>
-		</div>
-		<div class="tab-editor-shell">
-			<div class="tab-toolbar d-flex justify-content-end gap-1" id="resultsToolbar"></div>
-			<div class="code cm-panel h-100" id="sparqlResults"></div>
-		</div>
-	</div>
-</div>
-</article>
-</div>
+								<div class="sparql-pane-layout">
+									<div class="mb-2">
+										<label class="form-label fw-semibold mb-1" for="endpointInput">Endpoint</label>
+										<input
+										class="form-control form-control-sm"
+										id="endpointInput"
+										type="text"
+										placeholder="SPARQL endpoint URL"
+										/>
+									</div>
+									<div class="sparql-query-block">
+										<label class="form-label fw-semibold mb-1" for="sparqlEditor">Query</label>
+										<div class="tab-editor-shell">
+											<div class="tab-toolbar d-flex justify-content-end gap-1" id="sparqlToolbar"></div>
+											<div class="code cm-panel h-100" id="sparqlEditor"></div>
+										</div>
+									</div>
+								</div>
+							</div>
+							<div class="tab-pane fade h-100" id="results-pane" role="tabpanel"
+								aria-labelledby="results-tab" tabindex="0" >
+								<div class="results-controls-row d-flex justify-content-end align-items-center mb-2">
+									<div class="form-check form-switch m-0">
+										<input class="form-check-input" type="checkbox" role="switch" id="resultsAsSourceToggle" />
+										<label class="form-check-label small fw-semibold" for="resultsAsSourceToggle">
+											Use As Source
+										</label>
+									</div>
+								</div>
+								<div class="tab-editor-shell">
+									<div class="tab-toolbar d-flex justify-content-end gap-1" id="resultsToolbar"></div>
+									<div class="code cm-panel h-100" id="sparqlResults"></div>
+								</div>
+							</div>
+						</div>
+					</article>
 
-<div
-class="workspace-splitter"
-id="splitterConfigData"
-role="separator"
-aria-orientation="vertical"
-aria-label="Resize Config and Data panels"
-tabindex="0"
-></div>
-
-<div class="workspace-pane workspace-pane-data d-flex" id="dataPane">
-	<article class="card shadow-sm flex-fill d-flex">
-		<div class="card-header p-2">
-			<ul class="nav nav-pills panel-tabs panel-tabs-single flex-grow-1 m-0" id="dataTabs" role="tablist">
-				<li class="nav-item flex-fill" role="presentation">
-					<button class="nav-link active w-100" type="button" role="tab" aria-selected="true">
-						Encoding <i class="fa-solid fa-circle-info" title="Mapping between query variables and visual encodings; adjust based on the SELECT variables in the specified query."></i>
-					</button>
-				</li>
-			</ul>
-		</div>
-		<div class="card-body tab-content tab-content-fill flex-fill pt-2">
-			<div class="tab-editor-shell">
-				<div class="tab-toolbar d-flex justify-content-end gap-1" id="encodingToolbar"></div>
-				 <div class="tab-run" id="encodingRunButton">
-					<button class="btn btn-primary">Run</button>
+					<!-- Panel containing the encoding -->
+					<article class="card shadow-sm d-flex">
+						<div class="card-header p-2">
+							<ul class="nav nav-pills panel-tabs panel-tabs-single flex-grow-1 m-0" id="dataTabs" role="tablist">
+								<li class="nav-item flex-fill" role="presentation">
+									<button class="nav-link active w-100" type="button" role="tab" aria-selected="true">
+										Encoding <i class="fa-solid fa-circle-info" title="Mapping between query variables and visual encodings; adjust based on the SELECT variables in the specified query."></i>
+									</button>
+								</li>
+							</ul>
+						</div>
+						<div class="card-body tab-content tab-content-fill flex-fill pt-2">
+							<div class="tab-editor-shell">
+								<div class="tab-toolbar d-flex justify-content-end gap-1" id="encodingToolbar"></div>
+								
+								<div class="editor cm-panel h-100" id="encodingEditor"></div>
+							</div>
+						</div>
+					</article>
 				</div>
-				<div class="editor cm-panel h-100" id="encodingEditor"></div>
+
+				 <div class="editor-actions">
+					<button class="btn btn-primary" id="encodingRunButton">
+						Run Visualization
+					</button>
+				</div>
 			</div>
 		</div>
-	</article>
-</div>
 
 <div
 class="workspace-splitter"

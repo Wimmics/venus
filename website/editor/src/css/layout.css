@@ -25,17 +25,12 @@
 }
 
 .workspace-pane-config {
-  flex: 0 0 31%;
-  min-width: 280px;
-}
-
-.workspace-pane-data {
-  flex: 0 0 29%;
+  flex: 0 0 60%;
   min-width: 280px;
 }
 
 .workspace-pane-result {
-  flex: 1 1 auto;
+  flex: 1 1 0;
   min-width: 280px;
 }
 
@@ -68,6 +63,51 @@
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
+}
+
+.editor-workspace {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    box-shadow: 0 .125rem .25rem rgba(0, 0, 0, .075);
+
+    padding: 1rem;
+    gap: 1rem;
+
+    overflow: hidden;
+}
+
+.editor-columns {
+    display: flex;
+    flex: 1 1 auto;
+
+    gap: .2rem;
+
+    min-width: 0;
+    min-height: 0;
+}
+
+.editor-columns > article {
+    flex: 1;
+    min-width: 0;
+
+    /* leave room for the action bar */
+    height: calc(100% - .5rem);
+}
+
+.editor-actions {
+    flex: 0 0 auto;
+    display: flex;
+    justify-content: flex-end;
+    
 }
 
 .tab-content-fill {
