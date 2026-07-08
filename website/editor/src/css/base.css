@@ -221,7 +221,7 @@ button {
 .editor-toast-stack {
   position: fixed;
   right: 1rem;
-  bottom: 1rem;
+  top: 15rem;
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
@@ -240,6 +240,7 @@ button {
   padding: 0.55rem 0.7rem;
   font-size: 0.9rem;
   line-height: 1.35;
+  white-space: pre-line;
 }
 
 .editor-toast.error {

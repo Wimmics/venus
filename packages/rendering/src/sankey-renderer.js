@@ -85,16 +85,13 @@ export class SankeyRenderer extends BaseRenderer {
 			.nodeSort(nodeSort || undefined)
 			.nodeWidth(sankeyLayout.nodeWidth)
 			.nodePadding(sankeyLayout.nodePadding)
-			.extent([[0, 0], [innerWidth, innerHeight]])({
+			.extent([[margin.left, margin.top], [innerWidth, innerHeight]])({
 				nodes: this.nodes.map((d) => ({ ...d })),
 				links: this.links.map((d) => ({
 					...d,
 					value: Number(d.value ?? d.weight ?? 1)
 				}))
 			});
-
-		
-
 
 		this._drawLinks()
 		this._drawNodes()

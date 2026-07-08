@@ -4,29 +4,9 @@
     "source": {
       "field": "model",
       "color": { "value": "orange" },
-      "size": {
-        "metric": "degree",
-        "legend": { "display": false }
-      },
       "labels": {
         "display": true,
         "field": "modelName"
-      }
-    },
-    "target": {
-      "field": "resource",
-      "labels": {
-        "display": true,
-        "field": "resourceName"
-      },
-      "color": {
-        "field": "resourceType",
-        "scale": {
-          "range": "Category10"
-        },
-        "legend": {
-          "position": "top-right"
-        }
       },
       "size": {
         "metric": "degree",
@@ -38,9 +18,47 @@
           "display": false
         }
       }
-    }
+    },
+    "target": {
+      "field": "resource",
+      "labels": {
+        "display": true,
+        "field": "resourceName"
+      },
+      "size": {
+        "metric": "degree",
+        "scale": {
+          "type": "linear",
+          "range": [20, 55]
+        },
+        "legend": {
+          "display": false
+        }
+      },
+      "color": {
+        "field": "resourceType",
+        "scale": {
+          "range": "Category10"
+        },
+        "legend": {
+          "position": "top-right"
+        }
+      }
+    },
+    "size": {
+        "metric": "degree",
+        "scale": {
+          "type": "linear",
+          "range": [20, 55]
+        },
+        "legend": {
+          "display": false
+        }
+      }
   },
   "links": {
+    "type": "semantic",
+    "relation": { "field": "rel"},
     "color": {
       "field": "relationship",
       "scale": {
@@ -49,9 +67,6 @@
       "legend": {
         "position": "top-right"
       }
-    },
-    "size": {
-      "value": 4
     }
   }
 }

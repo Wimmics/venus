@@ -14,8 +14,7 @@ function getToastStack() {
 }
 
 function showToast(message, { isError = false } = {}) {
-  return;
-  if (!message) return;
+  if (!message || !isError) return;
   const stack = getToastStack();
   const toast = document.createElement("div");
   toast.className = isError ? "editor-toast error" : "editor-toast";
@@ -37,7 +36,7 @@ export function updateStatus(message, { isError = false, statusSelector = "#stat
     statusEl.textContent = message || "";
     statusEl.classList.toggle("error", Boolean(isError));
   }
-  showToast(message, { isError });
+  showToast(`${message}.\n\nSee the browser console for more details.`, { isError });
   console.log(message)
 }
 

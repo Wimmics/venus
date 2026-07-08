@@ -19,7 +19,8 @@ export const ATTRIBUTE_TYPES = {
 	DISTANCE: "distance",
 	ALIGN: "align",
 	WIDTH: "width",
-	PADDING: "padding"
+	PADDING: "padding",
+	TOOLTIP: "tooltip"
 }
 
 export const SCALE_TYPES = {
@@ -53,6 +54,13 @@ export const SORT_MODE = {
 	IN: "in",
 	OUT: "out"
 };
+
+export const ALIGN_TYPES = {
+	JUSTIFY: "justify",
+	LEFT: "left",
+	RIGHT: "right",
+	CENTER: "center"
+}
 
 export const LEGEND_POSITIONS = {
 	TOP: "top",

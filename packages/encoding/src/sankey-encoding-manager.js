@@ -1,5 +1,5 @@
 
-import { SORT_BY, SORT_MODE, SORT_ORDER, VIS_TYPES } from "@wimmics/venus-core";
+import { ALIGN_TYPES, SORT_BY, SORT_MODE, SORT_ORDER, VIS_TYPES } from "@wimmics/venus-core";
 import { GraphEncodingManager } from "./graph-encoding-manager.js";
 
 /**
@@ -139,7 +139,7 @@ export class SankeyEncodingManager extends GraphEncodingManager {
     
     _validateSankeyLayoutConfig(encoding) {
         const align = encoding?.nodes?.align;
-        if (align !== undefined && !["justify", "left", "right", "center"].includes(align)) {
+        if (align !== undefined && !ALIGN_TYPES.includes(align)) {
             throw new Error('Invalid encoding: "nodes.align" must be "justify", "left", "right", or "center".');
         }
         

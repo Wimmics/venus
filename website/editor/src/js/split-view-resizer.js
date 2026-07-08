@@ -8,7 +8,7 @@ export class SplitViewResizer {
 		this.splitters = splitters;
 		
 		this.visible = { config: true, result: true };
-		this.weights = { config: 60, result: 40 };
+		this.weights = { config: 50, result: 50 };
 		
 		this.activeDrag = null;
 		this.rafHandle = null;
