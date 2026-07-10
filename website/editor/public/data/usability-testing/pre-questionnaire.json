@@ -1,0 +1,86 @@
+{"values": [
+    {
+        "id": "age",
+        "description": "What is your age",
+        "type": "number" 
+    },
+    {
+        "id": "gender",
+        "description": "What is your gender?",
+        "options": ["Male", "Female", "Non-binary", "Prefer not to say"],
+        "type": "multiple-choice"
+    },
+    {
+        "id": "education-level",
+        "description": "What is your highest level of education?",
+        "type": "multiple-choice",
+        "options": ["High school or equivalent", "Bachelor's degree", "Master's degree", "PhD", "Habilitation (HDR)"]
+    },
+    {
+        "id": "profession", 
+        "description": "What is your current profession?",
+        "type": "multiple-choice",
+        "options": ["Undergraduate Student", "Master's Student", "PhD Student", "Posdoctoral Researcher", "Research Engineer", "Researcher", "Assistant Professor / Lecturer", "Associate Professor", "Full Professor", "Software Engineer", "Data Scientist"]
+    },
+    
+
+    {
+        "id": "js-frequency",
+        "description": "How often do you develop web applications?",
+        "type": "likert-frequency"
+    },
+    {
+        "id": "json-familiarity",
+        "description": "How familiar are you with JSON?",
+        "type": "likert-familiarity"
+    },
+
+
+
+    {
+        "id": "sparql-familiarity",
+        "description": "How familiar are you with SPARQL?",
+        "type": "likert-familiarity"
+    },
+    {
+        "id": "sparql-usage", 
+        "description": "How often do you use SPARQL?",
+        "type": "likert-frequency"
+    },
+    {
+        "id": "dbpedia-familiarity", 
+        "description": "How familiar are you with the DBPedia ecossystem?",
+        "type": "likert-familiarity"
+    },
+
+
+   
+    {
+        "id":"vis-usage",
+        "description": "How often do you use visualizations to explore the following?",
+        "options": ["Tabular data", "Knowledge Graphs", "SPARQL query results", "Ontologies"],
+        "type": "likert-matrix-frequency"
+    },
+    {
+        "id": "vis-techniques-familiarity",
+        "description": "How familiar are you with the following visualization techniques?",
+        "options": ["Bar Chart", "Node-link diagram (force-directed graph)", "Sankey diagram"],
+        "type": "likert-matrix-familiarity"
+    },
+    {
+        "id": "vis-creation-tools-usage", 
+        "description": "How often do you write code to create interactive data visualizations?",
+        "type": "likert-frequency"
+    },
+    {
+        "id": "vis-creation-tools-familiarity",
+        "description": "How familiar are you with the following visualization libraries?",
+        "options": ["D3.js", "VEGA", "VEGA-Lite", "Google Charts", "Apache Echarts", "Chart.js", "Plotly", "ggplot2"],
+        "type": "likert-matrix-familiarity"
+    },
+    {
+        "id": "vis-experience",
+        "description": "Overall, how would you rate your experience with data visualization?",
+        "type": "likert-experience"
+    }
+]}

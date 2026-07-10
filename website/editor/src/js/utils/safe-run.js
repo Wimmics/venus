@@ -36,7 +36,7 @@ export function updateStatus(message, { isError = false, statusSelector = "#stat
     statusEl.textContent = message || "";
     statusEl.classList.toggle("error", Boolean(isError));
   }
-  showToast(`${message}.\n\nSee the browser console for more details.`, { isError });
+  showToast(`${message}.`, { isError });
   console.log(message)
 }
 

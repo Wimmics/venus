@@ -107,10 +107,13 @@ export class DemoControl {
 		}
 	}
 	
-	async loadSelectedScenario() {
-		const scenario = this.scenarioById.get(this.selectEl.value);
+	async loadSelectedScenario(scenarioId = null) {
+		if (!scenarioId)
+			scenarioId = this.selectEl.value
+
+		const scenario = this.scenarioById.get(scenarioId);
 		if (!scenario) {
-			throw new Error(`Unknown scenario: ${this.selectEl.value}`);
+			throw new Error(`Unknown scenario: ${scenarioId}`);
 		}
 		
 		this.activeQueryText = await fetchText(scenario.queryPath);

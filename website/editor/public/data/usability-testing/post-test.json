@@ -1,0 +1,22 @@
+{"values":[
+    {
+        "id": "likes",
+        "description": "Please list up to three (3) aspects of the VENUS framework that you liked the most.",
+        "type": "multiple-open"
+    },
+    {
+        "id": "dislikes",
+        "description": "Please list up to three (3) aspects of the VENUS framework that you liked the least or found most challenging.",
+        "type": "multiple-open"
+    },
+    {
+        "id": "venus-comments",
+        "description": "Do you have any additional comments or suggestions to improve the VENUS framework?",
+        "type": "open-question"
+    },
+    {
+        "id": "study-comments",
+        "description": "Do you have any comments or suggestions regarding this online study (e.g., the instructions, tasks, questionnaires, or overall workflow)?",
+        "type": "open-question"
+    }
+]}

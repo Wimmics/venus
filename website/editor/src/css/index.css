@@ -5,4 +5,6 @@
 @import "./snippet-view.css";
 @import "./visualization-view.css";
 @import "./responsive.css";
-@import "./encoding-builder.css"
+@import "./encoding-builder.css";
+
+@import "./user-testing.css";

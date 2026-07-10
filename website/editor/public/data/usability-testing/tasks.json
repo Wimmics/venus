@@ -1,0 +1,17 @@
+{"values":[
+    {
+        "id": "task_1",
+        "description_path": "/tasks/task_1.html",
+        "scenario_id": "barchart-movies-dbpedia",
+        "sparql": false, 
+        "encoding": true 
+    },
+    {
+        "id": "task_2",
+        "description_path": "/tasks/task_2.html",
+        "scenario_id": "barchart-movies-dbpedia",
+        "sparql": false, 
+        "encoding": false 
+    }
+
+]}

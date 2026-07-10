@@ -96,6 +96,10 @@ button {
   gap: 0.55rem;
 }
 
+.editor-done-button {
+    margin-left: auto;
+}
+
 .editor-createbar-separator {
   width: 1px;
   height: 1.6rem;

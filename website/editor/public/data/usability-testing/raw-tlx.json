@@ -1,0 +1,32 @@
+{"values": [
+    {
+        "id": "mental-demand",
+        "title": "Mental Demand",
+        "description": "How mentally demanding was the task (e.g., thinking, deciding, remembering, looking, searching)?"
+    },
+    {
+        "id": "physical-demand",
+        "title": "Physical Demand",
+        "description": "How physically demanding was the task (e.g., controlling, activating)?"
+    },
+    {
+        "id": "temporal-demand",
+        "title": "Temporal Demand",
+        "description": "How rushed or time-pressured did you feel during the task?"
+    },
+    {
+        "id": "effort",
+        "title": "Effort",
+        "description": "How much effort did you put into accomplish your level of performance?"
+    },
+    {
+        "id": "performance",
+        "title": "Performance",
+        "description": "How successful do you think you were in completing the task?"
+    },
+    {
+        "id": "frustration",
+        "title": "Furstration Level",
+        "description": "How frustrated did you feel during the task?"
+    }
+]}

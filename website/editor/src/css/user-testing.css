@@ -1,0 +1,80 @@
+#user-testing-overlay {
+    position: fixed;
+    inset: 0;
+
+    display: none;
+    align-items: center;
+    justify-content: center;
+
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(2px);
+
+    z-index: 9999;
+}
+
+#user-testing-overlay.active {
+    display: flex;
+}
+
+#user-testing-overlay #jspsych-content {
+    width: min(1200px, calc(100vw - 3rem));
+    max-height: calc(100vh - 3rem);
+
+    overflow-y: auto;
+
+    background: white;
+    border-radius: 0.75rem;
+    padding: 2rem;
+
+    box-shadow: 0 1rem 3rem rgba(0,0,0,.25);
+}
+
+/* Left-align the survey */
+#jspsych-content {
+    text-align: left;
+}
+
+/* One section per question */
+.jspsych-question {
+    padding: 1rem 0;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.jspsych-question:last-child {
+    border-bottom: none;
+}
+
+/* Question title */
+.jspsych-question > label:first-child {
+    display: block;
+    font-weight: 600;
+    margin-bottom: .75rem;
+}
+
+/* Space between radio buttons */
+.jspsych-question label {
+    display: block;
+    margin-bottom: .005rem
+}
+
+.likert-matrix {
+    width: 100%;
+    table-layout: fixed;
+}
+
+.likert-matrix th:first-child,
+.likert-matrix td:first-child {
+    width: 220px;
+    text-align: left;
+}
+
+/* .jspsych-btn {
+    background-color: #0d6efd !important;
+    border-color: #0d6efd !important;
+    color: white !important;
+}
+
+.jspsych-btn:hover {
+    background-color: #0b5ed7 !important; 
+    border-color: #0a58ca !important;
+} */

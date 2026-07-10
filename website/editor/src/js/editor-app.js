@@ -134,14 +134,15 @@ export class EditorApp {
 		
 	}
 	
-	async loadScenarioAndRefresh() {
+	async loadScenarioAndRefresh(scenarioId = null) {
 		
 		this.isScenarioLoading = true;
 		await this.safeRun(
 			async () => {
 				this.setStatus(`Loading demo: ${this.selectEl.value}...`);
 				
-				const loadedScenario = await this.demoControl.loadSelectedScenario();
+				const loadedScenario = await this.demoControl.loadSelectedScenario(scenarioId);
+				
 				const { queryText } = this.demoControl.getActiveContext();
 				this.activateExampleWorkspace(loadedScenario);
 				
@@ -348,10 +349,6 @@ export class EditorApp {
 	}
 	
 	async startCustomWorkspace(templateId = DEFAULT_CUSTOM_TEMPLATE_ID) {
-		// if (this.autoRenderTimer) {
-		// 	clearTimeout(this.autoRenderTimer);
-		// 	this.autoRenderTimer = null;
-		// }
 		
 		await this.safeRun(
 			async () => {
@@ -404,7 +401,7 @@ export class EditorApp {
 			async () => {
 				const parsedEncoding = await this.encodingPanelController.parseValue();
 				if (parsedEncoding.error) {
-					this.setStatus(`Invalid encoding JSON: ${parsedEncoding.error.message}`, true);
+					this.setStatus(parsedEncoding.error.message, true);
 					return;
 				}
 				
@@ -442,25 +439,25 @@ export class EditorApp {
 					}
 				}
 				
-				this.setStatus("Rendering...");
-				const output = await this.visualizationView.render({
-					component,
-					scenario,
-					endpoint,
-					queryText,
-					encoding: parsedEncoding.value,
-					dataSource: renderDataSource,
-					sparqlResult: providedSparqlResult
-				});
-				
-				this.lastRenderedSparqlData = output?.sparqlData || null;
+				try {
+					await this.visualizationView.render({
+						component,
+						scenario,
+						endpoint,
+						queryText,
+						encoding: parsedEncoding.value,
+						dataSource: renderDataSource,
+						sparqlResult: providedSparqlResult
+					});
+				} catch(e) {
+					this.setStatus(e.message, true)
+				}
 				
 				if (dataSource === "query") {
 					await this.resultsPanelController.setText(JSON.stringify(this.lastRenderedSparqlData || {}, null, 2));
 				}
 				
 				await this.updateGeneratedCode();
-				this.setStatus(`Rendered: ${this.getActiveWorkspaceLabel()}`);
 			},
 			"Render failed"
 		);
@@ -511,17 +508,6 @@ export class EditorApp {
 		const useResultsAsSource = this.getDataSourceMode() === "provided";
 		await this.resultsPanelController.setReadOnly(!useResultsAsSource);
 	}
-	
-	// scheduleAutoRender() {
-	// 	if (this.isScenarioLoading) return;
-	// 	if (this.autoRenderTimer) {
-	// 		clearTimeout(this.autoRenderTimer);
-	// 	}
-	// 	this.autoRenderTimer = setTimeout(() => {
-	// 		this.autoRenderTimer = null;
-	// 		void this.render();
-	// 	}, this.autoRenderDelayMs);
-	// }
 	
 	refreshVisualizationTab() {
 		const { scenario } = this.demoControl.getActiveContext();
