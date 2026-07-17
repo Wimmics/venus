@@ -31,9 +31,40 @@
 	</header>
 	<nav class="editor-createbar" aria-label="Create visualization">
 		<div class="w3-content editor-createbar-inner">
-			<div class="editor-createbar-label">Create From</div>
+			<div class="editor-createbar-label">Start with </div>
 			<div class="editor-createbar-actions">
-				<div class="editor-create-dropdown" id="visualizationTypeDropdown">
+				<div class="editor-toolbar-group">
+					<label for="visualizationTypeSelect" class="editor-toolbar-label">
+						Visualization Template
+					</label>
+					<select class="form-select form-select-sm" id="visualizationTypeSelect">
+						<option value="" selected>Choose a template…</option>
+					</select>
+				</div>
+
+				<div class="editor-createbar-separator" aria-hidden="true"></div>
+
+				<div class="editor-toolbar-group">
+					<label for="querySelect" class="editor-toolbar-label">
+						SPARQL Query
+					</label>
+					<select class="form-select form-select-sm" id="querySelect">
+						<option value="" selected>Choose a query…</option>
+					</select>
+				</div>
+
+				<div class="editor-createbar-separator" aria-hidden="true"></div>
+
+				<div class="editor-toolbar-group">
+					<label for="scenarioSelect" class="editor-toolbar-label">
+						Full Example
+					</label>
+					<select class="form-select form-select-sm" id="scenarioSelect">
+						<option value="" selected>Choose an example…</option>
+					</select>
+				</div>
+
+				<!-- <div class="editor-create-dropdown" id="visualizationTypeDropdown">
 					<button
 					type="button"
 					class="editor-create-button btn btn-sm btn-outline-secondary"
@@ -49,19 +80,54 @@
 						id="visualizationTypeDropdownMenu"
 						role="menu"
 						hidden ></div>
-				</div>
-				<div class="editor-createbar-separator" aria-hidden="true"></div>
-				<div class="editor-create-dropdown" id="examplesDropdown">
+				</div> -->
+
+				<!-- <select
+					class="form-select form-select-sm"
+					id="visualizationTypeSelect"
+					aria-label="Select a visualization template">
+				</select>
+
+				<div class="editor-createbar-separator" aria-hidden="true"></div> -->
+				<!-- <div class="editor-create-dropdown" id="queriesDropdown">
+					<button type="button" class="editor-create-button btn btn-sm btn-outline-secondary"
+						id="queriesDropdownButton"
+						aria-haspopup="menu"
+						aria-expanded="false" >
+						<i class="bi bi-collection" aria-hidden="true"></i>
+						<span>SPARQL Queries</span>
+						<i class="bi bi-caret-down-fill" aria-hidden="true"></i></button>
+					<div class="editor-create-menu w3-card" id="queryDropdownMenu" role="menu" hidden></div>
+					<select class="editor-select-native" id="querySelect" aria-label="Select a SPARQL Query" tabindex="-1"></select>
+				</div> -->
+
+				<!-- <select
+					class="form-select form-select-sm"
+					id="querySelect"
+					aria-label="Select a SPARQL query">
+				</select>
+
+
+				<div class="editor-createbar-separator" aria-hidden="true"></div> -->
+				<!-- <div class="editor-create-dropdown" id="examplesDropdown">
 					<button type="button" class="editor-create-button btn btn-sm btn-outline-secondary"
 						id="examplesDropdownButton"
 						aria-haspopup="menu"
 						aria-expanded="false" >
 						<i class="bi bi-collection" aria-hidden="true"></i>
-						<span>Examples</span>
+						<span>Full Examples</span>
 						<i class="bi bi-caret-down-fill" aria-hidden="true"></i></button>
 					<div class="editor-create-menu editor-examples-menu w3-card" id="examplesDropdownMenu" role="menu" hidden></div>
-					<select class="editor-examples-select-native" id="scenarioSelect" aria-label="Select an example" tabindex="-1"></select>
-				</div>
+					<select class="editor-select-native" id="scenarioSelect" aria-label="Select an example" tabindex="-1"></select>
+				</div> -->
+
+				<!-- <select
+					class="form-select form-select-sm"
+					id="scenarioSelect"
+					aria-label="Select a complete example">
+				</select> -->
+
+				
 			</div>
 
 			<button

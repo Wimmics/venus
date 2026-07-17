@@ -1,0 +1,19 @@
+PREFIX dbo: <http://dbpedia.org/ontology/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT DISTINCT
+    ?director
+    ?directorName
+    ?movie
+    ?movieName
+WHERE {
+    ?movie a dbo:Film ;
+           dbo:director ?director .
+
+    ?director rdfs:label ?directorName .
+    FILTER(LANG(?directorName)="en")
+
+    ?movie rdfs:label ?movieName .
+    FILTER(LANG(?movieName)="en")
+}
+LIMIT 500

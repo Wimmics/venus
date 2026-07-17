@@ -2,8 +2,8 @@ import { CodeViewer } from "./code-viewer.js";
 import { EditorPanelController } from "./editor-panel-controller.js";
 
 export class SnippetPanelController extends EditorPanelController {
-  constructor({ demoControl, statusSelector = "#status" }) {
-    super({ demoControl, statusSelector });
+  constructor({ getActiveContext, statusSelector = "#status" }) {
+    super({ getActiveContext, statusSelector });
     this.editor = new CodeViewer({
       holderId: "generatedCode",
       language: "html",

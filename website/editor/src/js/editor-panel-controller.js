@@ -2,8 +2,8 @@ import { TabToolbar } from "./tab-toolbar.js";
 import { safeRun, updateStatus } from "./utils/safe-run.js";
 
 export class EditorPanelController {
-	constructor({ demoControl, onContentChanged = null, onAfterReset = null, statusSelector = "#status" }) {
-		this.demoControl = demoControl;
+	constructor({ getActiveContext, onContentChanged = null, onAfterReset = null, statusSelector = "#status" }) {
+		this.getActiveContext = getActiveContext;
 		this.onContentChanged = onContentChanged;
 		this.onAfterReset = onAfterReset;
 		this.statusSelector = statusSelector;
@@ -97,7 +97,7 @@ export class EditorPanelController {
 	}
 	
 	_getScenarioId() {
-		return this.demoControl?.getActiveContext()?.scenario?.id;
+		return this.getActiveContext()?.scenario?.id;
 	}
 	
 	_buildSafeFileStem(value) {

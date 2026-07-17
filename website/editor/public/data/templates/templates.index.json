@@ -1,0 +1,69 @@
+{
+    "defaultTemplateId": "force-graph-directed",
+    "templates": [{
+        "id": "force-graph-directed",
+        "label": "Directional Graph",
+        "component": "venus-graph",
+        "encodingPath": "/force-graph/directed.json"
+    },
+    {
+        "id": "force-graph-semantic",
+        "label": "Semantic Graph",
+        "component": "venus-graph",
+        "encodingPath": "/force-graph/semantic.json"
+    },
+    {
+        "id": "force-graph-co-occurrence",
+        "label": "Co-occurrence Graph",
+        "component": "venus-graph",
+        "encodingPath": "/force-graph/co-occurrence.json"
+    },
+    {
+        "id": "bar-chart-simple",
+        "label": "Bar Chart",
+        "component": "venus-barchart",
+        "encodingPath": "/bar-chart/simple.json"
+    },
+    {
+        "id": "bar-chart-grouped",
+        "label": "Grouped Bar Chart",
+        "component": "venus-barchart",
+        "encodingPath": "/bar-chart/grouped.json"
+    },
+    {
+        "id": "bar-chart-stacked",
+        "label": "Stacked Bar Chart",
+        "component": "venus-barchart",
+        "encodingPath": "/bar-chart/stacked.json"
+    },
+    {
+        "id": "line-chart-simple",
+        "label": "Line Chart",
+        "component": "venus-linechart",
+        "encodingPath": "/line-chart/simple.json"
+    },
+    {
+        "id": "line-chart-multi-line",
+        "label": "Multi-line Chart",
+        "component": "venus-linechart",
+        "encodingPath": "/line-chart/multi-line.json"
+    },
+    {
+        "id": "scatter-plot-simple",
+        "label": "Scatter Plot",
+        "component": "venus-scatterplot",
+        "encodingPath": "/scatter-plot/simple.json"
+    },
+    {
+        "id": "scatter-plot-bubble",
+        "label": "Bubble Plot",
+        "component": "venus-scatterplot",
+        "encodingPath": "/scatter-plot/bubble.json"
+    },
+    {
+        "id": "sankey-simple",
+        "label": "Sankey Diagram",
+        "component": "venus-sankey",
+        "encodingPath": "/sankey/simple.json"
+    }]
+}

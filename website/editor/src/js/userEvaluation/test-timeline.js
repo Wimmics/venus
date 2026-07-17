@@ -31,6 +31,7 @@ export class UsabilityTestingWorkflow {
 
         // tasks
         const json = await this._loadJson("tasks.json")
+        // const tasks = json.values.filter(d => ["task_5", "task_6"].includes(d.id))
         const tasks = json.values
         console.log("tasks = ", tasks)
         for (const task of tasks) {
@@ -38,8 +39,8 @@ export class UsabilityTestingWorkflow {
         }
 
         // post-test 
-        await this._addUMUXLiteQuestionnaire()
-        await this._addPostTestQuestionnaire()
+        // await this._addUMUXLiteQuestionnaire()
+        // await this._addPostTestQuestionnaire()
 
     }
 

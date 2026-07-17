@@ -8,6 +8,9 @@ export class TaskLog{
         this.runCount = 0
 
         this.errors = []
+        this.templateSelections = []
+        this.encodingSnippets = []
+        this.configs = []
 
         this.finalEncoding = null
         this.finalQuery = null

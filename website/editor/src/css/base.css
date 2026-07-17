@@ -106,7 +106,23 @@ button {
   background: var(--border);
 }
 
-.editor-create-dropdown {
+.editor-toolbar-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 220px;
+}
+
+.editor-toolbar-label {
+    margin: 0;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--bs-secondary-color);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+/* .editor-create-dropdown {
   position: relative;
 }
 
@@ -158,13 +174,13 @@ button {
   font-weight: 700;
 }
 
-.editor-examples-select-native {
+.editor-select-native {
   position: absolute;
   opacity: 0;
   pointer-events: none;
   width: 1px;
   height: 1px;
-}
+} */
 
 .editor-export-dropdown {
   position: relative;

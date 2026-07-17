@@ -1,3 +1,5 @@
+import { safeRun } from "./utils/safe-run";
+
 export class VisualizationView {
 	constructor({ hostEl, metaPanelEl }) {
 		this.hostEl = hostEl;
@@ -82,6 +84,59 @@ export class VisualizationView {
 		}
 		this.activeComponentTag = null;
 		this.activeComponentEl = null;
+	}
+
+	init() {
+		this._setupExportDropdown()
+	}
+
+	_setupExportDropdown() {
+		const dropdownEl = document.querySelector("#exportDropdown")
+
+		const exportDropdownButtonEl = document.querySelector("#exportDropdownButton");
+		const exportDropdownMenuEl = document.querySelector("#exportDropdownMenu");
+
+		if (dropdownEl.dataset.bound === "1") return;
+		dropdownEl.dataset.bound = "1";
+		
+		exportDropdownButtonEl.addEventListener("click", (event) => {
+			event.stopPropagation();
+			const willOpen = exportDropdownMenuEl.hidden;
+			exportDropdownMenuEl.hidden = !willOpen;
+			exportDropdownButtonEl.setAttribute("aria-expanded", String(willOpen));
+		});
+		
+		exportDropdownMenuEl.querySelectorAll(".editor-export-option").forEach((button) => {
+			button.addEventListener("click", async () => {
+				const format = button.dataset.format;
+				this._closeExportDropdown();
+				
+				const stem = this._buildFileStem("venus-visualization")
+
+				await safeRun(
+					async () => await this.exportAs(format, stem), 
+					`Failed to download ${format} image.`)
+			});
+		});
+		
+		document.addEventListener("click", (event) => {
+			if (!dropdownEl.contains(event.target)) {
+				this._closeExportDropdown();
+			}
+		});
+	}
+	
+	_closeExportDropdown() {
+		document.querySelector("#exportDropdownButton").hidden = true;
+		document.querySelector("#exportDropdown").setAttribute("aria-expanded", "false");
+	}
+
+	_buildFileStem(value) {
+		return String(value || "venus-visualization")
+		.trim()
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, "-")
+		.replace(/^-+|-+$/g, "") || "venus-visualization";
 	}
 	
 	async _ensureComponent(tag) {

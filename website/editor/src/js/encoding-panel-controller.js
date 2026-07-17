@@ -8,19 +8,15 @@ import { getMenuStructure } from "./encoding-snippets.js";
 
 export class EncodingPanelController extends EditorPanelController {
 	constructor({
-		demoControl,
-		isCustomWorkspace = null,
+		getActiveContext,
 		getCustomDefaultEncoding = null,
 		getActiveComponent = null,
 		onContentChanged,
 		onAfterReset,
-		onRun, 
-		statusSelector = "#status"
+		onRun
 	}) {
-		super({ demoControl, onContentChanged, onAfterReset, statusSelector });
+		super({ getActiveContext, onContentChanged, onAfterReset });
 		this.editor = new EncodingEditor({ holderId: "encodingEditor" });
-		this.isCustomWorkspace = isCustomWorkspace;
-		this.getCustomDefaultEncoding = getCustomDefaultEncoding;
 		this.getActiveComponent = getActiveComponent;
 		this.addMenuEl = null;
 		this.addMenuButtonEl = null;
@@ -45,7 +41,7 @@ export class EncodingPanelController extends EditorPanelController {
 				id: "encoding-reset",
 				title: "Reload base encoding from demo",
 				iconClass: "bi bi-arrow-counterclockwise",
-				onClick: async () => this.resetToScenarioEncoding()
+				onClick: async () => this.reset()
 			}
 		];
 	}
@@ -178,44 +174,26 @@ export class EncodingPanelController extends EditorPanelController {
 	async addSnippet(d) {
 		const selectedValue = document.querySelector(`#${d.key}`).value
 		const snippet = d.action(selectedValue, this.getActiveComponent())
+		console.log("snippet = ", snippet)
 
 		this.editor.insertAtCursor(snippet)
 	}
 	
-	async resetToScenarioEncoding() {
+	async reset() {
 		await safeRun(
 			async () => {
-				if (this.isCustomWorkspace?.()) {
-					const defaultEncoding = await this.getCustomDefaultEncoding?.();
-					if (!defaultEncoding) {
-						updateStatus("Select a chart type first.", {
-							isError: true,
-							statusSelector: this.statusSelector
-						});
-						return;
-					}
-					
-					await this.setValue(defaultEncoding);
-					if (this.onAfterReset) await this.onAfterReset({ target: "encoding" });
-					updateStatus("Default chart encoding reloaded.", {
-						statusSelector: this.statusSelector
-					});
+				const { encoding } = await this.getActiveContext?.()
+				console.log("encoding = ", encoding)
+				if (!encoding) {
+					updateStatus("Select a visualization template or an example first.", { isError: true })
 					return;
 				}
 				
-				const scenario = this.demoControl.getActiveContext().scenario;
-				if (!scenario) {
-					updateStatus("No demo selected.", { isError: true, statusSelector: this.statusSelector });
-					return;
-				}
-				
-				await this.setValue(scenario.encoding || {});
-				if (this.onAfterReset) await this.onAfterReset({ scenario, target: "encoding" });
-				updateStatus(`Base encoding reloaded: ${scenario.name || scenario.id}`, {
-					statusSelector: this.statusSelector
-				});
+				await this.setValue(encoding)
+
+				if (this.onAfterReset) await this.onAfterReset({ target: "encoding" });
 			},
-			{ fallbackMessage: this.getResetFailureMessage(), statusSelector: this.statusSelector }
+			{ fallbackMessage: this.getResetFailureMessage() }
 		);
 	}
 	

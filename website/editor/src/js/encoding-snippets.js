@@ -1,73 +1,4 @@
-import { SCALE_TYPES, LEGEND_POSITIONS, VIS_TYPES, MARK_TYPES, CHANNEL_TYPES, ATTRIBUTE_TYPES, ALIGN_TYPES } from "@wimmics/venus-core"
-
-export const VISUALIZATION_TEMPLATES = Object.freeze([
-	{
-		id: "force-graph-directed",
-		label: "Directional Graph",
-		component: "venus-graph",
-		encodingPath: "./templates/force-graph/directed.json"
-	},
-	{
-		id: "force-graph-semantic",
-		label: "Semantic Graph",
-		component: "venus-graph",
-		encodingPath: "./templates/force-graph/semantic.json"
-	},
-	{
-		id: "force-graph-co-occurrence",
-		label: "Co-occurrence Graph",
-		component: "venus-graph",
-		encodingPath: "./templates/force-graph/co-occurrence.json"
-	},
-	{
-		id: "bar-chart-simple",
-		label: "Bar Chart",
-		component: "venus-barchart",
-		encodingPath: "./templates/bar-chart/simple.json"
-	},
-	{
-		id: "bar-chart-grouped",
-		label: "Grouped Bar Chart",
-		component: "venus-barchart",
-		encodingPath: "./templates/bar-chart/grouped.json"
-	},
-	{
-		id: "bar-chart-stacked",
-		label: "Stacked Bar Chart",
-		component: "venus-barchart",
-		encodingPath: "./templates/bar-chart/stacked.json"
-	},
-	{
-		id: "line-chart-simple",
-		label: "Line Chart",
-		component: "venus-linechart",
-		encodingPath: "./templates/line-chart/simple.json"
-	},
-	{
-		id: "line-chart-multi-line",
-		label: "Multi-line Chart",
-		component: "venus-linechart",
-		encodingPath: "./templates/line-chart/multi-line.json"
-	},
-	{
-		id: "scatter-plot-simple",
-		label: "Scatter Plot",
-		component: "venus-scatterplot",
-		encodingPath: "./templates/scatter-plot/simple.json"
-	},
-	{
-		id: "scatter-plot-bubble",
-		label: "Bubble Plot",
-		component: "venus-scatterplot",
-		encodingPath: "./templates/scatter-plot/bubble.json"
-	},
-	{
-		id: "sankey-simple",
-		label: "Sankey Diagram",
-		component: "venus-sankey",
-		encodingPath: "./templates/sankey/simple.json"
-	}
-]);
+import { SCALE_TYPES, LEGEND_POSITIONS, VIS_TYPES, MARK_TYPES, CHANNEL_TYPES, ATTRIBUTE_TYPES, ALIGN_TYPES, isOrdinalScaleType } from "@wimmics/venus-core"
 
 // -----------------------------------------------
 // encoding builder menu's construction functions
@@ -157,9 +88,10 @@ function getNodesValues() {
 			],
 			action: (option) => buildMarkPropertySnippet(null, option)
 		},
-		{ key: "sort-by", label: "Sort By", options: byOptions, action: (option, vis) => buildMarkPropertySnippet("by", option), display: (vis) => vis === VIS_TYPES.VENUS_SANKEY ? "grid" : "none" },
-		{ key: "sort-order", label: "Sort Order", options: orderOptions, action: (option, vis) => buildMarkPropertySnippet("order", option), display: (vis) => vis === VIS_TYPES.VENUS_SANKEY ? "grid" : "none" },
-		{ key: "sort-mode", label: "Sort Mode", options: modeOptions, action: (option, vis) => buildMarkPropertySnippet("mode", option), display: (vis) => vis === VIS_TYPES.VENUS_SANKEY ? "grid" : "none" },
+		// { key: "sort-by", label: "Sort By", options: byOptions, action: (option, vis) => buildMarkPropertySnippet("by", option), display: (vis) => vis === VIS_TYPES.VENUS_SANKEY ? "grid" : "none" },
+		// { key: "sort-order", label: "Sort Order", options: orderOptions, action: (option, vis) => buildMarkPropertySnippet("order", option), display: (vis) => vis === VIS_TYPES.VENUS_SANKEY ? "grid" : "none" },
+		// { key: "sort-mode", label: "Sort Mode", options: modeOptions, action: (option, vis) => buildMarkPropertySnippet("mode", option), display: (vis) => vis === VIS_TYPES.VENUS_SANKEY ? "grid" : "none" },
+		{ key: "sort", label: "Sort By", options: byOptions, action: (option, vis) => buildSortSnippet(option),  display: (vis) => vis === VIS_TYPES.VENUS_SANKEY ? "grid" : "none" },
 		{ key: "align", label: "Alignment", options: getObjectOptions(ALIGN_TYPES), action: (option, vis) => buildMarkPropertySnippet("align", option), display: (vis) => vis === VIS_TYPES.VENUS_SANKEY ? "grid" : "none"},
 		{ key: "padding", label: "Padding", action: () => buildValueSnippet("padding"), display: (vis) => vis === VIS_TYPES.VENUS_SANKEY ? "grid" : "none"}
 	]
@@ -224,6 +156,9 @@ function buildObjectSnippet(object, vis) {
 	if (object === MARK_TYPES.NODES && vis === VIS_TYPES.VENUS_SANKEY )
 		return `"${object}": { "fields": [] }`
 
+	if ([MARK_TYPES.BARS, MARK_TYPES.POINTS, MARK_TYPES.LINES].includes(object))
+		return `"${object}": { }`
+
 	return `"${object}": { "field": null }`
 }
 
@@ -240,8 +175,16 @@ function buildLegendSnippet(position){
 function buildScaleSnippet(type) {
 	return `"scale": {
 		"type": "${type}",
-		"range": null,
+		"range": ${isOrdinalScaleType(type) ? `"Accent"` : null},
 		"domain": null
+	}`
+}
+
+function buildSortSnippet(value) {
+	return `"sort": {
+		"by": "${value}",
+		"order": "desc", 
+		"mode": "total"
 	}`
 }
 
@@ -259,6 +202,9 @@ function buildMarkPropertySnippet(property, option) {
 	
 	if (!property && option)
 		return `"${option}": { "field": null }` // source, target
+
+	if (option === "true")
+		return `"${property}": true`
 
 	return `"${property}": "${option}"` // all other cases
 }

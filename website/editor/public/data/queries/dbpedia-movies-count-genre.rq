@@ -1,0 +1,14 @@
+PREFIX dbo: <http://dbpedia.org/ontology/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?genre (COUNT(DISTINCT ?movie) AS ?nbMovies)
+WHERE {
+  ?movie a dbo:Film ;
+         dbo:genre ?g .
+
+  ?g rdfs:label ?genre .
+  FILTER(LANG(?genre) = "en")
+}
+GROUP BY ?genre
+ORDER BY DESC(?nbMovies)
+LIMIT 20

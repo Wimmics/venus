@@ -2,8 +2,8 @@ import { CodeViewer } from "./code-viewer.js";
 import { EditorPanelController } from "./editor-panel-controller.js";
 
 export class ResultsPanelController extends EditorPanelController {
-  constructor({ demoControl, onContentChanged, statusSelector = "#status" }) {
-    super({ demoControl, onContentChanged, statusSelector });
+  constructor({ getActiveContext, onContentChanged, statusSelector = "#status" }) {
+    super({ getActiveContext, onContentChanged, statusSelector });
     this.editor = new CodeViewer({
       holderId: "sparqlResults",
       language: "json",

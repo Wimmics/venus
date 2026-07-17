@@ -1,0 +1,29 @@
+PREFIX dbo: <http://dbpedia.org/ontology/>
+PREFIX dbp: <http://dbpedia.org/property/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT
+    ?studioName
+    ?genreName
+    ?language
+    (COUNT(DISTINCT ?movie) AS ?nbMovies)
+WHERE {
+
+    ?movie a dbo:Film ;
+           dbp:studio ?studio ;
+           dbp:genre ?genre ;
+           dbo:language ?lang .
+
+    ?studio rdfs:label ?studioName .
+    FILTER(LANG(?studioName)="en")
+
+    ?genre rdfs:label ?genreName .
+    FILTER(LANG(?genreName)="en")
+
+    ?lang rdfs:label ?language .
+    FILTER(LANG(?language)="en")
+
+}
+GROUP BY ?studioName ?genreName ?language
+ORDER BY DESC(?nbMovies)
+LIMIT 300

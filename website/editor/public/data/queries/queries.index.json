@@ -1,0 +1,32 @@
+[
+    {
+        "id": "dbpedia-actors-genre",
+        "queryPath": "/dbpedia-actors-genre.rq",
+        "label": "Actors per genre. Source: DBPedia."
+    },
+    {
+        "id": "dbpedia-movies-count-decade",
+        "queryPath": "/dbpedia-movies-count-decade.rq",
+        "label": "Movies per decade. Source: DBPedia."
+    },
+    {
+        "id": "dbpedia-movies-count-genre",
+        "queryPath": "/dbpedia-movies-count-genre.rq",
+        "label": "Movies per genre. Source: DBPedia."
+    },
+    {
+        "id": "dbpedia-movies-directors",
+        "queryPath": "/dbpedia-movies-directors.rq",
+        "label": "Movies and directors. Source: DBPedia."
+    },
+    {
+        "id": "dbpedia-movies-genre-language-country",
+        "queryPath": "/dbpedia-movies-genre-language-country.rq",
+        "label": "Movies per genre, language, and country. Source: DBPedia."
+    },
+    {
+        "id": "dbpedia-movies-genre-language-studio",
+        "queryPath": "/dbpedia-movies-genre-language-studio.rq",
+        "label": "Movies per genre, language, and studio. Source: DBPedia."
+    }
+]

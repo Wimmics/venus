@@ -1,0 +1,14 @@
+PREFIX dbo: <http://dbpedia.org/ontology/>
+
+SELECT ?decade (COUNT(*) AS ?nbMovies)
+WHERE {
+    {
+        SELECT DISTINCT ?movie (FLOOR(YEAR(?date)/10)*10 AS ?decade)
+        WHERE {
+            ?movie a dbo:Film ;
+                   dbo:releaseDate ?date .
+        }
+    }
+}
+GROUP BY ?decade
+ORDER BY ?decade
