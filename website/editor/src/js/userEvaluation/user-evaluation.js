@@ -3,6 +3,8 @@ import "jspsych/css/jspsych.css";
 import { TaskLog } from "./task-log";
 import { UsabilityTestingWorkflow } from "./test-timeline";
 
+export const USABILITY_TEST_DATA_PATH = `${import.meta.env.BASE_URL}/data/usability-testing`
+
 export class UserEvaluation {
     constructor({editorApp}) {
         this.editorApp = editorApp
@@ -50,43 +52,65 @@ export class UserEvaluation {
             this.finishTask();
         })
 
-        this._wrapEditor()
+        this._setupEditorInterceptor()
+        this._setupToastInterceptor()
     }
 
-    _wrapEditor() {
-        // Intercept and log errors
-        const originalSetStatus = this.editorApp.setStatus.bind(this.editorApp);
+    _setupToastInterceptor() {
+        this.statusObserver = new MutationObserver((mutations) => {
+            for (const mutation of mutations) {
+                for (const node of mutation.addedNodes) {
+                    if (
+                        node.nodeType === Node.ELEMENT_NODE &&
+                        node.matches(".editor-toast.error")
+                    ) {
+                        const message = node.textContent.trim();
 
-        this.editorApp.setStatus = (message, isError, ...args) => {
-            if (isError) {
-                this.currentTaskLog.errors.push({
+                        this.currentTaskLog.errors.push({
+                            time: performance.now() - this.currentTaskLog.startTime,
+                            type: this.getErrorType(message),
+                            message
+                        });
+                    }
+                }
+            }
+        });
+
+        this.statusObserver.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+    }
+
+    _setupEditorInterceptor() {
+       // Intercept and log query/template selections
+        const originalLaunchWorkspace = this.editorApp.launchWorkspace.bind(this.editorApp);
+
+        this.editorApp.launchWorkspace = async (options = {}, ...args) => {
+            const { queryId, templateId } = options;
+
+            if (queryId) {
+                const query = this.editorApp.queries.get(queryId);
+
+                this.currentTaskLog.querySelections.push({
                     time: performance.now() - this.currentTaskLog.startTime,
-                    type: this.getErrorType(message),
-                    message
+                    queryId,
+                    queryLabel: query?.label
                 });
             }
 
-            return originalSetStatus(message, isError, ...args);
-        };
+            if (templateId) {
+                const template = this.editorApp.templates.get(templateId);
 
-        // Intercept and log selected visualization templates, while keeping the sparql query visible after template selection during user evaluation. By default, the query is deleted.
-        const originalStartCustomWorkspace = this.editorApp.startCustomWorkspace.bind(this.editorApp);
+                this.currentTaskLog.templateSelections.push({
+                    time: performance.now() - this.currentTaskLog.startTime,
+                    templateId,
+                    templateLabel: template?.label,
+                    component: template?.component
+                });
+            }
 
-        this.editorApp.startCustomWorkspace = async (templateId, ...args) => {
-            const sparql = await this.editorApp.sparqlPanelController.getText();
- 
-            const template = this.editorApp.getTemplateById(templateId);
-
-            this.currentTaskLog.templateSelections.push({
-                time: performance.now() - this.currentTaskLog.startTime,
-                templateId,
-                templateLabel: template.label,
-                component: template.component
-            });
-
-            await originalStartCustomWorkspace(templateId, ...args);
-
-            await this.editorApp.sparqlPanelController.setText(sparql);
+            return originalLaunchWorkspace(options, ...args);
         };
 
         // Intercept and log selected snippets in the encoding panel
@@ -149,7 +173,7 @@ export class UserEvaluation {
         this.doneButton.hidden = false
 
         // Load scenario into the editor
-        await this.editorApp.loadScenarioAndRefresh(task.scenario_id)
+        await this.editorApp.launchWorkspace({scenarioId: task.scenario_id})
 
         // Prepare terrain
         this.editorApp.sparqlPanelController.setReadOnly(!task.sparql)

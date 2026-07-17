@@ -9,6 +9,8 @@ export class TaskLog{
 
         this.errors = []
         this.templateSelections = []
+        this.querySelections = []
+        
         this.encodingSnippets = []
         this.configs = []
 

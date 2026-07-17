@@ -5,6 +5,8 @@ import surveyMultiChoice from "@jspsych/plugin-survey-multi-choice";
 import surveyText from "@jspsych/plugin-survey-text";
 import surveyHtmlForm from "@jspsych/plugin-survey-html-form";
 
+import { fetchJson, fetchText } from "../utils/http-utils";
+import { USABILITY_TEST_DATA_PATH } from "./user-evaluation";
 
 export class UsabilityTestingWorkflow {
     constructor({startTask = null, finishTask = null, waitForUser = null} = {}) {
@@ -30,7 +32,7 @@ export class UsabilityTestingWorkflow {
 
 
         // tasks
-        const json = await this._loadJson("tasks.json")
+        const json = await fetchJson(`${USABILITY_TEST_DATA_PATH}/tasks.json`)
         // const tasks = json.values.filter(d => ["task_5", "task_6"].includes(d.id))
         const tasks = json.values
         console.log("tasks = ", tasks)
@@ -89,7 +91,7 @@ export class UsabilityTestingWorkflow {
     }   
 
     async _addPreTestQuestionnaire() {
-        const json = await this._loadJson('pre-questionnaire.json')
+        const json = await fetchJson(`${USABILITY_TEST_DATA_PATH}/pre-questionnaire.json`)
         console.log("json = ", json)
 
         this.timeline.push({
@@ -117,7 +119,7 @@ export class UsabilityTestingWorkflow {
     }
 
     async _addTask(task) {
-        const htmlContent = await this._loadHtml(`/tasks/${task.id}.html`);
+        const htmlContent = await fetchText(`${USABILITY_TEST_DATA_PATH}/tasks/${task.id}.html`);
 
         this.timeline.push({
             type: htmlButtonResponse,
@@ -150,7 +152,7 @@ export class UsabilityTestingWorkflow {
     
 
     async _addRawTLXQuestionnaire(task) {
-        const json = await this._loadJson('raw-tlx.json')
+        const json = await fetchJson(`${USABILITY_TEST_DATA_PATH}/raw-tlx.json`)
         console.log("json = ", json)
 
         this.timeline.push({
@@ -180,7 +182,7 @@ export class UsabilityTestingWorkflow {
     }
 
     async _addUMUXLiteQuestionnaire() {
-        const json = await this._loadJson('umux-lite.json')
+        const json = await fetchJson(`${USABILITY_TEST_DATA_PATH}/umux-lite.json`)
         console.log("json = ", json)
 
         this.timeline.push({
@@ -210,7 +212,7 @@ export class UsabilityTestingWorkflow {
     }
 
     async _addPostTestQuestionnaire(){
-        const json = await this._loadJson('post-test.json')
+        const json = await fetchJson(`${USABILITY_TEST_DATA_PATH}/post-test.json`)
 
         this.timeline.push({
             type: surveyHtmlForm,
@@ -407,16 +409,6 @@ export class UsabilityTestingWorkflow {
     // ------ end HTML form helpers -----
 
     // ---- data helpers ------
-
-    async _loadHtml(path) {
-        const response = await fetch(`${import.meta.env.BASE_URL}/data/usability-testing/${path}`);
-        return response.text();
-    }
-
-    async _loadJson(path) {
-        const response = await fetch(`${import.meta.env.BASE_URL}/data/usability-testing/${path}`);
-        return response.json();
-    }
 
     _getScale10Questions(data) {
         const questions = []
