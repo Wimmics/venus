@@ -1,128 +1,154 @@
 {
-  "defaultScenarioId": "visgraph-cooccurrence-color-size",
-  "scenarios": [
-    {
-      "id": "visgraph-minimal-cooccurrence",
-      "name": "Force-directed Graph: Harrison Ford Co-Stars (Minimal Example)",
-      "encodingPath": "./encoding/vis-graph-minimal-cooccurrence.json",
-      "queryPath": "./queries/redford-costars.rq",
-      "endpoint": "https://dbpedia.org/sparql",
-      "component": "venus-graph"
-    },
-
-    {
-      "id": "visgraph-directed-color-size",
-      "name": "Force-directed Graph: Movie Distributors and Co-stars of Harrison Ford (Color and Size Channels)",
-      "encodingPath": "./encoding/vis-graph-directed-color-size.json",
-      "queryPath": "./queries/redford-costars.rq",
-      "endpoint": "https://dbpedia.org/sparql",
-      "component": "venus-graph"
-    },
-    {
-      "id": "visgraph-cooccurrence-color-size",
-      "name": "Force-directed Graph: Harrison Ford Co-Stars and their Birth Year",
-      "encodingPath": "./encoding/vis-graph-cooccurrence-color-size.json",
-      "queryPath": "./queries/redford-costars-birthyear.rq",
-      "endpoint": "https://dbpedia.org/sparql",
-      "component": "venus-graph"
-    },
-    {
-      "id": "visgraph-semantic-links-labels",
-      "name": "Force-directed Graph: Graph structure of films on DBPedia",
-      "encodingPath": "./encoding/graph-semantic-links.json",
-      "queryPath": "./queries/dbpedia-movies-spo.rq",
-      "endpoint": "https://dbpedia.org/sparql",
-      "component": "venus-graph"
-    },
-    {
-      "id": "visgraph-datalens-test",
-      "name": "Datalens test",
-      "encodingPath": "./encoding/datalens-cq3.json",
-      "queryPath": "./queries/datalens-cq3.rq",
-      "endpoint": "https://graph.i3s.unice.fr/repositories/datalens",
-      "component": "venus-graph"
-    },
-
-
-    {
-      "id": "sankey-simple",
-      "name": "Sankey: People per country and birth decade",
-      "encodingPath": "./encoding/sankey-simple.json",
-      "queryPath": "./queries/people-country-birthDecade.rq",
-      "endpoint": "https://dbpedia.org/sparql",
-      "component": "venus-sankey"
-    },
-    {
-      "id": "sankey-colored-nodes",
-      "name": "Sankey: Universities across countries and cities",
-      "encodingPath": "./encoding/sankey-colored-nodes.json",
-      "queryPath": "./queries/university-features.rq",
-      "endpoint": "https://dbpedia.org/sparql",
-      "component": "venus-sankey"
-    },
-
-
-    {
-      "id": "barchart-simple",
-      "name": "Simple Bar Chart: Harrison Ford Co-Stars per Movie",
-      "encodingPath": "./encoding/barchart-simple.json",
-      "queryPath": "./queries/redford-costars-count.rq",
-      "endpoint": "https://dbpedia.org/sparql",
-      "component": "venus-barchart"
-    },
-    {
-      "id": "barchart-stacked",
-      "name": "Stacked Bar Chart: Harrison Ford Movies",
-      "encodingPath": "./encoding/barchart-stacked.json",
-      "queryPath": "./queries/redford-movies-genre-count.rq",
-      "endpoint": "https://dbpedia.org/sparql",
-      "component": "venus-barchart"
-    },
-    {
-      "id": "barchart-grouped",
-      "name": "Grouped Bar Chart: Harrison Ford Movies",
-      "encodingPath": "./encoding/barchart-grouped.json",
-      "queryPath": "./queries/redford-movies-genre-count.rq",
-      "endpoint": "https://dbpedia.org/sparql",
-      "component": "venus-barchart"
-    },
-
-
-    {
-      "id": "linechart-simple",
-      "name": "Simple Line Chart: Harrison Ford Co-Stars per Movie",
-      "encodingPath": "./encoding/linechart-simple.json",
-      "queryPath": "./queries/films-per-year.rq",
-      "endpoint": "https://query.wikidata.org/sparql",
-      "component": "venus-linechart"
-    },
-    {
-      "id": "linechart-multilines",
-      "name": "Multiline Line Chart: Temporal evolution of birth rate per country",
-      "encodingPath": "./encoding/linechart-multilines.json",
-      "queryPath": "./queries/films-per-year-genre.rq",
-      "endpoint": "https://query.wikidata.org/sparql",
-      "component": "venus-linechart"
-    },
-
-    {
-      "id": "scatterplot-simple",
-      "name": "Simple Scatter Plot: Relationship between Birth Rate and Education Level",
-      "encodingPath": "./encoding/scatterplot-simple.json",
-      "queryPath": "./queries/birth-education-country-continent.rq",
-      "endpoint": "https://query.wikidata.org/sparql",
-      "component": "venus-scatterplot"
-    },
-
-    {
-      "id": "bubble-plot",
-      "name": "Bubble Plot: Birth rate vs Education Level vs Population in 2020",
-      "encodingPath": "./encoding/bubble-plot.json",
-      "queryPath": "./queries/birth-education-country-continent.rq",
-      "endpoint": "https://query.wikidata.org/sparql",
-      "component": "venus-scatterplot"
-    }
-
-
-  ]
+	"defaultScenarioId": "visgraph-cooccurrence-color-size",
+	"scenarios": [
+		{
+			"id": "barchart-movies-dbpedia",
+			"name": "Bar Chart: Movies per Studio",
+			"encodingPath": "/encoding/movies-dbpedia-barchart.json",
+			"queryPath": "/queries/movies-count-dbpedia.rq",
+			"endpoint": "https://dbpedia.org/sparql",
+			"component": "venus-barchart"
+		},
+		{
+			"id": "visgraph-movies-dbpedia",
+			"name": "Cooccurrence Graph: Co-staring network",
+			"encodingPath": "/encoding/movies-dbpedia-graph-eval.json",
+			"queryPath": "/queries/movies-dbpedia.rq",
+			"endpoint": "https://dbpedia.org/sparql",
+			"component": "venus-graph"
+		},
+		{
+			"id": "sankey-movies-dbpedia",
+			"name": "Sankey Diagram: Movies",
+			"encodingPath": "/encoding/movies-dbpedia-sankey-eval.json",
+			"queryPath": "/queries/movies-dbpedia-flows.rq",
+			"endpoint":"https://dbpedia.org/sparql",
+			"component":"venus-sankey"
+		},
+		
+		
+		{
+			"id": "visgraph-minimal-cooccurrence",
+			"name": "Force-directed Graph: Harrison Ford Co-Stars (Minimal Example)",
+			"encodingPath": "/encoding/vis-graph-minimal-cooccurrence.json",
+			"queryPath": "/queries/redford-costars.rq",
+			"endpoint": "https://dbpedia.org/sparql",
+			"component": "venus-graph"
+		},
+		
+		{
+			"id": "visgraph-directed-color-size",
+			"name": "Force-directed Graph: Movie Distributors and Co-stars of Harrison Ford (Color and Size Channels)",
+			"encodingPath": "/encoding/vis-graph-directed-color-size.json",
+			"queryPath": "/queries/redford-costars.rq",
+			"endpoint": "https://dbpedia.org/sparql",
+			"component": "venus-graph"
+		},
+		{
+			"id": "visgraph-cooccurrence-color-size",
+			"name": "Force-directed Graph: Harrison Ford Co-Stars and their Birth Year",
+			"encodingPath": "/encoding/vis-graph-cooccurrence-color-size.json",
+			"queryPath": "/queries/redford-costars-birthyear.rq",
+			"endpoint": "https://dbpedia.org/sparql",
+			"component": "venus-graph"
+		},
+		{
+			"id": "visgraph-semantic-links-labels",
+			"name": "Force-directed Graph: Graph structure of films on DBPedia",
+			"encodingPath": "/encoding/graph-semantic-links.json",
+			"queryPath": "/queries/dbpedia-movies-spo.rq",
+			"endpoint": "https://dbpedia.org/sparql",
+			"component": "venus-graph"
+		},
+		{
+			"id": "visgraph-datalens-test",
+			"name": "Datalens test",
+			"encodingPath": "/encoding/datalens-cq3.json",
+			"queryPath": "/queries/datalens-cq3.rq",
+			"endpoint": "https://graph.i3s.unice.fr/repositories/datalens",
+			"component": "venus-graph"
+		},
+		
+		
+		{
+			"id": "sankey-simple",
+			"name": "Sankey: People per country and birth decade",
+			"encodingPath": "/encoding/sankey-simple.json",
+			"queryPath": "/queries/people-country-birthDecade.rq",
+			"endpoint": "https://dbpedia.org/sparql",
+			"component": "venus-sankey"
+		},
+		{
+			"id": "sankey-colored-nodes",
+			"name": "Sankey: Universities across countries and cities",
+			"encodingPath": "/encoding/sankey-colored-nodes.json",
+			"queryPath": "/queries/university-features.rq",
+			"endpoint": "https://dbpedia.org/sparql",
+			"component": "venus-sankey"
+		},
+		
+		
+		{
+			"id": "barchart-simple",
+			"name": "Simple Bar Chart: Harrison Ford Co-Stars per Movie",
+			"encodingPath": "/encoding/barchart-simple.json",
+			"queryPath": "/queries/redford-costars-count.rq",
+			"endpoint": "https://dbpedia.org/sparql",
+			"component": "venus-barchart"
+		},
+		{
+			"id": "barchart-stacked",
+			"name": "Stacked Bar Chart: Harrison Ford Movies",
+			"encodingPath": "/encoding/barchart-stacked.json",
+			"queryPath": "/queries/redford-movies-genre-count.rq",
+			"endpoint": "https://dbpedia.org/sparql",
+			"component": "venus-barchart"
+		},
+		{
+			"id": "barchart-grouped",
+			"name": "Grouped Bar Chart: Harrison Ford Movies",
+			"encodingPath": "/encoding/barchart-grouped.json",
+			"queryPath": "/queries/redford-movies-genre-count.rq",
+			"endpoint": "https://dbpedia.org/sparql",
+			"component": "venus-barchart"
+		},
+		
+		
+		{
+			"id": "linechart-simple",
+			"name": "Simple Line Chart: Harrison Ford Co-Stars per Movie",
+			"encodingPath": "/encoding/linechart-simple.json",
+			"queryPath": "/queries/films-per-year.rq",
+			"endpoint": "https://query.wikidata.org/sparql",
+			"component": "venus-linechart"
+		},
+		{
+			"id": "linechart-multilines",
+			"name": "Multiline Line Chart: Temporal evolution of birth rate per country",
+			"encodingPath": "/encoding/linechart-multilines.json",
+			"queryPath": "/queries/films-per-year-genre.rq",
+			"endpoint": "https://query.wikidata.org/sparql",
+			"component": "venus-linechart"
+		},
+		
+		{
+			"id": "scatterplot-simple",
+			"name": "Simple Scatter Plot: Relationship between Birth Rate and Education Level",
+			"encodingPath": "/encoding/scatterplot-simple.json",
+			"queryPath": "/queries/birth-education-country-continent.rq",
+			"endpoint": "https://query.wikidata.org/sparql",
+			"component": "venus-scatterplot"
+		},
+		
+		{
+			"id": "bubble-plot",
+			"name": "Bubble Plot: Birth rate vs Education Level vs Population in 2020",
+			"encodingPath": "/encoding/bubble-plot.json",
+			"queryPath": "/queries/birth-education-country-continent.rq",
+			"endpoint": "https://query.wikidata.org/sparql",
+			"component": "venus-scatterplot"
+		}
+		
+		
+	]
 }

@@ -1,0 +1,17 @@
+{
+    "nodes":{
+        "source": {
+            "field": "actor",
+            "labels": { 
+                "field": "actorName"
+            }
+        },
+        "target": {
+            "field": "movie",
+            "color": { "value": "orange" }
+        }
+    },
+    "links": {
+        "type": "directional"
+    }
+}

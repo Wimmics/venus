@@ -1,5 +1,5 @@
 import { SparqlToGraphMapper } from "./sparql-to-graph.js";
-import { VIS_TYPES, MARK_CHANNELS, MARK_ATTRIBUTES, MARK_TYPES } from "@wimmics/venus-core";
+import { VIS_TYPES, MARK_TYPES, getSupportedChannels, getSupportedAttributes } from "@wimmics/venus-core";
 
 /**
  * Transforms SPARQL results into Sankey diagram visualization format.
@@ -16,19 +16,6 @@ import { VIS_TYPES, MARK_CHANNELS, MARK_ATTRIBUTES, MARK_TYPES } from "@wimmics/
  * positioned vertically and links flow horizontally with widths proportional to values.
  * 
  * @extends SparqlToGraphMapper
- * 
- * @example
- * const mapper = createSparqlMapper(VIS_TYPES.VENUS_SANKEY);
- * const sparqlResults = { 
- *   head: { vars: ['source', 'target', 'value', 'type'] }, 
- *   results: {...} 
- * };
- * const encoding = { 
- *   nodes: { color: { field: 'type' }, label: { field: 'label' } },
- *   links: { opacity: { field: 'value', scale: { type: 'sqrt', range: [0.1, 1] } } }
- * };
- * const mapped = mapper.map(sparqlResults, { encoding });
- * // Returns { nodes: [...], links: [...] }
  */
 export class SparqlToSankey extends SparqlToGraphMapper {
     constructor(options = {}) {
@@ -185,7 +172,7 @@ export class SparqlToSankey extends SparqlToGraphMapper {
         // Include all encoding fields (color, size, opacity, labels, etc.)
         const nodeConfig = this.encoding?.nodes;
         if (nodeConfig) {
-            const encodingFieldNames = (MARK_CHANNELS[MARK_TYPES.NODES] || []).concat(MARK_ATTRIBUTES[MARK_TYPES.NODES] || []);
+            const encodingFieldNames = (getSupportedChannels(MARK_TYPES.NODES)).concat(getSupportedAttributes(MARK_TYPES.NODES));
             
             for (const fieldName of encodingFieldNames) {
                 const field = nodeConfig[fieldName]?.field;

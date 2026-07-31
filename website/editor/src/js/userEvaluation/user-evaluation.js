@@ -4,12 +4,16 @@ import { TaskLog } from "./task-log";
 import { UsabilityTestingWorkflow } from "./test-timeline";
 
 export const USABILITY_TEST_DATA_PATH = `${import.meta.env.BASE_URL}/data/usability-testing`
+console.log(USABILITY_TEST_DATA_PATH)
+const STORAGE_KEY = "venus-usability-test";
 
 export class UserEvaluation {
     constructor({editorApp}) {
         this.editorApp = editorApp
 
         this.doneButton = document.querySelector("#doneButton")
+        this.viewTaskButton = document.querySelector("#viewTask") 
+
         this.testContainer = document.querySelector("#user-testing-overlay")
 
         this.waitingResolve = null;
@@ -21,6 +25,8 @@ export class UserEvaluation {
             finishTask: () => this.finishTask(),
             waitForUser: () => this.waitForUser()
         })
+
+        
     }
 
     async init(){
@@ -33,27 +39,38 @@ export class UserEvaluation {
             // auto_update_progress_bar: false,
             // allow_backward: true,   
 
-            on_finish: () => {
+            on_finish: async () => {
                 this.testContainer.classList.remove("active");
-
-                console.log(this.jsPsych.data.get().values());
+                await this.saveToServer()
             },
 
             on_trial_finish: () => {
                 console.log(this.jsPsych.data.get().values());
+
+                this.saveTrialData()
             }
         });
 
+        await this.setTestState()
+
         await this.workflow.buildTimeline()
 
-        this.jsPsych.run(this.workflow.getTimeline())
+        const timeline = this.workflow.getTimeline()
+        this.jsPsych.run(timeline.slice(this.state.currentStep))
 
         this.doneButton.addEventListener("click", () => {
             this.finishTask();
         })
 
+        this.viewTaskButton.addEventListener("click", () => {
+            this.showTaskDescription()
+        })
+
         this._setupEditorInterceptor()
         this._setupToastInterceptor()
+
+        // Disable example selection
+        document.querySelector("#scenarioSelect").disabled = true
     }
 
     _setupToastInterceptor() {
@@ -164,27 +181,38 @@ export class UserEvaluation {
         });
     }
 
-    async startTask(task = null) {
-        console.log("task = ", task)
-        this.currentTaskLog = new TaskLog({task: task, startTime: performance.now()})
+    async startTask({ taskConfig = null, taskDescription = null} ) {
+        this.currentTaskLog = new TaskLog({task: taskConfig, startTime: performance.now()})
+        this.currentTaskDescription = taskDescription
 
         this.testContainer.classList.remove("active");
 
         this.doneButton.hidden = false
+        this.viewTaskButton.hidden = false
 
         // Load scenario into the editor
-        await this.editorApp.launchWorkspace({scenarioId: task.scenario_id})
+        await this.editorApp.launchWorkspace({scenarioId: taskConfig.scenario_id})
 
-        // Prepare terrain
-        this.editorApp.sparqlPanelController.setReadOnly(!task.sparql)
+        // Prepare editor for task
+        this.editorApp.sparqlPanelController.setReadOnly(taskConfig.sparqlReadOnly)
+
+        if (taskConfig.sparql === false)
+            this.editorApp.sparqlPanelController.setText("")
         
-        if (task.encoding === false) 
+        if (taskConfig.encoding === false) 
             this.editorApp.encodingPanelController.setValue({})
+
+        if (taskConfig.visualization === false) 
+            this.editorApp.visualizationView.clear()
+
+        document.querySelector("#visualizationTypeSelect").selectedIndex = 0
+        document.querySelector("#querySelect").selectedIndex = 0
     }
 
     async finishTask() {
         // Hide done button
         this.doneButton.hidden = true;
+        this.viewTaskButton.hidden = true
 
         // Show jsPsych again
         this.testContainer.classList.add("active");
@@ -204,5 +232,71 @@ export class UserEvaluation {
     async _getCurrentEncoding(){
         const finalEncoding = await this.editorApp.encodingPanelController.parseValue()
         return finalEncoding.value
+    }
+
+    showTaskDescription() {
+        const overlay = document.createElement("div");
+        overlay.className = "task-overlay";
+
+        overlay.innerHTML = `
+            <div class="jspsych-display-element">
+                <div class="jspsych-content-wrapper">
+                    <div class="task-dialog jspsych-content">
+                        ${this.currentTaskDescription}
+
+                        <div class="mt-4 text-center">
+                            <button
+                                id="closeTaskDescription"
+                                class="btn btn-primary">
+                                Back to task
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        overlay.querySelector("#closeTaskDescription")
+            .onclick = () => overlay.remove();
+
+        document.body.appendChild(overlay);
+    }
+
+    async saveTrialData() {
+        this.state.currentStep++
+        this.state.data.push(this.jsPsych.data.get().last(1).values()[0]) 
+
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(this.state))
+    }
+
+    async setTestState() {
+        const saved = sessionStorage.getItem(STORAGE_KEY)
+        if (!saved) {
+            this.state = {
+                data: [],
+                currentStep: 0,
+                participantId: crypto.randomUUID()
+            }
+        }
+        else 
+            this.state = JSON.parse(saved)
+    }
+
+    async saveToServer() {
+        console.log("final state = ", this.state)
+
+        const response = await fetch("http://localhost:3000/logs", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(this.state)
+        });
+
+        if (!response.ok) {
+            throw new Error("Failed to save log.");
+        }
+
+        sessionStorage.removeItem(STORAGE_KEY);
     }
 }

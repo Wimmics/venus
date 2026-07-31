@@ -1,3 +1,5 @@
+import { CHANNEL_TYPES, getSupportedChannels, getEncodingTemplate } from "@wimmics/venus-core";
+
 /**
  * Base class for visual encoding managers.
  * 
@@ -11,23 +13,6 @@
  * - Merge user encoding with visualization-specific defaults
  * - Provide metadata about supported marks and visual channels
  * - Validate that referenced data fields exist in SPARQL query results
- * 
- * @example
- * import { createEncodingManager } from '@wimmics/venus-encoding';
- * import { VIS_TYPES } from '@wimmics/venus-core';
- * 
- * const manager = createEncodingManager(VIS_TYPES.VENUS_BARCHART);
- * 
- * // Validate encoding
- * const userEncoding = { bars: { x: { field: 'category' }, y: { field: 'value' } } };
- * const result = manager.validateEncoding(userEncoding);
- * 
- * // Get merged encoding with defaults
- * const finalEncoding = manager.mergeEncoding(userEncoding);
- * 
- * // Check field references against SPARQL variables
- * const sparqlVars = ['category', 'value', 'region'];
- * manager.validateReferencedFields(finalEncoding, sparqlVars);
  */
 export class EncodingManager {
 	constructor() { }
@@ -40,18 +25,6 @@ export class EncodingManager {
 		return [];
 	}
 	
-	getMarkChannels() {
-		return {
-			color: true,
-			size: true,
-			tooltip: true
-		};
-	}
-	
-	getNestedMarkChannels() {
-		return {};
-	}
-	
 	/**
 	 * Returns the default encoding template for this visualization type.
 	 * 
@@ -62,17 +35,9 @@ export class EncodingManager {
 	 * 
 	 * @abstract
 	 * @returns {Object} The default encoding specification for this visualization type.
-	 * @throws {Error} If not implemented by subclass.
-	 * 
-	 * @example
-	 * const defaults = manager.getDefaultEncoding();
-	 * // {
-	 * //   bars: { color: { value: '#ccc' }, stroke: { display: false } },
-	 * //   interactions: { enabled: true, tooltip: true }
-	 * // }
 	 */
 	getDefaultEncoding() {
-		throw new Error("getDefaultEncoding must be implemented by subclass");
+		return getEncodingTemplate(this.getChartType());
 	}
 	
 	/**
@@ -87,15 +52,6 @@ export class EncodingManager {
 	 * 
 	 * @param {Object} userEncoding - The user-provided encoding specification.
 	 * @throws {Error} If encoding is invalid. Error message describes the specific problem.
-	 * 
-	 * @example
-	 * try {
-	 *   manager.validateEncoding(userEncoding);
-	 *   console.log('Encoding is valid');
-	 * } catch (error) {
-	 *   console.error('Encoding error:', error.message);
-	 *   // "Encoding error: Invalid encoding: bars.x field is required"
-	 * }
 	 */
 	validateEncoding(userEncoding) {
 		if (!userEncoding || typeof userEncoding !== "object") {
@@ -109,7 +65,6 @@ export class EncodingManager {
 		this.validateVisSpecificEncoding(userEncoding);
 		this._validateMarks(userEncoding);
 
-		// return true
 	}
 	
 	/**
@@ -121,12 +76,6 @@ export class EncodingManager {
 	 * @param {Object} encoding - The validated encoding specification.
 	 * @param {string[]} [sparqlVars=[]] - List of variable names from SPARQL query results.
 	 * @throws {Error} If any field reference is not found in sparqlVars.
-	 * 
-	 * @example
-	 * const sparqlQuery = "SELECT ?category ?value ?region { ... }";
-	 * const sparqlVars = ['category', 'value', 'region'];
-	 * manager.validateReferencedFields(encoding, sparqlVars);
-	 * // Throws if encoding references a field like 'nonexistent_field'
 	 */
 	validateReferencedFields(encoding, sparqlVars = []) {
 		this._validateReferencedFieldsExist(encoding, sparqlVars);
@@ -144,25 +93,54 @@ export class EncodingManager {
 	 * @abstract
 	 * @param {Object} userEncoding - The user-provided encoding specification (already validated).
 	 * @returns {Object} The merged encoding with all defaults applied and all required fields populated.
-	 * @throws {Error} If not implemented by subclass.
-	 * 
-	 * @example
-	 * // For a bar chart visualization
-	 * const userEncoding = { bars: { color: { field: 'region' } } };
-	 * const merged = manager.mergeEncoding(userEncoding);
-	 * // merged = {
-	 * //   bars: {
-	 * //     color: { field: 'region', scale: { type: 'ordinal', range: 'Set2' } },
-	 * //     stroke: { display: false, color: '#000', width: 1 },
-	 * //     opacity: { value: 1 }
-	 * //   },
-	 * //   x: { field: 'category', scale: { type: 'band' } },
-	 * //   y: { field: 'value', scale: { type: 'linear' } },
-	 * //   interactions: { drag: false, zoom: false, tooltip: true }
-	 * // }
 	 */
  	mergeEncoding(userEncoding) {
-		throw new Error("mergeEncoding must be implemented by subclass");
+		const defaults = this.getDefaultEncoding();
+
+		const mergedEncoding = {
+			...defaults,
+			...userEncoding,
+			interactions: {
+				...(defaults.interactions || {}),
+				...(userEncoding.interactions || {})
+			}
+		}
+
+		for (const mark of this.getMarks()) {
+            mergedEncoding[mark] = {
+				...(defaults?.[mark]),
+				...(userEncoding?.[mark])
+			};
+			
+			this._mergeChannels(
+				mergedEncoding[mark], 
+				defaults?.[mark], 
+				userEncoding?.[mark], 
+				getSupportedChannels(mark)
+			)
+        }
+		
+		this.mergeVisSpecificEncoding(
+			mergedEncoding, 
+			defaults, 
+			userEncoding)
+
+		return mergedEncoding
+	}
+
+	_mergeChannels(merged, defaults, user, channels) {
+		for (const channel of channels) {
+			if (defaults?.[channel] == null && user?.[channel] == null) continue;
+
+			merged[channel] = {
+				...defaults?.[channel],
+				...user?.[channel]
+			}
+		}
+	}
+
+	mergeVisSpecificEncoding(){
+		throw new Error("mergeVisSpecificEncoding must be implemented by subclass.")
 	}
 	
 	/**
@@ -219,11 +197,11 @@ export class EncodingManager {
 			this._validateMarkDisplay(encoding, mark);
 			this._validateMarkSizeField(encoding, mark);
 			
-			const nestedChannels = this.getNestedMarkChannels(mark);
+			// const nestedChannels = this.getNestedMarkChannels(mark);
 			
-			for (const channel of Object.keys(nestedChannels || {})) {
-				this._validateNestedField(encoding, mark, channel);
-			}
+			// for (const channel of Object.keys(nestedChannels || {})) {
+			// 	this._validateNestedField(encoding, mark, channel);
+			// }
 		}
 	}
 	

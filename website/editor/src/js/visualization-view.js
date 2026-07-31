@@ -86,11 +86,11 @@ export class VisualizationView {
 		this.activeComponentEl = null;
 	}
 
-	init() {
-		this._setupExportDropdown()
+	async init() {
+		await this._setupExportDropdown()
 	}
 
-	_setupExportDropdown() {
+	async _setupExportDropdown() {
 		const dropdownEl = document.querySelector("#exportDropdown")
 
 		const exportDropdownButtonEl = document.querySelector("#exportDropdownButton");
@@ -127,7 +127,7 @@ export class VisualizationView {
 	}
 	
 	_closeExportDropdown() {
-		document.querySelector("#exportDropdownButton").hidden = true;
+		// document.querySelector("#exportDropdownButton").hidden = true;
 		document.querySelector("#exportDropdown").setAttribute("aria-expanded", "false");
 	}
 

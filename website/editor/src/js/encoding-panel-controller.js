@@ -174,16 +174,16 @@ export class EncodingPanelController extends EditorPanelController {
 	async addSnippet(d) {
 		const selectedValue = document.querySelector(`#${d.key}`).value
 		const snippet = d.action(selectedValue, this.getActiveComponent())
-		console.log("snippet = ", snippet)
 
 		this.editor.insertAtCursor(snippet)
+
+		this.closeAddMenu()
 	}
 	
 	async reset() {
 		await safeRun(
 			async () => {
 				const { encoding } = await this.getActiveContext?.()
-				console.log("encoding = ", encoding)
 				if (!encoding) {
 					updateStatus("Select a visualization template or an example first.", { isError: true })
 					return;

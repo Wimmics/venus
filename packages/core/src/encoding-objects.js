@@ -3,7 +3,8 @@ export const CHANNEL_TYPES = {
 	SIZE: "size", 
 	STROKE: "stroke", 
 	STROKE_WIDTH: "strokeWidth",
-	OPACITY: "opacity"
+	OPACITY: "opacity",
+	GROUPS: "groups"
 }
 
 export const MARK_TYPES = {

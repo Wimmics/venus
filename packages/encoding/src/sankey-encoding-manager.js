@@ -1,5 +1,5 @@
 
-import { ALIGN_TYPES, SORT_BY, SORT_MODE, SORT_ORDER, VIS_TYPES } from "@wimmics/venus-core";
+import { ALIGN_TYPES, MARK_TYPES, SORT_BY, SORT_MODE, SORT_ORDER, VIS_TYPES, getSupportedChannels } from "@wimmics/venus-core";
 import { GraphEncodingManager } from "./graph-encoding-manager.js";
 
 /**
@@ -11,32 +11,11 @@ import { GraphEncodingManager } from "./graph-encoding-manager.js";
  * Extends GraphEncodingManager with Sankey-specific defaults and sort normalization.
  * 
  * @extends GraphEncodingManager
- * 
- * @example
- * const manager = createEncodingManager(VIS_TYPES.VENUS_SANKEY);
- * 
- * const encoding = {
- *   nodes: {
- *     color: { field: 'type', scale: { type: 'ordinal', range: 'Pastel1' } },
- *     label: { field: 'name' }
- *   },
- *   links: {
- *     color: { value: '#ccc' },
- *     opacity: { field: 'weight', scale: { type: 'sqrt', range: [0.1, 1] } }
- *   },
- *   sort: { by: 'size', order: 'descending' }
- * };
- * const merged = manager.mergeEncoding(encoding);
  */
 export class SankeyEncodingManager extends GraphEncodingManager {
     
     getChartType() {
         return VIS_TYPES.VENUS_SANKEY;
-    }
-
-    mergeEncoding(userEncoding) {
-        const merged = super.mergeEncoding(userEncoding);
-        return this._normalizeSankeySortConfig(merged);
     }
     
     validateReferencedFields(encoding, sparqlVars = []) {
@@ -85,33 +64,74 @@ export class SankeyEncodingManager extends GraphEncodingManager {
     
     _validateGraphConstructionConfig(encoding) {
         const fields = encoding?.nodes?.fields;
-        
-        if (!Array.isArray(fields) || fields.length < 2) {
-            throw new Error('Invalid encoding: "nodes.fields" must be an array with at least two entries.');
+
+        if (!Array.isArray(fields)) {
+            throw new Error('Invalid encoding: "nodes.fields" must be an array.');
         }
 
-        this._validateSortConfig(encoding?.nodes?.sort, 'nodes.sort');
+        if (fields.length < 2) {
+            throw new Error('Invalid encoding: "nodes.fields" must contain at least two entries.');
+        }
 
-        const invalid = fields.find((item, index) => {
-            if (typeof item === "string") return !item.trim();
-            if (!item || typeof item !== "object") return true;
-            if (typeof item.field !== "string" || !item.field.trim()) return true;
+        this._validateSortConfig(encoding?.nodes?.sort, "nodes.sort");
 
-            if (item.title !== undefined && (typeof item.title !== "string" || !item.title.trim())) {
-                return true;
+        // Validate each value of the fields array
+        for (let index = 0; index < fields.length; index++) {
+            const item = fields[index];
+
+            if (typeof item === "string") {
+                if (!item.trim()) {
+                    throw new Error(
+                        `Invalid encoding: "nodes.fields[${index}]" must not be an empty string.`
+                    );
+                }
+                continue;
             }
 
-            if (item.color !== undefined && (item.color == null || typeof item.color !== "object")) {
-                return true;
+            if (item == null || typeof item !== "object") {
+                throw new Error(
+                    `Invalid encoding: "nodes.fields[${index}]" must be either a non-empty string or an object.`
+                );
             }
 
-            this._validateSortConfig(item.sort, `nodes.fields[${index}].sort`);
+            if (typeof item.field !== "string") {
+                throw new Error(
+                    `Invalid encoding: "nodes.fields[${index}].field" must be a string.`
+                );
+            }
 
-            return false;
-        });
+            if (!item.field.trim()) {
+                throw new Error(
+                    `Invalid encoding: "nodes.fields[${index}].field" must not be an empty string.`
+                );
+            }
 
-        if (invalid !== undefined) {
-            throw new Error('Invalid encoding: "nodes.fields" entries must be non-empty strings or objects shaped like { field, title?, color?, sort? }.');
+            if (item.title !== undefined && item.title !== null) {
+                if (typeof item.title !== "string") {
+                    throw new Error(
+                        `Invalid encoding: "nodes.fields[${index}].title" must be a string or null.`
+                    );
+                }
+
+                if (!item.title.trim()) {
+                    throw new Error(
+                        `Invalid encoding: "nodes.fields[${index}].title" must not be an empty string.`
+                    );
+                }
+            }
+
+            if (item.color !== undefined) {
+                if (item.color == null || typeof item.color !== "object") {
+                    throw new Error(
+                        `Invalid encoding: "nodes.fields[${index}].color" must be an object.`
+                    );
+                }
+            }
+
+            this._validateSortConfig(
+                item.sort,
+                `nodes.fields[${index}].sort`
+            );
         }
     }
     
@@ -172,34 +192,44 @@ export class SankeyEncodingManager extends GraphEncodingManager {
         }
     }
 
-    _normalizeSankeySortConfig(encoding = {}) {
-        const nodes = encoding?.nodes || {};
-        const normalizedGlobalSort = this._normalizeSortConfig(nodes.sort, {
-            by: SORT_BY.LAYOUT,
-            order: SORT_ORDER.ASC,
-            mode: null
-        });
+    mergeVisSpecificEncoding(encoding = {}, defaults) {
+        encoding.nodes ??= {};
 
-        const normalizedFields = (nodes.fields || []).map((item) => {
-            if (typeof item === "string") return item;
-            if (!item || typeof item !== "object") return item;
-
-            return {
-                ...item,
-                ...(item.sort !== undefined
-                    ? { sort: this._normalizeSortConfig(item.sort, normalizedGlobalSort) }
-                    : {})
-            };
-        });
-
-        return {
-            ...encoding,
-            nodes: {
-                ...nodes,
-                sort: normalizedGlobalSort,
-                fields: normalizedFields
+        encoding.nodes.sort = this._normalizeSortConfig(
+            encoding.nodes.sort,
+            {
+                by: SORT_BY.LAYOUT,
+                order: SORT_ORDER.ASC,
+                mode: null
             }
-        };
+        );
+
+        encoding.nodes.fields = (encoding.nodes.fields || []).map(item => {
+            const stage =
+                typeof item === "string"
+                    ? { field: item }
+                    : { ...item };
+
+            stage.sort = this._normalizeSortConfig(
+                stage.sort,
+                encoding.nodes.sort
+            );
+
+            // Apply the common node defaults (color, opacity, etc.)
+            const mergedStage = {
+                ...defaults.nodes,
+                ...stage
+            };
+
+            this._mergeChannels(
+                mergedStage,
+                defaults.nodes,
+                stage,
+                getSupportedChannels(MARK_TYPES.NODES)
+            );
+
+            return mergedStage;
+        });
     }
 
     _validateSortConfig(config, path) {

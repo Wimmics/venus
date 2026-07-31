@@ -7,26 +7,9 @@
  * with force graph-specific defaults.
  * 
  * @extends GraphEncodingManager
- * 
- * @example
- * const manager = createEncodingManager(VIS_TYPES.VENUS_GRAPH);
- * 
- * const encoding = {
- *   nodes: {
- *     color: { field: 'type', scale: { type: 'ordinal', range: 'Set2' } },
- *     size: { field: 'degree', scale: { type: 'sqrt', range: [8, 50] } },
- *     label: { field: 'name' }
- *   },
- *   links: {
- *     color: { value: '#ccc' },
- *     stroke: { width: { field: 'weight', scale: { type: 'sqrt', range: [1, 3] } } }
- *   },
- *   interactions: { drag: true, zoom: true, tooltip: true }
- * };
- * const merged = manager.mergeEncoding(encoding);
  */
 import { GraphEncodingManager } from "./graph-encoding-manager";
-import { VIS_TYPES } from "@wimmics/venus-core";
+import { getSupportedChannels, MARK_TYPES, VIS_TYPES } from "@wimmics/venus-core";
 
 export class ForceGraphEncodingManager extends GraphEncodingManager {
 
@@ -34,6 +17,29 @@ export class ForceGraphEncodingManager extends GraphEncodingManager {
 		return VIS_TYPES.VENUS_GRAPH
 	}
 
+	mergeVisSpecificEncoding(mergedEncoding, defaults, userEncoding){
+	
+		// Add defaults for semantic and directional graphs, via source and target tags
+		if (mergedEncoding.links.type !== "cooccurrence") {
+			mergedEncoding.nodes = {
+				...mergedEncoding.nodes, // global nodes options
+			}
+
+			for (let role of ["source", "target"]) {
+				mergedEncoding.nodes[role] = {
+					...(defaults.nodes),
+					...(userEncoding.nodes?.[role])
+				}
+
+				this._mergeChannels(
+					mergedEncoding.nodes[role], 
+					defaults.nodes, 
+					userEncoding.nodes?.[role], 
+					getSupportedChannels(MARK_TYPES.NODES)
+				)
+			}
+		}
+	}
 
 	_validateGraphSpecificEncoding(merged){
         this._validateSingleScaleConfig(merged);

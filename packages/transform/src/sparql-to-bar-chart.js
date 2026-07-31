@@ -13,17 +13,6 @@ import { SparqlToCartesianMapper } from "./sparql-to-cartesian.js";
  * - chart: Configuration object with stack mode, group field, and other metadata
  * 
  * @extends SparqlToCartesianMapper
- * 
- * @example
- * const mapper = createSparqlMapper(VIS_TYPES.VENUS_BARCHART);
- * const sparqlResults = { head: { vars: ['year', 'revenue', 'region'] }, results: {...} };
- * const encoding = { 
- *   x: { field: 'year' }, 
- *   y: { field: 'revenue' },
- *   bars: { color: { field: 'region' }, stack: true }
- * };
- * const mapped = mapper.map(sparqlResults, { encoding });
- * // Returns { rows: [...], chart: { stack: true, groupField: 'region', ... } }
  */
 export class SparqlToBarChartMapper extends SparqlToCartesianMapper {
 	constructor(options = {}) {
@@ -52,14 +41,17 @@ export class SparqlToBarChartMapper extends SparqlToCartesianMapper {
 				? groupsConfig.field || colorField
 				: null;
 
+		const stackMode = this._resolveStackMode(encoding?.bars?.stack);
+
 		const stackField =
-			stackConfig === true
-				? colorField
-				: stackConfig && typeof stackConfig === "object"
-				? stackConfig.field || colorField || groupField
+			stackMode !== "none"
+				? (
+					typeof stackConfig === "object"
+						? stackConfig.field || colorField || groupField
+						: colorField
+				)
 				: null;
 
-		const stackMode = this._resolveStackMode(encoding?.bars?.stack);
 		const layoutMode = this._resolveLayoutMode(stackMode, groupField);
 
 		const splitField =

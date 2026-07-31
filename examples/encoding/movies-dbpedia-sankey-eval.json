@@ -1,0 +1,10 @@
+{
+    "nodes": {
+        "fields": ["studioName", "runtimeCategory", 
+        { "field": "language" }    
+    ]
+    },
+    "links":{
+        "field": "nbMovies"
+    }
+}

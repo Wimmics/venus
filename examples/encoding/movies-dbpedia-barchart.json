@@ -1,0 +1,19 @@
+{
+  "title": "Count of Movies per Studio. Source: DBPedia.",
+  "x": {
+    "field": "studioName",
+    "axis": {
+      "labelAngle": -45,
+      "labelOffset": {
+        "x": -6,
+        "y": 5
+      }
+    }
+  },
+  "y": {
+    "field": "nbMovies"
+  },
+  "bars":{
+
+  }
+}

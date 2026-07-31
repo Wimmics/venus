@@ -1,6 +1,6 @@
 import * as d3 from "d3";
 
-import { ATTRIBUTE_TYPES, CHANNEL_TYPES, MARK_ATTRIBUTES, MARK_CHANNELS, MARK_TYPES } from "@wimmics/venus-core";
+import { ATTRIBUTE_TYPES, CHANNEL_TYPES, getSupportedChannels, getSupportedAttributes } from "@wimmics/venus-core";
 
 /**
  * Base class for D3-based visualization renderers.
@@ -9,24 +9,6 @@ import { ATTRIBUTE_TYPES, CHANNEL_TYPES, MARK_ATTRIBUTES, MARK_CHANNELS, MARK_TY
  * Handles SVG creation, state management, dimension handling, and event callbacks.
  * Subclasses (BarChartRenderer, LineChartRenderer, etc.) implement visualization-specific
  * rendering logic by overriding abstract methods.
- * 
- * @abstract
- * 
- * @example
- * import { createRenderer } from '@wimmics/venus-rendering';
- * import { VIS_TYPES } from '@wimmics/venus-core';
- * 
- * const renderer = createRenderer(VIS_TYPES.VENUS_BARCHART, {
- *   container: document.querySelector('#chart'),
- *   width: 800,
- *   height: 600,
- *   callbacks: {
- *     onHover: (datum) => console.log('Hovered:', datum),
- *     onClick: (datum) => console.log('Clicked:', datum)
- *   }
- * });
- * 
- * renderer.render(payload, visualArtifacts);
  */
 export default class BaseRenderer {
 	/**
@@ -229,7 +211,7 @@ export default class BaseRenderer {
 		this.channels = {} 		
 	
 		for (let mark of marks) {
-			for (let channel of MARK_CHANNELS[mark]) {
+			for (let channel of getSupportedChannels(mark)) {
 				if (!this.channels[channel]) this.channels[channel] = {}
 
 				this.channels[channel][mark] = this._getArtifactChannel(mark, channel)
@@ -249,7 +231,7 @@ export default class BaseRenderer {
 		this.attributes = {} 		
 	
 		for (let mark of marks) {
-			for (let attribute of MARK_ATTRIBUTES[mark]) {
+			for (let attribute of getSupportedAttributes(mark)) {
 				if (!this.attributes[attribute]) this.attributes[attribute] = {}
 
 				this.attributes[attribute][mark] = this._getArtifactAttribute(mark, attribute)

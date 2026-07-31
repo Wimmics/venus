@@ -1,11 +1,7 @@
 import { D3ScaleFactory } from "../scales/d3-scale-factory";
-import { SCALE_DEFAULTS, 
-	SCALE_TYPES, 
-	MARK_DEFAULTS, 
-	CHANNEL_TYPES, 
-	MARK_CHANNELS, 
-	isColorScale, 
-	MARK_ATTRIBUTES} from "@wimmics/venus-core";
+import { isColorScale, 
+	getSupportedChannels,
+	getSupportedAttributes} from "@wimmics/venus-core";
 	
 import { ChartSpaceManager } from "./chart-space-manager";
 
@@ -80,15 +76,8 @@ export class VisualArtifacts {
 	}
 
 	_processMarkArtifacts({ mark, config, data, role = null }) {
-		// console.log("[processMarkArtifacts]")
-		// console.log("mark = ", mark)
-		// console.log("config = ", config)
-		// console.log("data = ", data)
 
-		for (let channel of (MARK_CHANNELS[mark] || [])) {
-			// console.log("channel = ", channel)
-			// console.log("channel config = ", config?.[channel])
-
+		for (let channel of (getSupportedChannels(mark))) {
 			this._processScaleChannel({
 				mark: mark,
 				role: role,
@@ -100,7 +89,7 @@ export class VisualArtifacts {
 		}
 
 		
-		for (let attribute of (MARK_ATTRIBUTES[mark] || [])) {
+		for (let attribute of (getSupportedAttributes(mark))) {
 			this._processAttribute({
 				mark: mark,
 				attribute: attribute,

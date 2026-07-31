@@ -102,7 +102,7 @@ export class EditorApp {
 		await this.resultsPanelController.setReadOnly(true);
 		await this.snippetPanelController.init("// Generated integration snippet will appear here");
 
-		this.visualizationView.init()
+		await this.visualizationView.init()
 		
 		await this.loadResources()
 		await this.setupSelects()

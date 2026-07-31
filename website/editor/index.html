@@ -65,12 +65,21 @@
 				</div>
 			</div>
 
-			<button
-				id="doneButton"
-				class="btn btn-success editor-done-button"
-				hidden>
-				Done with task
-			</button>
+			<div class="usability-test-buttons">
+				<button
+					id="viewTask"
+					class="btn btn-primary editor-done-button"
+					hidden>
+					Reopen task description
+				</button>
+
+				<button
+					id="doneButton"
+					class="btn btn-success editor-done-button"
+					hidden>
+					Done with task
+				</button>
+			</div>
 		</div>
 	</nav>
 
@@ -246,6 +255,9 @@ tabindex="0"
 	tabindex="0"
 	>
 	<div class="visualization-shell">
+		<div id="visualizationHost" class="visualization-host"></div>
+		<!-- <venus-uri-meta id="metaPanel" width="900" height="600"></venus-uri-meta> -->
+
 		<div class="tab-toolbar d-flex justify-content-end gap-1" id="visualizationToolbar">
 			<div class="editor-export-dropdown" id="exportDropdown">
 				<button
@@ -267,8 +279,7 @@ tabindex="0"
 			</div>
 		</div>
 	</div>
-	<div id="visualizationHost" class="visualization-host"></div>
-	<venus-uri-meta id="metaPanel" width="900" height="600"></venus-uri-meta>
+	
 </div>
 </div>
 <div

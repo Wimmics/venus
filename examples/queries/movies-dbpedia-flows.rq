@@ -1,0 +1,46 @@
+PREFIX dbo:  <http://dbpedia.org/ontology/>
+PREFIX dbp:  <http://dbpedia.org/property/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+
+SELECT
+    ?studioName
+    ?runtimeCategory
+    ?language
+    (COUNT(DISTINCT ?movie) AS ?nbMovies)
+WHERE {
+    {
+        SELECT ?studio
+        WHERE {
+            ?m a dbo:Film ;
+               dbp:studio ?studio .
+        }
+        GROUP BY ?studio
+        ORDER BY DESC(COUNT(DISTINCT ?m))
+        LIMIT 30
+    }
+
+    ?movie a dbo:Film ;
+           dbp:studio ?studio ;
+           dbp:runtime ?runtime ;
+           dbo:language ?lang .
+
+    FILTER(xsd:decimal(?runtime) >= 2400 &&
+           xsd:decimal(?runtime) <= 14400)
+
+    BIND(
+        IF(xsd:decimal(?runtime) < 5400, "40–90 min",
+        IF(xsd:decimal(?runtime) < 7200, "90–120 min",
+        IF(xsd:decimal(?runtime) < 9000, "120–150 min",
+                                     "150–240 min")))
+        AS ?runtimeCategory
+    )
+
+    ?studio rdfs:label ?studioName .
+    FILTER(LANG(?studioName) = "en")
+
+    ?lang rdfs:label ?language .
+    FILTER(LANG(?language) = "en")
+}
+GROUP BY ?studioName ?runtimeCategory ?language
+ORDER BY ?studioName DESC(?nbMovies)

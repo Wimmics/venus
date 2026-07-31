@@ -1,5 +1,5 @@
 import { SparqlToGraphMapper } from "./sparql-to-graph.js";
-import { MARK_ATTRIBUTES, MARK_CHANNELS, MARK_TYPES, VIS_TYPES } from "@wimmics/venus-core";
+import { VIS_TYPES } from "@wimmics/venus-core";
 
 /**
  * Transforms SPARQL results into force-directed graph visualization format.
@@ -12,19 +12,6 @@ import { MARK_ATTRIBUTES, MARK_CHANNELS, MARK_TYPES, VIS_TYPES } from "@wimmics/
  * - links: Array of link objects with source, target, color, width, and other encoded properties
  * 
  * @extends SparqlToGraphMapper
- * 
- * @example
- * const mapper = createSparqlMapper(VIS_TYPES.VENUS_GRAPH);
- * const sparqlResults = { 
- *   head: { vars: ['source', 'target', 'type', 'weight'] }, 
- *   results: {...} 
- * };
- * const encoding = { 
- *   nodes: { color: { field: 'type' }, size: { field: 'degree' } },
- *   links: { color: { value: '#999' }, stroke: { width: { field: 'weight' } } }
- * };
- * const mapped = mapper.map(sparqlResults, { encoding });
- * // Returns { nodes: [...], links: [...] }
  */
 export class SparqlToForceGraphMapper extends SparqlToGraphMapper {
 	/**

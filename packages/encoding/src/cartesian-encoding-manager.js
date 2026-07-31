@@ -12,66 +12,23 @@ import { getEncodingTemplate } from "@wimmics/venus-core";
  */
 export class CartesianEncodingManager extends EncodingManager {
 
-    getDefaultEncoding() {
-        return getEncodingTemplate(this.getChartType());
-    }
-    
-    mergeEncoding(userEncoding) {
-        const defaults = this.getDefaultEncoding();
-        const merged = {
-            ...defaults,
-            ...(userEncoding || {}),
-            interactions: {
-                ...defaults.interactions,
-                ...(userEncoding?.interactions || {})
-            },
+    mergeVisSpecificEncoding(merged, defaults, userEncoding) {
+        merged = {
+            ...merged,
             x: {
                 ...defaults.x,
-                ...(userEncoding?.x || {})
+                ...(userEncoding?.x)
             },
             y: {
                 ...defaults.y,
-                ...(userEncoding?.y || {})
+                ...(userEncoding?.y)
             }
-        };
-        
-        for (const mark of this.getMarks()) {
-            merged[mark] = this._mergeMark(defaults, userEncoding, mark);
         }
-        
-        return merged;
     }
     
     validateVisSpecificEncoding(merged) {
         this._validateRequiredXY(merged);
         this._validateCommonCartesianEncoding(merged);
-    }
-    
-    
-    _mergeMark(defaults, userEncoding, mark) {
-        const channels = this.getMarkChannels(mark);
-        const nestedChannels = this.getNestedMarkChannels(mark);
-        
-        const mergedMark = {
-            ...(defaults?.[mark] || {}),
-            ...(userEncoding?.[mark] || {})
-        };
-        
-        for (const channel of Object.keys(channels || {})) {
-            mergedMark[channel] = {
-                ...(defaults?.[mark]?.[channel] || {}),
-                ...(userEncoding?.[mark]?.[channel] || {})
-            };
-        }
-        
-        for (const channel of Object.keys(nestedChannels || {})) {
-            mergedMark[channel] = {
-                ...(defaults?.[mark]?.[channel] || {}),
-                ...(userEncoding?.[mark]?.[channel] || {})
-            };
-        }
-        
-        return mergedMark;
     }
     
     _validateRequiredXY(encoding) {

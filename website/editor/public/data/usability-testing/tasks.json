@@ -3,49 +3,57 @@
         "id": "task_1",
         "description_path": "/tasks/task_1.html",
         "scenario_id": "barchart-movies-dbpedia",
-        "sparql": false, 
-        "encoding": true 
+        "sparqlReadOnly": true, 
+        "encoding": true,
+        "visualization": true 
     },
     {
         "id": "task_2",
         "description_path": "/tasks/task_2.html",
         "scenario_id": "barchart-movies-dbpedia",
-        "sparql": false, 
-        "encoding": false 
+        "sparqlReadOnly": true, 
+        "encoding": false,
+        "visualization": false 
     },
     {
         "id": "task_3",
         "description_path": "/tasks/task_3.html",
         "scenario_id": "visgraph-movies-dbpedia",
-        "sparql": false,
-        "encoding": true
+        "sparqlReadOnly": true,
+        "encoding": true,
+        "visualization": true
     },
     {
         "id": "task_4",
         "description_path": "/tasks/task_4.html",
         "scenario_id": "visgraph-movies-dbpedia",
-        "sparql": false,
-        "encoding": false
+        "sparqlReadOnly": true,
+        "encoding": false,
+        "visualization": false
     },
     {
         "id": "task_5",
         "description_path": "/tasks/task_5.html",
         "scenario_id": "sankey-movies-dbpedia",
-        "sparql": false,
-        "encoding": true
+        "sparqlReadOnly": true,
+        "encoding": true,
+        "visualization": true
     },
     {
         "id": "task_6",
         "description_path": "/tasks/task_6.html",
         "scenario_id": "sankey-movies-dbpedia",
-        "sparql": false,
-        "encoding": false
+        "sparqlReadOnly": true,
+        "encoding": false,
+        "visualization": false
     },
     {
         "id": "task_7",
         "description_path": "/tasks/task_7.html",
         "scenario_id": null,
-        "sparql": true,
-        "encoding": false
+        "sparqlReadOnly": false,
+        "sparql": false,
+        "encoding": false,
+        "visualization":false
     }
 ]}

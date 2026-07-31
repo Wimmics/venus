@@ -29,14 +29,11 @@ export class UsabilityTestingWorkflow {
         // await this._addPreTestQuestionnaire()
 
         // tutorial
-
+        
 
         // tasks
         const json = await fetchJson(`${USABILITY_TEST_DATA_PATH}/tasks.json`)
-        // const tasks = json.values.filter(d => ["task_5", "task_6"].includes(d.id))
-        const tasks = json.values
-        console.log("tasks = ", tasks)
-        for (const task of tasks) {
+        for (const task of json.values) {
             await this._addTask(task)
         }
 
@@ -134,7 +131,7 @@ export class UsabilityTestingWorkflow {
             async: true,
             func: async done => {
 
-                await this.startTask(task);
+                await this.startTask({ taskConfig: task, taskDescription: htmlContent});
 
                 taskLog = await this.waitForUser();
 
@@ -153,7 +150,6 @@ export class UsabilityTestingWorkflow {
 
     async _addRawTLXQuestionnaire(task) {
         const json = await fetchJson(`${USABILITY_TEST_DATA_PATH}/raw-tlx.json`)
-        console.log("json = ", json)
 
         this.timeline.push({
             type: surveyLikert,
@@ -238,14 +234,6 @@ export class UsabilityTestingWorkflow {
                 this._styleButtons({type: "success"}) 
             }
         })
-
-    }
-
-    _addDifficultyQuestion() {
-
-    }
-
-    _addConfidenceQuestion() {
 
     }
 

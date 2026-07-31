@@ -1,5 +1,5 @@
 import { SparqlToVisMapper } from "./sparql-to-vis-mapper";
-import { MARK_TYPES, MARK_CHANNELS, MARK_ATTRIBUTES } from "@wimmics/venus-core";
+import { MARK_TYPES, getSupportedChannels, getSupportedAttributes } from "@wimmics/venus-core";
 
 export class SparqlToGraphMapper extends SparqlToVisMapper {
     
@@ -106,7 +106,7 @@ export class SparqlToGraphMapper extends SparqlToVisMapper {
     }
 
     _getAssociatedFields(mark, nodeConfig) {                                            
-		const encodingFields = MARK_CHANNELS[mark].concat(MARK_ATTRIBUTES[mark])
+		const encodingFields = getSupportedChannels(mark).concat(getSupportedAttributes(mark))
 
 		const dataFields = []
 		for (const field of encodingFields) {

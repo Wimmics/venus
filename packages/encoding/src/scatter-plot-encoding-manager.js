@@ -29,10 +29,6 @@ export class ScatterPlotEncodingManager extends CartesianEncodingManager {
 		return VIS_TYPES.VENUS_SCATTERPLOT
 	}
 	
-	getDefaultEncoding() {
-		return getEncodingTemplate(this.getChartType())
-	}
-	
 	getMarks() {
 		return [ MARK_TYPES.POINTS ];
 	}

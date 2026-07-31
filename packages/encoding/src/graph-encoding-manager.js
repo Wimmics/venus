@@ -1,6 +1,6 @@
 import { EncodingManager } from "./encoding-manager";
 
-import { getEncodingTemplate, MARK_TYPES } from "@wimmics/venus-core";
+import { CHANNEL_TYPES, MARK_TYPES } from "@wimmics/venus-core";
 
 /**
  * Base encoding manager for network/graph visualizations (graphs and sankeys).
@@ -13,55 +13,64 @@ import { getEncodingTemplate, MARK_TYPES } from "@wimmics/venus-core";
  */
 export class GraphEncodingManager extends EncodingManager {
 
-    mergeEncoding(userEncoding) {
-        const defaults = this.getDefaultEncoding();
+    // mergeEncoding(userEncoding) {
+    //     const defaults = this.getDefaultEncoding();
 
-		const mergedEncoding = {
-			...defaults,
-			...userEncoding,
-			interactions: {
-				...(defaults.interactions || {}),
-				...(userEncoding.interactions || {})
-			},
-			nodes: {
-				...(defaults.nodes || {}),
-				...(userEncoding.nodes || {}),
-				tooltip: {
-					...(defaults.nodes?.tooltip || {}),
-					...(userEncoding.nodes?.tooltip || {})
-				}
-			},
-			links: {
-				...(defaults.links || {}),
-				...(userEncoding.links || {}),
-				tooltip: {
-					...(defaults.links?.tooltip || {}),
-					...(userEncoding.links?.tooltip || {})
-				}
-			}
-		};
+	// 	const mergedEncoding = {
+	// 		...defaults,
+	// 		...userEncoding,
+	// 		interactions: {
+	// 			...(defaults.interactions || {}),
+	// 			...(userEncoding.interactions || {})
+	// 		},
+	// 		nodes: {
+	// 			...(defaults.nodes || {}),
+	// 			...(userEncoding.nodes || {}),
+	// 			tooltip: {
+	// 				...(defaults.nodes?.tooltip || {}),
+	// 				...(userEncoding.nodes?.tooltip || {})
+	// 			}
+	// 		},
+	// 		links: {
+	// 			...(defaults.links || {}),
+	// 			...(userEncoding.links || {}),
+	// 			tooltip: {
+	// 				...(defaults.links?.tooltip || {}),
+	// 				...(userEncoding.links?.tooltip || {})
+	// 			}
+	// 		}
+	// 	};
 
-		// Add defaults for semantic and directional graphs, via source and target tags
-		if (mergedEncoding.links.type !== "cooccurrence") {
-			mergedEncoding.nodes = {
-				...mergedEncoding.nodes,
-				source: { 
-					...(defaults.nodes),
-					...(userEncoding.nodes?.source)
-				},
-				target: { 
-					...(defaults.nodes),
-					...(userEncoding.nodes?.target)
-				}
-			}
-		}
+	// 	// Add defaults for semantic and directional graphs, via source and target tags
+	// 	if (mergedEncoding.links.type !== "cooccurrence") {
+	// 		mergedEncoding.nodes = {
+	// 			...mergedEncoding.nodes, // global nodes options
+	// 		}
 
-		return mergedEncoding
-    }
+	// 		for (let role of ["source", "target"]) {
+	// 			mergedEncoding.nodes[role] = {
+	// 				...(defaults.nodes),
+	// 				...(userEncoding.nodes?.[role])
+	// 			}
 
-    getDefaultEncoding() {
-		return getEncodingTemplate(this.getChartType());
-	}
+	// 			for (let channel of Object.values(CHANNEL_TYPES)) {
+	// 				if ( defaults.nodes?.[channel] === undefined && userEncoding.nodes?.[role]?.[channel] === undefined) 
+	// 					continue;
+
+	// 				mergedEncoding.nodes[role][channel] = {
+	// 					...defaults.nodes?.[channel],
+	// 					...userEncoding.nodes?.[role]?.[channel]
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+
+	// 	console.log("graph merged encoding = ", mergedEncoding)
+
+	// 	return mergedEncoding
+    // }
+
+	
 
     getMarks() {
 		return [ MARK_TYPES.NODES, MARK_TYPES.LINKS ]

@@ -1,0 +1,29 @@
+PREFIX dbo:  <http://dbpedia.org/ontology/>
+PREFIX dbp:  <http://dbpedia.org/property/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+SELECT DISTINCT *
+WHERE {
+  ?movie a dbo:Film ;
+         dbo:starring ?actor ;
+         dbp:studio ?studio ;
+         dbp:runtime ?runtime ;
+         dbo:language ?lang .
+
+  FILTER(xsd:decimal(?runtime) >= 2400 &&
+       xsd:decimal(?runtime) <= 14400)
+
+  ?movie rdfs:label ?movieName .
+  FILTER(LANG(?movieName) = "en")
+
+  ?actor rdfs:label ?actorName .
+  FILTER(LANG(?actorName) = "en")
+
+  ?studio rdfs:label ?studioName .
+  FILTER(LANG(?studioName) = "en")
+
+  ?lang rdfs:label ?language .
+  FILTER(LANG(?language) = "en")
+}
+LIMIT 1000
