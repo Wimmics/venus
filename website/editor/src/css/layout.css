@@ -205,6 +205,10 @@
   opacity: 1;
 }
 
+.tab-toolbar.tutorial-active {
+    opacity: 1;
+}
+
 .tab-toolbar .btn {
   width: 2rem;
   height: 2rem;
@@ -235,104 +239,7 @@
     opacity: 1;
 }
 
-/* Encoding builder menu */
-.encoding-add-dropdown {
-  position: static;
-  flex: 0 0 auto;
-}
 
-.encoding-add-menu {
-  position: absolute;
-  top: calc(100% + 0.35rem);
-  right: 0;
-  
-  width: 350px;
-  max-width: min(350px, calc(100vw - 2rem));
-  box-sizing: border-box;
-
-  max-height: min(600px, calc(100vh - 10rem));
-  overflow: auto;
-  
-  z-index: 10;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: #ffffff;
-  color: var(--text);
-  box-shadow: 0 12px 24px rgba(31, 41, 55, 0.18);
-  text-align: left;
-}
-
-.encoding-add-tree {
-  padding: 0.35rem;
-}
-
-.encoding-add-tree-branch {
-  margin: 0;
-}
-
-.encoding-add-tree-branch summary {
-  position: relative;
-  min-height: 1.9rem;
-  border-radius: 5px;
-  padding: 0.38rem 0.45rem 0.38rem 1.35rem;
-  cursor: pointer;
-  list-style: none;
-  line-height: 1.2;
-}
-
-.encoding-add-tree-branch summary::-webkit-details-marker {
-  display: none;
-}
-
-.encoding-add-tree-branch summary::before {
-  position: absolute;
-  top: 0.48rem;
-  left: 0.48rem;
-  content: "\203A";
-  color: var(--muted);
-  font-size: 1rem;
-  line-height: 1;
-  transform-origin: 50% 54%;
-  transition: transform 120ms ease-in-out;
-}
-
-.encoding-add-tree-branch[open] > summary::before {
-  transform: rotate(90deg);
-}
-
-.encoding-add-tree-scope + .encoding-add-tree-scope {
-  border-top: 1px solid #e5e7eb;
-}
-
-.encoding-add-tree-scope > summary {
-  font-weight: 650;
-}
-
-.encoding-add-tree-children {
-  margin: 0 0 0.2rem 0.85rem;
-  border-left: 1px solid #e5e7eb;
-  padding-left: 0.42rem;
-}
-
-.encoding-add-tree-action {
-  display: block;
-  width: 100%;
-  min-height: 1.9rem;
-  border: 0;
-  border-radius: 5px;
-  background: transparent;
-  color: var(--text);
-  padding: 0.38rem 0.45rem;
-  text-align: left;
-  line-height: 1.2;
-}
-
-.encoding-add-tree-action:hover,
-.encoding-add-tree-action:focus-visible,
-.encoding-add-tree-branch summary:hover,
-.encoding-add-tree-branch summary:focus-visible {
-  background: #f3f4f6;
-}
 
 .tab-editor-shell {
   position: relative;

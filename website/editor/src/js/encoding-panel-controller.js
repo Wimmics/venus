@@ -39,7 +39,7 @@ export class EncodingPanelController extends EditorPanelController {
 			...super.getToolbarActions(),
 			{
 				id: "encoding-reset",
-				title: "Reload base encoding from demo",
+				title: "Reload base encoding from example",
 				iconClass: "bi bi-arrow-counterclockwise",
 				onClick: async () => this.reset()
 			}
@@ -60,9 +60,11 @@ export class EncodingPanelController extends EditorPanelController {
 		// Create the encoding add + button
 		const holder = document.createElement("div");
 		holder.className = "encoding-add-dropdown";
+		holder.id = "encoding-builder"
 		
 		const button = document.createElement("button");
 		button.type = "button";
+		button.id = "encoding-builder-button"
 		button.className = "btn btn-sm btn-outline-secondary";
 		button.title = "Add encoding property";
 		button.setAttribute("aria-label", "Add encoding property");
@@ -73,6 +75,7 @@ export class EncodingPanelController extends EditorPanelController {
 		// Create the dropdown menu with the encoding options
 		const menu = document.createElement("div");
 		menu.className = "encoding-add-menu";
+		menu.id = "encoding-builder-body"
 		menu.setAttribute("role", "dialog");
 		menu.setAttribute("aria-label", "Add encoding property");
 		menu.hidden = true;
@@ -82,12 +85,7 @@ export class EncodingPanelController extends EditorPanelController {
 		
 		button.addEventListener("click", async (event) => {
 			event.stopPropagation();
-			const willOpen = menu.hidden;
-			if (willOpen) {
-				await this.displayEncodingOptions(menu);
-			}
-			menu.hidden = !willOpen;
-			button.setAttribute("aria-expanded", String(willOpen));
+			await this.openAddMenu()
 		});
 		
 		document.addEventListener("click", (event) => {
@@ -101,7 +99,22 @@ export class EncodingPanelController extends EditorPanelController {
 		this.addMenuButtonEl = button;
 		return holder;
 	}
-	
+
+	closeAddMenu() {
+		if (!this.addMenuEl || !this.addMenuButtonEl) return;
+		this.addMenuEl.hidden = true;
+		this.addMenuButtonEl.setAttribute("aria-expanded", "false");
+	}
+
+	async openAddMenu() {
+		const willOpen = this.addMenuEl.hidden;
+		if (willOpen) {
+			await this.displayEncodingOptions(this.addMenuEl);
+		}
+		this.addMenuEl.hidden = !willOpen;
+		this.addMenuButtonEl.setAttribute("aria-expanded", String(willOpen));
+	}
+
 	/**
 	 * Creates the dropdown menu with encoding options according to the selected visualization technique
 	 * @param {*} menu The DOM element containing the menu, which has been defined at init 
@@ -165,11 +178,7 @@ export class EncodingPanelController extends EditorPanelController {
 			.on("click", (event, d) => this.addSnippet(d))
 	}
 	
-	closeAddMenu() {
-		if (!this.addMenuEl || !this.addMenuButtonEl) return;
-		this.addMenuEl.hidden = true;
-		this.addMenuButtonEl.setAttribute("aria-expanded", "false");
-	}
+	
 	
 	async addSnippet(d) {
 		const selectedValue = document.querySelector(`#${d.key}`).value

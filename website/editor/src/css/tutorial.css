@@ -1,0 +1,34 @@
+.driver-popover {
+    max-width: 450px;          /* default is around 350px */
+    font-size: 1.05rem;
+}
+
+.driver-popover-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+.driver-popover-description {
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+.driver-popover-footer button {
+    font-size: 0.95rem;
+}
+
+.driver-popover.driver-popover-xl {
+    width: 1500px;
+    max-width: min(1500px, 90vw);
+}
+
+.driver-popover.driver-popover-xl .driver-popover-description {
+    max-width: none;
+}
+
+.driver-popover.driver-popover-xl img {
+    display: block;
+    width: 100%;
+    height: auto;
+    margin: 1rem 0;
+}

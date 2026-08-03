@@ -1,71 +1,98 @@
 .menu-container{
-    padding: 10px;
+	padding: 10px;
+}
+
+/* Encoding builder menu */
+.encoding-add-dropdown {
+	position: static;
+	flex: 0 0 auto;
+}
+
+.encoding-add-menu {
+	position: absolute;
+	top: calc(100% + 0.35rem);
+	right: 0;
+	
+	width: 350px;
+	max-width: min(350px, calc(100vw - 2rem));
+	box-sizing: border-box;
+	
+	max-height: min(600px, calc(100vh - 10rem));
+	overflow: auto;
+	
+	z-index: 10;
+	border: 1px solid var(--border);
+	border-radius: 6px;
+	background: #ffffff;
+	color: var(--text);
+	box-shadow: 0 12px 24px rgba(31, 41, 55, 0.18);
+	text-align: left;
 }
 
 .menu-section {
-    margin-bottom: 20px;
+	margin-bottom: 20px;
 }
 
 .section-title {
-    font-weight: 600;
-    margin-bottom: 8px;
+	font-weight: 600;
+	margin-bottom: 8px;
 }
 
 .section-rows {
-    display: grid;
-    row-gap: 8px;
+	display: grid;
+	row-gap: 8px;
 }
 
 .sector {
-    display: grid;
-    grid-template-columns: 90px 1fr 32px;
-    align-items: center;
-    column-gap: 10px;
+	display: grid;
+	grid-template-columns: 90px 1fr 32px;
+	align-items: center;
+	column-gap: 10px;
 }
 
 .sector-label {
-    font-weight: 500;
+	font-weight: 500;
 }
 
 .sector select {
-    width: 100%;
-    min-width: 120px;
-    padding: 4px 6px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    background: #f8f8f8;
+	width: 100%;
+	min-width: 120px;
+	padding: 4px 6px;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	background: #f8f8f8;
 }
 
 .add-button {
-    width: 28px;
-    height: 28px;
-
-    border: 1px solid #bbb;
-    border-radius: 4px;
-
-    background: #f8f8f8;
-    cursor: pointer;
+	width: 28px;
+	height: 28px;
+	
+	border: 1px solid #bbb;
+	border-radius: 4px;
+	
+	background: #f8f8f8;
+	cursor: pointer;
 }
 
 .add-button:hover {
-    background: #ececec;
+	background: #ececec;
 }
 
 .options {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
 }
 
 .options label {
-    font-size: 0.9em;
-    color: #666;
-    min-width: 45px;
+	font-size: 0.9em;
+	color: #666;
+	min-width: 45px;
 }
 
 .options select {
-    padding: 4px 8px;
-    border: 1px solid #cfcfcf;
-    border-radius: 4px;
-    background: white;
+	padding: 4px 8px;
+	border: 1px solid #cfcfcf;
+	border-radius: 4px;
+	background: white;
 }

@@ -25,7 +25,8 @@
     "@wimmics/venus-core": "file:../../packages/core",
     "codemirror": "^6.0.1",
     "codemirror-lang-sparql": "^2.0.0",
-    "d3": "^7.0.0"
+    "d3": "^7.0.0",
+    "driver.js": "^1.8.0"
   },
   "devDependencies": {
     "vite": "^5.0.0"
