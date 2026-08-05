@@ -126,7 +126,7 @@ export class EncodingBuilder{
 				label: "Mark Type", 
 				options: markOptions, 
 				action: ({ datum, value }) => {
-					return `${value}: ${datum.snippet?.[this.component] ?? datum.snippet.default}`
+					return `"${value}": ${datum.snippet?.[this.component] ?? datum.snippet.default}`
 				},
 				documentation: {
 					description: "Creates the graphical elements of the visualization. The required properties depend on the selected mark type.",
@@ -147,7 +147,7 @@ export class EncodingBuilder{
 				key: "components-visual-encodings", 
 				label: "Visual Variables", 
 				options: visualEncodingOptions, 
-				action: ({ datum, value} ) => `${value}: ${datum.snippet}`,
+				action: ({ datum, value} ) => `"${value}": ${datum.snippet}`,
 				documentation: {
 					description: "Defines the visual variables used to represent the data.",
 					values: visualEncodingOptions,
@@ -158,7 +158,7 @@ export class EncodingBuilder{
 				key: "components-annotations", 
 				label: "Annotations", 
 				options: annotationOptions, 
-				action: ({ datum, value} ) => `${value}: ${datum.snippet}`,
+				action: ({ datum, value} ) => `"${value}": ${datum.snippet}`,
 				documentation: {
 					description: "Adds textual information to the visualization. The required properties depend on the selected annotation type.",
 					values: annotationOptions,
@@ -239,7 +239,7 @@ export class EncodingBuilder{
 				key: "properties-data", 
 				label: "Data", 
 				options: dataOptions, 
-				action: ({ value }) => `${value}: null`,
+				action: ({ value }) => `"${value}": null`,
 				documentation: {
 					description: "Specifies how a channel obtains its values.",
 					values: dataOptions

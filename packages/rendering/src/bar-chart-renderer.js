@@ -35,10 +35,15 @@ export default class BarChartRenderer extends CartesianChartRenderer {
 		const isGrouped = mode === "grouped";
 		const isStacked = mode === "stacked" || mode === "normalize";
 
-		const getX = (d) => {
+		const getGroupScale = d => group?.scales?.get(d.x);
+
+		const getX = d => {
 			const baseX = x.scale(d.x) ?? 0;
-			if (isGrouped) return baseX + (group?.scale?.(d.sub) || 0);
-			return baseX;
+
+			if (!isGrouped)
+				return baseX;
+
+			return baseX + (getGroupScale(d)?.(d.sub) || 0);
 		};
 
 		const getY = (d) => {
@@ -46,9 +51,11 @@ export default class BarChartRenderer extends CartesianChartRenderer {
 			return y.scale(d.value);
 		};
 
-		const getWidth = () => {
-			if (isGrouped) return group?.scale?.bandwidth?.() || x.scale.bandwidth();
-			return x.scale.bandwidth();
+		const getWidth = d => {
+			if (!isGrouped)
+				return x.scale.bandwidth();
+
+			return getGroupScale(d)?.bandwidth() || x.scale.bandwidth();
 		};
 
 		const getHeight = (d) => {
@@ -68,9 +75,9 @@ export default class BarChartRenderer extends CartesianChartRenderer {
 			.data(visibleBars)
 			.enter()
 			.append("rect")
-			.attr("x", getX)
+			.attr("x", d => getX(d))
 			.attr("y", getY)
-			.attr("width", getWidth)
+			.attr("width", d => getWidth(d))
 			.attr("height", getHeight)
 			.attr("fill", (d) => this._getMarkColor(d.datum, MARK_TYPES.BARS) )
 			.attr("stroke", "#ffffff")
@@ -95,7 +102,8 @@ export default class BarChartRenderer extends CartesianChartRenderer {
 		const isGrouped = mode === "grouped";
 		const isStacked = mode === "stacked" || mode === "normalize";
 
-		
+		const getGroupScale = d => group?.scales?.get(d.x);
+
 		const getX = (d) => {
 			if (isStacked) return x.scale(d.y0);
 			return 0;
@@ -105,11 +113,10 @@ export default class BarChartRenderer extends CartesianChartRenderer {
 			const baseY = y.scale(d.x);
 			if (baseY == null) return 0;
 
-			if (isGrouped) {
-			return baseY + (group?.scale?.(d.sub) || 0);
-			}
+			if (!isGrouped)
+				return baseY;
 
-			return baseY;
+			return baseY + (getGroupScale(d)?.(d.sub) || 0);
 		};
 
 		const getWidth = (d) => {
@@ -120,12 +127,11 @@ export default class BarChartRenderer extends CartesianChartRenderer {
 			return Math.max(0, x.scale(d.value));
 		};
 
-		const getHeight = () => {
-			if (isGrouped) {
-				return group?.scale?.bandwidth?.() || y.scale.bandwidth();
-			}
+		const getHeight = d => {
+			if (!isGrouped)
+				return y.scale.bandwidth();
 
-			return y.scale.bandwidth();
+			return getGroupScale(d)?.bandwidth() || y.scale.bandwidth();
 		};
 
 		this.chartGroup
@@ -136,9 +142,9 @@ export default class BarChartRenderer extends CartesianChartRenderer {
 			.enter()
 			.append("rect")
 			.attr("x", d => this.barPadding + getX(d))
-			.attr("y", getY)
+			.attr("y", d => getY(d))
 			.attr("width", getWidth)
-			.attr("height", getHeight)
+			.attr("height", d => getHeight(d))
 			.attr("fill", (d) => this._getMarkColor(d.datum, MARK_TYPES.BARS))
 			.attr("stroke", "#ffffff")
 			.attr("stroke-width", (d) => this._getMarkStrokeWidth(d.datum, MARK_TYPES.BARS));

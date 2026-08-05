@@ -125,6 +125,8 @@ export class EncodingManager {
 			defaults, 
 			userEncoding)
 
+			console.log("merged encoding = ", mergedEncoding)
+
 		return mergedEncoding
 	}
 

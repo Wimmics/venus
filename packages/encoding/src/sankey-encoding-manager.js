@@ -217,14 +217,18 @@ export class SankeyEncodingManager extends GraphEncodingManager {
 
             // Apply the common node defaults (color, opacity, etc.)
             const mergedStage = {
-                ...defaults.nodes,
-                ...stage
+                ...defaults.nodes, // default values
+                ...encoding.nodes, // global user-defined values
+                ...stage // stage-specific user-defined values
             };
 
             this._mergeChannels(
                 mergedStage,
                 defaults.nodes,
-                stage,
+                {
+                    ...encoding.nodes,
+                    ...stage
+                },
                 getSupportedChannels(MARK_TYPES.NODES)
             );
 

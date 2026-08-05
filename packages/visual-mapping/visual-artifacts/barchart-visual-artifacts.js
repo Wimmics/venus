@@ -18,19 +18,28 @@ export class BarChartVisualArtifacts extends CartesianVisualArtifacts {
 		return [0, Math.max(1, maxValue)];
 	}
 
-	_createGroupScaleFromChart({ chart, range }) {
-		const domain = chart?.subCategories || [];
-		
-		const scale = d3.scaleBand()
-			.domain(domain)
-			.range(range)
-			.padding(0.05);
-		
+	_createGroupScalesFromChart({ chart, range }) {
+
+		const scales = new Map();
+
+		for (const xValue of chart.xValues) {
+
+			const domain = chart.bars
+				.filter(bar => bar.x === xValue && bar.observed !== false)
+				.map(bar => bar.sub);
+
+			scales.set(
+				xValue,
+				d3.scaleBand()
+					.domain(domain)
+					.range(range)
+					.padding(0.05)
+			);
+		}
+
 		return {
-			field: chart?.groupField || chart?.splitField || null,
-			scale,
-			domain,
-			range,
+			field: chart.groupField || chart.splitField,
+			scales,
 			scaleType: SCALE_TYPES.BAND
 		};
 	}
@@ -46,8 +55,8 @@ export class BarChartVisualArtifacts extends CartesianVisualArtifacts {
 
 	_resolveGroups({ chart, bandResult }) {
 
-		return this._getChartMode(chart) === "grouped" && chart?.groupField && bandResult?.scale?.bandwidth
-			? this._createGroupScaleFromChart({
+		return this._getChartMode(chart) === "grouped"
+			? this._createGroupScalesFromChart({
 				chart,
 				range: [0, bandResult.scale.bandwidth()]
 			})
