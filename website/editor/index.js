@@ -10,7 +10,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 	const app = new EditorApp();
 	await app.init();
 	
-	const testingMode = new URLSearchParams(window.location.search).get("mode") === "testing";
+	const testingMode = new URLSearchParams(window.location.search).get("mode") === "user-study";
 	
 	const tutorial = new Tutorial({ ui: app, workflow: editorTutorial })
 	tutorial.setContent(defaultContent)
