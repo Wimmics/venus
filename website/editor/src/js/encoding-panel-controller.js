@@ -4,7 +4,8 @@ import { safeRun, updateStatus } from "./utils/safe-run.js";
 
 import * as d3 from "d3"
 
-import { getMenuStructure } from "./encoding-snippets.js";
+// import { getMenuStructure } from "./encoding-snippets.js";
+import { EncodingBuilder } from "./encoding-snippets.js";
 
 export class EncodingPanelController extends EditorPanelController {
 	constructor({
@@ -21,6 +22,11 @@ export class EncodingPanelController extends EditorPanelController {
 		this.addMenuEl = null;
 		this.addMenuButtonEl = null;
 		this.onRun = onRun;
+
+		this.tooltip = d3.select("body")
+			.append("div")
+			.attr("id", "builder-tooltip")
+			.style("display", "none");
 
 		this._setEncodingRun()
 	}
@@ -122,36 +128,58 @@ export class EncodingPanelController extends EditorPanelController {
 	async displayEncodingOptions(menu) {
 		const _this = this;
 
+		const encodingBuilder = new EncodingBuilder({ component: this.getActiveComponent() })
+		await encodingBuilder.build()
+
 		menu.innerHTML = "";
 
 		const container = d3.select(menu)
 			.classed("menu-container", true)
 
-		// Define high-levek encoding objects, such as marks, channels, attributes, legends, scales
+		// Define high-level encoding objects, such as marks, visual encodings, annotations, legends, scales
 		const sections = d3.select(menu)
 			.selectAll(".menu-section")
-			.data(getMenuStructure())
+			.data(encodingBuilder.getData())
 			.enter()
 			.append("div")
 			.classed("menu-section", true)
-			.style("display", d => typeof d.display === "function" ? d.display(this.getActiveComponent()) : "grid")
+			.style("display", d => typeof d.display === "function" ? d.display() : "grid")
 
-		sections.append("div")
+		sections
+			.filter(d => !d.separator)
+			.append("div")
 			.classed("section-title", true)
 			.text(d => d.label)
+
+		sections
+			.filter(d => d.separator)
+			.append("div")
+			.classed("menu-divider", true)
+			.append("span")
+			.text(d => d.separator);
+
 
 		const rows = sections.append("div")
 			.classed("section-rows", true)
 			.selectAll(".sector")
-			.data(d => d.values)
+			.data(d => d.values ?? [])
 			.enter()
 			.append("div")
 			.classed("sector", true)
 			.style("display", d => typeof d.display === "function" ? d.display(this.getActiveComponent()) : "grid")
 
-		rows.append("span")
+		const labels = rows.append("div")
+			.classed("sector-header", true);
+
+		labels.append("span")
 			.classed("sector-label", true)
 			.text(d => d.label);
+
+		labels.filter(d => d.documentation)
+			.append("i")
+			.classed("fa-solid fa-circle-info sector-help", true)
+			.on("mouseenter", (event, d) => this.showDocumentation(event, d.documentation))
+			.on("mouseleave", () => this.hideDocumentation());
 
 		const select = rows.filter(d => d.options)
 			.append("select")
@@ -162,6 +190,7 @@ export class EncodingPanelController extends EditorPanelController {
 			.enter()
 			.append("option")
 			.attr("value", d => d.value ?? "")
+			.attr("title", d => d.description ?? null) // might not work for every browser
 			.text(d => d.label ?? d.value)
 			.each(function(d) {
 				const disabled = typeof d.disabled === "function"
@@ -170,19 +199,99 @@ export class EncodingPanelController extends EditorPanelController {
 
 				this.disabled = disabled;
 				this.selected = !disabled && !!d.selected;
-			});
+			})
 
 		rows.append("button")
 			.classed("add-button", true)
 			.text("+")
 			.on("click", (event, d) => this.addSnippet(d))
 	}
-	
+
+	showDocumentation(event, doc) {
+
+		this.tooltip
+			.html(this.buildDocumentation(doc))
+			.style("display", "block")
+			.style("left", `${event.pageX + 12}px`)
+			.style("top", `${event.pageY}px`);
+	}
+
+	hideDocumentation() {
+		this.tooltip.style("display", "none");
+	}
+
+	buildDocumentation(doc) {
+
+		let html = `<h5>${doc.description}</h5>`;
+
+		if (doc.values) {
+			html += buildValues(doc.values);
+		}
+
+		if (doc.properties) {
+
+			html += `<br><h6>Properties</h6>`;
+			html += "<table>";
+
+			for (const p of doc.properties) {
+
+				html += `
+					<tr>
+						<th>${p.name}</th>
+						<td>${p.description}</td>
+					</tr>
+				`;
+				
+				if (p.values) {
+					html += `
+						<tr>
+							<td colspan="2">
+								${buildValues(p.values)}
+							</td>
+						</tr>
+					`;
+				}
+			}
+
+			html += "</table>";
+		}
+
+		function buildValues(values) {
+			const hasDescriptions = values.some(v => v.description);
+
+			return hasDescriptions
+				? `
+					<ul class="tooltip-values">
+						${values.map(v => `
+							<li><strong>${v.label ?? v}</strong> – ${v.description}</li>
+						`).join("")}
+					</ul>
+				`
+				: `
+					<div class="tooltip-badges">
+						${values.map(v => `
+							<span class="badge bg-light text-dark border">${v.label ?? v}</span>
+						`).join("")}
+					</div>
+				`;
+		}
+
+		return html;
+	}
+		
 	
 	
 	async addSnippet(d) {
-		const selectedValue = document.querySelector(`#${d.key}`).value
-		const snippet = d.action(selectedValue, this.getActiveComponent())
+		const selectElement = document.querySelector(`#${d.key}`)
+		const datum = d3.select(selectElement.options[selectElement.selectedIndex]).datum()
+		console.log("datum = ", datum)
+
+		const selectedValue = selectElement.value
+		const snippet = d.action({
+			datum,
+			value: selectedValue, 
+			component: this.getActiveComponent()
+		})
 
 		this.editor.insertAtCursor(snippet)
 

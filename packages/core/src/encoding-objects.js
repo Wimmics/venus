@@ -1,10 +1,18 @@
+import * as chromatic from "d3-scale-chromatic";
+
+export const COLOR_PALETTES = Object.keys(chromatic)
+    .filter(name => name.startsWith("scheme"))
+    .map(name => ({
+        value: name.replace(/^scheme/, ""),
+        label: name.replace(/^scheme/, "")
+    }));
+
 export const CHANNEL_TYPES = {
 	COLOR: "color", 
 	SIZE: "size", 
 	STROKE: "stroke", 
 	STROKE_WIDTH: "strokeWidth",
-	OPACITY: "opacity",
-	GROUPS: "groups"
+	OPACITY: "opacity"
 }
 
 export const MARK_TYPES = {

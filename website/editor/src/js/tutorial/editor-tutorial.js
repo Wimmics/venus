@@ -31,10 +31,6 @@ export default [
         element: "#queryEndpoint"
     },
     {
-        id: "query-content",
-        element: "#queryContent"
-    },
-    {
         id: "query-toolbar",
         element: "#sparqlToolbar",
         beforeNext: showSPARQLResults,

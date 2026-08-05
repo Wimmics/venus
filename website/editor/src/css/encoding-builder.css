@@ -17,7 +17,7 @@
 	max-width: min(350px, calc(100vw - 2rem));
 	box-sizing: border-box;
 	
-	max-height: min(600px, calc(100vh - 10rem));
+	max-height: min(650px, calc(100vh - 10rem));
 	overflow: auto;
 	
 	z-index: 10;
@@ -56,7 +56,7 @@
 
 .sector select {
 	width: 100%;
-	min-width: 120px;
+	min-width: 100px;
 	padding: 4px 6px;
 	border: 1px solid #ccc;
 	border-radius: 4px;
@@ -95,4 +95,89 @@
 	border: 1px solid #cfcfcf;
 	border-radius: 4px;
 	background: white;
+}
+
+#builder-tooltip {
+    position: absolute;
+    z-index: 10000;
+
+    max-width: 420px;
+
+    padding: 12px 16px;
+
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: .5rem;
+
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.15);
+
+    font-size: .9rem;
+    line-height: 1.4;
+}
+
+#builder-tooltip h5 {
+    margin: 0 0 .75rem;
+    font-size: 1rem;
+}
+
+#builder-tooltip table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#builder-tooltip th {
+    width: 90px;
+    text-align: left;
+    vertical-align: top;
+    padding: .35rem .5rem .35rem 0;
+}
+
+#builder-tooltip td {
+    padding: .35rem 0;
+}
+
+#builder-tooltip ul {
+    margin: .25rem 0 .75rem 1rem;
+    padding: 0;
+}
+
+.sector-header {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+}
+
+.sector-help {
+    color: #6c757d;
+    cursor: help;
+}
+
+.sector-help:hover {
+    color: #0d6efd;
+}
+
+.menu-divider {
+    display: flex;
+    align-items: center;
+
+    margin: 1rem 0 .75rem;
+    color: #6c757d;
+
+    font-size: .85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+}
+
+.menu-divider::before,
+.menu-divider::after {
+    content: "";
+    flex: 1;
+
+    border-top: 1px solid #dee2e6;
+}
+
+.menu-divider span {
+    margin: 0 .75rem;
+    white-space: nowrap;
 }

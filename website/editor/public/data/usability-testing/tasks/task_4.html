@@ -1,23 +1,44 @@
-<h2>Task 4 – Create a Directional Graph</h2>
+<h2>Task 5 – Create a Directional Graph</h2>
+
+<div class="task-goal">
+    <strong>Goal</strong>
+
+    <p>Create a directional graph that:</p>
+
+    <ul>
+        <li>represents <strong>actors</strong> and <strong>movies</strong> as nodes;</li>
+        <li>connects each <strong>actor</strong> to the <strong>movies</strong> in which they appeared using directed links;</li>
+        <li>colors <strong>movie nodes</strong> according to the producing <strong>studio</strong>;</li>
+        <li>uses <code>actorName</code> as the label of <strong>actor nodes</strong>;</li>
+        <li>uses <code>movieName</code> as the label of <strong>movie nodes</strong>.</li>
+    </ul>
+</div>
 
 <p>
-In this task, you are provided with a <b>SPARQL query</b> and an empty encoding panel.
+You are provided with a <strong>SPARQL query</strong> and an empty visualization encoding. Create the visualization by defining the required encoding.
 </p>
 
 <p>
-<b>Goal:</b> Create a directional graph that represents <b>actors</b> and <b>movies</b> as nodes, with directed links connecting each actor to the movies in which they appeared. Complete the encoding so that:
+<strong>Hint:</strong> Zoom in to view the graph labels and verify your results.
 </p>
 
-<ul>
-    <li><b>Movie nodes</b> are colored according to the <b>studio</b> that produced them.</li>
-    <li><b>Actor nodes</b> display the value of <code>actorName</code> as their label.</li>
-    <li><b>Movie nodes</b> display the value of <code>movieName</code> as their label.</li>
-</ul>
+<div class="query-description">
+    <strong>SPARQL Query Description</strong>
 
-<p>
-     <b>Hint:</b> Zoom in to view the graph labels and verify your results.
-</p>
+    <p>
+        The provided query retrieves information about <strong>movies</strong>, the
+        <strong>actors</strong> starring in them, their <strong>film studios</strong>,
+        <strong>languages</strong>, and <strong>runtime</strong>. Only movies with a
+        runtime between <strong>40 minutes and 4 hours</strong> are included.
+    </p>
 
-<p>
-    <b>Restriction:</b> Do not modify the SPARQL query.
-</p>
+    <p>The query returns the following fields:</p>
+
+    <ul>
+        <li><strong>Movie</strong> — the name of the movie.</li>
+        <li><strong>Actor</strong> — the name of an actor starring in the movie.</li>
+        <li><strong>Studio</strong> — the name of the film studio.</li>
+        <li><strong>Language</strong> — the language of the movie.</li>
+        <li><strong>Runtime</strong> — the movie runtime, expressed in seconds.</li>
+    </ul>
+</div>

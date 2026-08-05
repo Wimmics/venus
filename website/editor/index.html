@@ -33,7 +33,7 @@
 			</div>
 		</div>
 	</header>
-	<nav class="editor-createbar" aria-label="Create visualization">
+	<nav class="editor-createbar" aria-label="Create visualization" id="main-toolbar">
 		<div class="w3-content editor-createbar-inner">
 			<div class="editor-createbar-label">Start with </div>
 			<div class="editor-createbar-actions">
@@ -69,29 +69,8 @@
 				</div>
 			</div>
 
-			<!-- Only shown during usability testing ; hidden otherwise -->
-			<div class="usability-test-buttons">
-				<button
-					id="viewTask"
-					class="btn btn-primary editor-done-button"
-					hidden>
-					Reopen task description
-				</button>
-
-				<button
-					id="doneButton"
-					class="btn btn-success editor-done-button"
-					hidden>
-					Done with task
-				</button>
-			</div>
 		</div>
 	</nav>
-
-<!-- Only shown during usability testing ; hidden otherwise -->
-<div id="user-testing-overlay">
-    <div id="jspsych-container"></div>
-</div>
 
 <div class="container-fluid editor-root">
 	<section class="workspace-row" id="workspaceRow">

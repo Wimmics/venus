@@ -1,13 +1,39 @@
 <h2>Task 4 – Modify a Directional Graph</h2>
 
-<p>
-In this task, you will be provided with a <b>SPARQL query</b> and the basic encoding of a <b>directional graph</b>. The encoding already defines nodes and links using the SPARQL variables <code>actor</code> and <code>movie</code>. This visualization displays actors linked to movies they worked on.
-</p>
+<div class="task-goal">
+    <strong>Goal</strong>
+
+    <p>
+        Modify the provided directional graph encoding so that the size of each
+        <strong>target node</strong> is proportional to the <strong>runtime</strong>
+        of the associated movie.
+    </p>
+</div>
 
 <p>
-<b>Goal:</b> Modify the encoding so that the size of each <b>target</b> node is proportional to the <b>runtime</b> of the associated movie.
+You are provided with a <strong>SPARQL query</strong> and the basic encoding of a
+<strong>directional graph</strong>. The encoding already defines the graph structure
+using the SPARQL variables <code>actor</code> and <code>movie</code>, producing a network
+where actors are connected to the movies they appeared in.
 </p>
 
-<p>
-<b>Restriction:</b> Do not modify the SPARQL query.
-</p>
+<div class="query-description">
+    <strong>SPARQL Query Description</strong>
+
+    <p>
+        The provided query retrieves information about <strong>movies</strong>, the
+        <strong>actors</strong> starring in them, their <strong>film studios</strong>,
+        <strong>languages</strong>, and <strong>runtime</strong>. Only movies with a
+        runtime between <strong>40 minutes and 4 hours</strong> are included.
+    </p>
+
+    <p>The query returns the following fields:</p>
+
+    <ul>
+        <li><strong>Movie</strong> — the name of the movie.</li>
+        <li><strong>Actor</strong> — the name of an actor starring in the movie.</li>
+        <li><strong>Studio</strong> — the name of the film studio.</li>
+        <li><strong>Language</strong> — the language of the movie.</li>
+        <li><strong>Runtime</strong> — the movie runtime, expressed in seconds.</li>
+    </ul>
+</div>

@@ -38,19 +38,13 @@ export default {
     query: {
         title: "SPARQL Query",
         description:
-            "This panel contains the SPARQL query used to retrieve the data displayed in the visualization."
+            "This panel contains the SPARQL query used to retrieve the data displayed in the visualization. Write a new SPARQL query or modify the existing one. The query determines which data will be retrieved for visualization."
     },
 
     "query-endpoint": {
         title: "SPARQL Endpoint",
         description:
             "Specify the SPARQL endpoint against which the query will be executed. The editor requires endpoints that support CORS. Endpoints without CORS can still be used through a proxy in your own application."
-    },
-
-    "query-content": {
-        title: "Query Editor",
-        description:
-            "Write a new SPARQL query or modify the existing one. The query determines which data will be retrieved for visualization."
     },
 
     "query-toolbar": {
@@ -87,7 +81,7 @@ export default {
     "encoding-toolbar": {
         title: "Encoding Tools",
         description:
-            "Copy or download the encoding, restore the original encoding from an example, or insert predefined encoding snippets to help you build your visualization."
+            "Copy or download the encoding, restore the original encoding from an example, or insert predefined encoding snippets to help you build your visualization ('+' button)."
     },
 
     "encoding-builder": {

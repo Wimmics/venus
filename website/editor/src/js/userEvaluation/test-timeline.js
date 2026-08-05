@@ -9,16 +9,16 @@ import { fetchJson, fetchText } from "../utils/http-utils";
 import { USABILITY_TEST_DATA_PATH } from "./user-evaluation";
 
 export class UsabilityTestingWorkflow {
-    constructor({startTask = null, finishTask = null, waitForUser = null} = {}) {
+    constructor({startTask = null, waitForUser = null, startTutorial = null} = {}) {
         this.startTask = startTask
-        this.finishTask = finishTask
         this.waitForUser = waitForUser
+        this.startTutorial = startTutorial
 
         this.timeline = []
 
         this.frequencyLikert = ["Not at all", "Slightly", "Moderately", "Very", "Extremely"]
 
-        this.debug = true // change for production
+        this.debug = true // TEMP: make debug false for evaluation
     }
 
     async buildTimeline() {
@@ -28,43 +28,27 @@ export class UsabilityTestingWorkflow {
         // await this._addTermsAndConditionsAgreement()
         // await this._addPreTestQuestionnaire()
 
-        // tutorial
+        // // tutorial
+        // await this._addTutorial()
         
 
-        // tasks
-        const json = await fetchJson(`${USABILITY_TEST_DATA_PATH}/tasks.json`)
-        for (const task of json.values) {
-            await this._addTask(task)
-        }
+        // // tasks
+        // const json = await fetchJson(`${USABILITY_TEST_DATA_PATH}/tasks.json`)
+        // for (const task of json.values) {
+        //     await this._addTask(task)
+        // }
 
-        // post-test 
+        // // post-test 
         // await this._addUMUXLiteQuestionnaire()
-        // await this._addPostTestQuestionnaire()
-
+        await this._addPostTestQuestionnaire()
     }
 
     getTimeline() {
         return this.timeline
     }
 
-    /**
-     * Add semantics to jspsych answers, when relevant, for further analysis
-     */
-    getAnswers(data) {
-        // const response = data.response;
-
-        // const answers = Object.fromEntries(
-        //     nasaQuestions.map((q, i) => [
-        //         q.id,
-        //         response[`Q${i}`]
-        //     ])
-        // );
-
-        // console.log(answers);
-    }
-
     async _addWelcomeMessage(){
-        const htmlContent = await this._loadHtml('welcome.html');
+        const htmlContent = await fetchText(`${USABILITY_TEST_DATA_PATH}/welcome.html`);
 
         this.timeline.push({
             type: surveyHtmlForm,
@@ -76,7 +60,7 @@ export class UsabilityTestingWorkflow {
     }
 
     async _addTermsAndConditionsAgreement() {
-        const htmlContent = await this._loadHtml('terms.html');
+        const htmlContent = await fetchText(`${USABILITY_TEST_DATA_PATH}/terms.html`);
 
         this.timeline.push({
             type: surveyHtmlForm,
@@ -115,9 +99,59 @@ export class UsabilityTestingWorkflow {
         
     }
 
-    async _addTask(task) {
-        const htmlContent = await fetchText(`${USABILITY_TEST_DATA_PATH}/tasks/${task.id}.html`);
+    async _addTutorial() {
+        
+        const onboardingContent = await fetchText(`${USABILITY_TEST_DATA_PATH}/onboarding.html`);
 
+        this.timeline.push({
+            type: htmlButtonResponse,
+            stimulus: onboardingContent,
+            choices: ["Start Onboarding"],
+            on_load: () => this._styleButtons()
+        })
+
+        const terminologyContent = await fetchText(`${USABILITY_TEST_DATA_PATH}/terminology.html`);
+
+        this.timeline.push({
+            type: htmlButtonResponse,
+            stimulus: terminologyContent,
+            choices: ["Start Guided Tour"],
+            on_load: () => this._styleButtons()
+        })
+
+        let taskLog = null
+        this.timeline.push({
+            type:callFunction,
+            async: true, 
+            func: async (done) => {
+                await this.startTutorial()
+
+                taskLog = await this.waitForUser()
+
+                done()
+            },
+            data: () => ({
+                ...taskLog
+            })
+        })
+    }
+
+    async _addTask(task) {
+        const baseContent = await fetchText(`${USABILITY_TEST_DATA_PATH}/tasks/${task.id}.html`);
+
+        const sparqlRestriction = `<li>Do not modify the SPARQL query.</li>`
+        const htmlContent = `${baseContent} 
+            <div class="info-box">
+            <strong>Instructions</strong>
+
+            <ul>
+                ${task.id !== "task_7" ? sparqlRestriction : ""}
+                <li>Click <strong>Task</strong> at any time to reopen the task description.</li>
+                <li>Click <strong>Done</strong> once you have completed the task.</li>
+            </ul>
+        </div>
+        `
+        
         this.timeline.push({
             type: htmlButtonResponse,
             stimulus: htmlContent,

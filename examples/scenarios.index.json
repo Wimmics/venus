@@ -1,5 +1,5 @@
 {
-	"defaultScenarioId": "visgraph-cooccurrence-color-size",
+	"defaultScenarioId": "visgraph-directed-color-size",
 	"scenarios": [
 		{
 			"id": "barchart-movies-dbpedia",

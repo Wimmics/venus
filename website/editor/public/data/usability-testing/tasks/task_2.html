@@ -1,18 +1,35 @@
 <h2>Task 2 – Create a Stacked Bar Chart</h2>
 
+<div class="task-goal">
+    <strong>Goal</strong>
+
+    <p>Create a <strong>stacked bar chart</strong> that:</p>
+
+    <ul>
+        <li>displays the <strong>studios</strong> on the x-axis;</li>
+        <li>displays the <strong>number of movies</strong> on the y-axis;</li>
+        <li>stacks the bars according to the movie <strong>language</strong>;</li>
+        <li>uses the <strong>Set2</strong> color palette.</li>
+    </ul>
+</div>
+
 <p>
-In this task, you are provided with a <b>SPARQL query</b> and an empty encoding panel.
+You are provided with a <strong>SPARQL query</strong> and an empty visualization encoding. Create the visualization by defining the required encoding.
 </p>
 
-<p><b>Goal:</b></p>
+<div class="query-description">
+    <strong>SPARQL Query Description</strong>
 
-<ul>
-    <li>Create a <b>stacked bar chart</b> using the provided query.</li>
-    <li>Display the <b>studios</b> on the x-axis and the <b>number of movies</b> on the y-axis.</li>
-    <li>Stack the bars by the movies' <b>language</b>.</li>
-    <li>Use the <b>Set2</b> color palette.</li>
-</ul>
+    <p>
+        The provided query retrieves information about the <strong>20 film studios with the largest number of movies</strong> in DBpedia.
+        For each studio, it groups the movies by <strong>language</strong> and counts how many movies are available.
+    </p>
 
-<p>
-<b>Restriction:</b> Do not modify the SPARQL query.
-</p>
+    <p>The query returns the following fields:</p>
+
+    <ul>
+        <li><strong>Studio</strong> — the name of the film studio.</li>
+        <li><strong>Language</strong> — the language associated with the movies.</li>
+        <li><strong>Number of Movies</strong> — the number of movies produced by the studio in that language.</li>
+    </ul>
+</div>

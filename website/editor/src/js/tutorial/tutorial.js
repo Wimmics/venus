@@ -3,7 +3,7 @@ import "driver.js/dist/driver.css";
 
 export class Tutorial {
 
-    constructor({ui}) {
+    constructor({ui, workflow}) {
         this.driver = driver({
             animate: true,
             smoothScroll: true,
@@ -15,11 +15,16 @@ export class Tutorial {
         });
 
         this.mandatory = false
+        this.disabledSteps = []
+
         this.ui = ui
+        this.workflow = workflow
     }
 
-    start(definition, startAt = 0) {
-        const steps = definition.map((step, i) => this._buildStep(step, i));
+    start(startAt = 0) {
+        const validSteps = this.workflow.filter(step => !this.disabledSteps.includes(step.id))
+
+        const steps = validSteps.map((step, i) => this._buildStep(step, i, i === validSteps.length - 1));
 
         this.driver.setConfig({
             allowClose: !this.mandatory
@@ -28,7 +33,7 @@ export class Tutorial {
         this.driver.setSteps(steps);
 
         const index = typeof startAt === "string"
-            ? definition.findIndex(step => step.id === startAt)
+            ? this.workflow.findIndex(step => step.id === startAt)
             : startAt;
 
         this.driver.drive(index);
@@ -42,7 +47,15 @@ export class Tutorial {
         this.mandatory = mandatory
     }
 
-    _buildStep(step, index) {
+    setDisabledSteps(steps) {
+        this.disabledSteps = steps
+    }
+
+    setDoneAction(callback) {
+        this.doneAction = callback;
+    }
+
+    _buildStep(step, index, isLast) {
         return {
             ...step,
 
@@ -59,7 +72,14 @@ export class Tutorial {
 
             popover: {
                 ...this.content[step.id],
-                ...(step.popover || {})
+                ...(step.popover || {}),
+
+                ...(isLast && this.doneAction && {
+                    onNextClick: () => {
+                        this.driver.destroy();
+                        this.doneAction();
+                    }
+                })
             }
         };
     }

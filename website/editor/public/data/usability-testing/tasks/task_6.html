@@ -1,18 +1,36 @@
 <h2>Task 6 – Create a Sankey Diagram</h2>
 
-<p>
-In this task, you are provided with a <b>SPARQL query</b> and an empty encoding panel.
-</p>
+<div class="task-goal">
+    <strong>Goal</strong>
+
+    <p>Create a Sankey diagram that:</p>
+
+    <ul>
+        <li>represents the flow of movies through the <strong>Studio</strong>, <strong>Runtime Category</strong>, and <strong>Language</strong> stages;</li>
+        <li>assigns a <strong>title to each stage</strong>;</li>
+        <li>colors all stages according to the <strong>runtime category</strong>.</li>
+    </ul>
+</div>
 
 <p>
-<b>Goal:</b> Create a Sankey diagram representing the flow of movies through the <b>studio</b>, <b>runtime category</b>, and <b>language</b> stages. Complete the encoding so that:
+You are provided with a <strong>SPARQL query</strong> and an empty visualization encoding. Create the visualization by defining the required encoding.
 </p>
 
-<ul>
-    <li>Each stage displays a <b>custom title</b>.</li>
-    <li>All stages are colored according to the corresponding <b>runtime category</b>.</li>
-</ul>
 
-<p>
-<b>Restriction:</b> Do not modify the SPARQL query.
-</p>
+<div class="query-description">
+    <strong>SPARQL Query Description</strong>
+
+    <p>
+        The provided query retrieves information about the <strong>30 film studios with the largest number of movies</strong> in DBpedia.
+        For each studio, movies are grouped into <strong>runtime categories</strong> and <strong>languages</strong>, and the number of movies in each combination is counted.
+    </p>
+
+    <p>The query returns the following fields:</p>
+
+    <ul>
+        <li><strong>Studio</strong> — the name of the film studio.</li>
+        <li><strong>Runtime Category</strong> — one of four runtime intervals: <em>40–90 min</em>, <em>90–120 min</em>, <em>120–150 min</em>, or <em>150–240 min</em>.</li>
+        <li><strong>Language</strong> — the language associated with the movies.</li>
+        <li><strong>Number of Movies</strong> — the number of movies belonging to each combination of studio, runtime category, and language.</li>
+    </ul>
+</div>

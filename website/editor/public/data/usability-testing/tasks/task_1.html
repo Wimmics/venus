@@ -1,17 +1,32 @@
 <h2>Task 1 – Modify a Bar Chart</h2>
 
-<p>
-In this task, you will be provided with a <b>SPARQL query</b> and the basic encoding of a <b>bar chart</b>. The encoding already defines the x- and y-axis mappings using the SPARQL variables <code>studioName</code> and <code>nbMovies</code>, respectively.
-</p>
+<div class="task-goal">
+    <strong>Goal</strong>
+
+    <p>
+        Modify the provided bar chart encoding so that the bars are <strong>colored according to the movie language</strong>.
+    </p>
+</div>
 
 <p>
-<b>Goal:</b> Complete the visualization by modifying the encoding so that:
+You are provided with a <strong>SPARQL query</strong> and the basic encoding of a
+<strong>bar chart</strong>. The encoding already defines the x- and y-axis mappings
+using the SPARQL variables <code>studioName</code> and <code>nbMovies</code>.
 </p>
 
-<ul>
-    <li>bars are colored according to the movie <b>language</b>.</li>
-</ul>
+<div class="query-description">
+    <strong>SPARQL Query Description</strong>
 
-<p>
-<b>Restriction:</b> Do not modify the SPARQL query.
-</p>
+    <p>
+        The provided query retrieves information about the <strong>20 film studios with the largest number of movies</strong> in DBpedia.
+        For each studio, it groups the movies by <strong>language</strong> and counts how many movies are available.
+    </p>
+
+    <p>The query returns the following fields:</p>
+
+    <ul>
+        <li><strong>Studio</strong> — the name of the film studio.</li>
+        <li><strong>Language</strong> — the language associated with the movies.</li>
+        <li><strong>Number of Movies</strong> — the number of movies produced by the studio in that language.</li>
+    </ul>
+</div>

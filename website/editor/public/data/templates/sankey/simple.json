@@ -1,7 +1,6 @@
 {
   "nodes": {
-    "fields": ["node"],
-    "labels": { "field": "nodeLabel" }
+    "fields": ["stage1", { "field": "stage2"}]
   },
   "links": {
     "value": { "field": "value" }

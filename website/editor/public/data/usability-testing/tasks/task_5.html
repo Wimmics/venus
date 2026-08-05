@@ -1,25 +1,62 @@
 <h2>Task 5 – Modify a Sankey Diagram</h2>
 
-<p>
-In this task, you are provided with a <b>SPARQL query</b> and the encoding of a <b>Sankey diagram</b>.</p> 
+<div class="task-goal">
+    <strong>Goal</strong>
 
-<p>If you are not familiar with this type of visualization, the figure below illustrates how to interpret it (the example is for explanation purposes only and is not related to the data used in this task).
+    <p>
+        Modify the provided Sankey diagram encoding so that the
+        <strong>Language</strong> stage is sorted according to the
+        <strong>number of incoming links</strong>.
+    </p>
+</div>
+
+<p>
+You are provided with a <strong>SPARQL query</strong> and the encoding of a
+<strong>Sankey diagram</strong>.
 </p>
 
 <p>
-A Sankey diagram represents the flow of items through a sequence of stages. Each rectangle corresponds to a category at a given stage, while the links between rectangles represent the flow of items from one category to another. The width of each link is proportional to the quantity it represents.
+If you are not familiar with this type of visualization, the figure below illustrates how to interpret it. The example is provided for explanation purposes only and is not related to the data used in this task.
 </p>
 
-<img src="/editor/data/usability-testing/figs/sankey-explanation.png" alt="Example illustrating how to read a Sankey diagram."/>
+<div class="query-description">
+    <strong>How to Read a Sankey Diagram</strong>
 
-<p>
-In this task, the Sankey diagram shows the flow of movies through three stages: <b>studio</b>, <b>runtime category</b>, and <b>language</b>. The width of each link corresponds to the number of movies represented by that flow.
-</p>
+    <p>
+        A Sankey diagram represents the flow of items through a sequence of stages.
+        Each <strong>rectangle</strong> corresponds to a category at a given stage,
+        while the <strong>links</strong> between rectangles represent the flow of
+        items from one category to another. The width of each link is proportional
+        to the quantity it represents.
+    </p>
 
-<p>
-<b>Goal:</b> Modify the encoding so that the <b>language</b> stage is sorted according to the number of incoming links.
-</p>
+    <img
+        src="/editor/data/usability-testing/figs/sankey-explanation.png"
+        alt="Example illustrating how to read a Sankey diagram."
+    />
 
-<p>
-<b>Restriction:</b> Do not modify the SPARQL query.
-</p>
+    <p>
+        In this task, the Sankey diagram represents the flow of movies through three
+        stages: <strong>Studio</strong>, <strong>Runtime Category</strong>, and
+        <strong>Language</strong>. The width of each link corresponds to the number
+        of movies represented by that flow.
+    </p>
+</div>
+
+<div class="query-description">
+    <strong>SPARQL Query Description</strong>
+
+    <p>
+        The provided query retrieves information about the <strong>30 film studios with the largest number of movies</strong> in DBpedia.
+        For each studio, movies are grouped into <strong>runtime categories</strong> and <strong>languages</strong>, and the number of movies in each combination is counted.
+    </p>
+
+    <p>The query returns the following fields:</p>
+
+    <ul>
+        <li><strong>Studio</strong> — the name of the film studio.</li>
+        <li><strong>Runtime Category</strong> — one of four runtime intervals: <em>40–90 min</em>, <em>90–120 min</em>, <em>120–150 min</em>, or <em>150–240 min</em>.</li>
+        <li><strong>Language</strong> — the language associated with the movies.</li>
+        <li><strong>Number of Movies</strong> — the number of movies belonging to each combination of studio, runtime category, and language.</li>
+    </ul>
+</div>
