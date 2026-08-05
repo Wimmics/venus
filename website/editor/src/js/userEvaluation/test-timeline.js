@@ -28,17 +28,17 @@ export class UsabilityTestingWorkflow {
         await this._addTermsAndConditionsAgreement()
         await this._addPreTestQuestionnaire()
 
-        // // tutorial
+        // tutorial
         await this._addTutorial()
         
 
-        // // tasks
+        // tasks
         const json = await fetchJson(`${USABILITY_TEST_DATA_PATH}/tasks.json`)
         for (const task of json.values) {
             await this._addTask(task)
         }
 
-        // // post-test 
+        // post-test 
         await this._addUMUXLiteQuestionnaire()
         await this._addPostTestQuestionnaire()
     }
