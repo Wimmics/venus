@@ -109,8 +109,8 @@ export class ForceGraphEncodingManager extends GraphEncodingManager {
 			throw new Error('Invalid encoding: "links.type" must be "directional", "semantic", or "cooccurrence".');
 		}
 		if (linkType === "cooccurrence") {
-			if (!encoding?.nodes?.field) {
-				throw new Error('Invalid encoding: "nodes.field" is required for co-occurrence graph nodes.');
+			if (!encoding?.nodes?.field && !encoding?.nodes?.fields) {
+				throw new Error('Invalid encoding: "nodes.field" or "nodes.fields" is required for co-occurrence graph nodes.');
 			}
 			if (typeof encoding?.links?.context?.field !== "string" || !encoding.links.context.field.trim()) {
 				throw new Error('Invalid encoding: "links.context.field" is required for co-occurrence links.');

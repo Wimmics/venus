@@ -138,7 +138,7 @@ export class EncodingBuilder{
 						},
 						{
 							name: "fields",
-							description: "Specifies an ordered list of stage definitions ({ field: ... }). Used by node marks in Sankey diagrams."
+							description: "Specifies a list of node definitions. In Sankey diagrams, these create ordered stages ({ field: ... }). In co-occurrence graphs, these create node types."
 						}
 					]
 				} 

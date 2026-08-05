@@ -59,6 +59,19 @@ export class SparqlToForceGraphMapper extends SparqlToGraphMapper {
 			linkType === "cooccurrence"
 			? null
 			: this.encoding?.nodes?.target?.field;
+
+		let cooccurrenceNodeVars = [];
+
+		if (Array.isArray(this.encoding?.nodes?.fields)) {
+			cooccurrenceNodeVars = this.encoding.nodes.fields.map(d =>
+				typeof d === "string" ? d : d.field
+			);
+		} else {
+			const field = this.encoding?.nodes?.field;
+			cooccurrenceNodeVars = Array.isArray(field)
+				? field
+				: [field].filter(Boolean);
+		}
 		
 		return {
 			linkType,
@@ -66,7 +79,7 @@ export class SparqlToForceGraphMapper extends SparqlToGraphMapper {
 			targetVar,
 			contextVar: this.encoding?.links?.context?.field || null,
 			relationVar: this.encoding?.links?.relation?.field || null,
-			cooccurrenceNodeVars: Array.isArray(sourceVar) ? sourceVar : [sourceVar].filter(Boolean)
+			cooccurrenceNodeVars
 		};
 	}
 	
