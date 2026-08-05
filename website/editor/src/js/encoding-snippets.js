@@ -44,7 +44,7 @@ export class EncodingBuilder{
 				values: this.buildChannelPropertiesSection() 
 			},
 			{
-				separator: "Visualization-specific"
+				separator: "Mark-specific Properties"
 			},
 			{ 
 				label: "Nodes", 
@@ -67,6 +67,19 @@ export class EncodingBuilder{
 				display: () => [VIS_TYPES.VENUS_LINECHART].includes(this.component) ? "grid" : "none" 
 			}
 		]
+
+		const layoutVisualizations = [VIS_TYPES.VENUS_SANKEY, VIS_TYPES.VENUS_BARCHART]
+
+		if (layoutVisualizations.includes(this.component)) {
+			this.data.push({
+				separator: "Visualization-specific"
+			})
+
+			this.data.push({
+				label: "Layout",
+				values: this.buildLayoutPropertiesSection()
+			})
+		}
 	}
 
 	buildComponentsSection() {
@@ -82,7 +95,10 @@ export class EncodingBuilder{
 			{
 				value: MARK_TYPES.LINKS,
 				label: "Links",
-				snippet: `{ }`
+				snippet: {
+					default: `{ }`,
+					[VIS_TYPES.VENUS_SANKEY]: `{ "value": { "field": null }}`
+				} 
 			},
 			{
 				value: MARK_TYPES.BARS,
@@ -126,7 +142,7 @@ export class EncodingBuilder{
 				label: "Mark Type", 
 				options: markOptions, 
 				action: ({ datum, value }) => {
-					return `"${value}": ${datum.snippet?.[this.component] ?? datum.snippet.default}`
+					return `"${value}": ${datum.snippet?.[this.component] ?? datum.snippet.default ?? datum.snippet}`
 				},
 				documentation: {
 					description: "Creates the graphical elements of the visualization. The required properties depend on the selected mark type.",
@@ -134,11 +150,15 @@ export class EncodingBuilder{
 					properties: [
 						{
 							name: "field",
-							description: "Specifies the data field used to create graphical elements. Used by node marks in graphs."
+							description: "Specifies the data field used to create graphical elements. Used by node and link marks."
 						},
 						{
 							name: "fields",
 							description: "Specifies a list of node definitions. In Sankey diagrams, these create ordered stages ({ field: ... }). In co-occurrence graphs, these create node types."
+						}, 
+						{
+							name: "value", 
+							description: "Specifies the data field used to determine the flow value between stages."
 						}
 					]
 				} 
@@ -223,7 +243,7 @@ export class EncodingBuilder{
 						},
 						{
 							name: "range",
-							description: "Specifies the set of visual values produced by the scale. Provide either a list of colors (names or HEX codes) or the name of a color palette.",
+							description: "Specifies the set of visual values produced by the scale. When using colors, provide either a list of colors (names or HEX codes) or the name of a color palette.",
 							values: COLOR_PALETTES,
 							default: "Accent"
 						},
@@ -286,6 +306,37 @@ export class EncodingBuilder{
 		]
 	}
 
+	buildLayoutPropertiesSection() {
+		const alignmentOptions = this.buildOptions(Object.values(ALIGN_TYPES))
+
+		const directionOptions = this.buildOptions(["horizontal", "vertical"])
+
+		return [
+			{ 
+				key: "layout-alignment", 
+				label: "Alignment", 
+				options: alignmentOptions, 
+				action: ({value}) => `"align": "${value}"`, 
+				display: () => this.component === VIS_TYPES.VENUS_SANKEY ? "grid" : "none",
+				documentation: {
+					description: "Controls the alignment of Sankey stages.",
+					values: alignmentOptions
+				}
+			},
+			{
+				key: "layout-direction", 
+				label: "Direction",
+				options: directionOptions,
+				action: ({value}) => `"direction": "${value}"`,
+				display: () => this.component === VIS_TYPES.VENUS_BARCHART ? "grid" : "none",
+				documentation: {
+					description: "Specifies the orientation of the bar chart.",
+					values: directionOptions
+				}
+			}
+		]
+	}
+
 	buildNodePropertiesSection() {
 		const nodeTypeOptions = [
 			{ 
@@ -311,12 +362,11 @@ export class EncodingBuilder{
 			}
 		]
 
-		const alignmentOptions = this.buildOptions(Object.values(ALIGN_TYPES))
 
 		return [
 			{ 
 				key: "node-type", 
-				label: "Node Type", 
+				label: "Type", 
 				options: nodeTypeOptions,
 				action: ({ datum }) => d.snippet,
 				documentation: {
@@ -333,19 +383,8 @@ export class EncodingBuilder{
 			},
 			this.buildSortObject(),
 			{ 
-				key: "align", 
-				label: "Stages Alignment", 
-				options: alignmentOptions, 
-				action: ({value}) => `align: ${value}`, 
-				display: () => this.component === VIS_TYPES.VENUS_SANKEY ? "grid" : "none",
-				documentation: {
-					description: "Controls the alignment of Sankey stages.",
-					values: alignmentOptions
-				}
-			},
-			{ 
 				key: "padding", 
-				label: "Node padding", 
+				label: "Padding", 
 				action: () => `"padding": { "value": null }`,
 				display: () => this.component === VIS_TYPES.VENUS_SANKEY ? "grid" : "none",
 				documentation: {
@@ -355,8 +394,8 @@ export class EncodingBuilder{
 			},
 			{ 
 				key: "width", 
-				label: "Node width", 
-				action: () => `"width": { "value": null }`,
+				label: "Size", 
+				action: () => `"size": { "value": null }`,
 				display: () => this.component === VIS_TYPES.VENUS_SANKEY ? "grid" : "none",
 				documentation: {
 					description: "Controls the fixed width of Sankey nodes.",

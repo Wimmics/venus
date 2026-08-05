@@ -109,11 +109,10 @@ export const VISUALIZATION_DEFAULTS = {
     },
 
     [VIS_TYPES.VENUS_SANKEY]: {
-
+        align: "justify",
         nodes: {
 			...MARK_DEFAULTS.nodes,
             size: channel.size(25),
-            align: "justify",
             padding: 2,
             sort: {
                 by: SORT_BY.LAYOUT,

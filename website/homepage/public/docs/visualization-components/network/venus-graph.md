@@ -188,6 +188,8 @@ Here, the `p` variable provides the label (predicate) associated with each direc
 
 Undirected graphs represents relationships based on the co-occurrence of values within a common context. To define one, only the `nodes` and `links` marks are required. Since co-occurrence graphs are undirected, `nodes.source` and `nodes.target` do not need to be specified. Instead, VENUS automatically creates links between nodes that co-occur in the same context.
 
+The nodes can be defined using either a single data field (`nodes.field`) or an ordered list of node definitions (`nodes.fields`). When multiple node definitions are provided, VENUS creates a distinct node type for each field and links all nodes that co-occur within the specified context.
+
 **Example**
 
 Given the query:
@@ -217,6 +219,26 @@ a `cooccurrence` graph using `publication` as the context connects authors who h
 	}
 }
 ```
+
+When multiple node types are defined, for example:
+
+```json
+{
+  "nodes": {
+    "fields": [
+      { "field": "author" },
+      { "field": "keyword" }
+    ]
+  },
+  "links": {
+    "type": "cooccurrence",
+    "context": {
+      "field": "publication"
+    }
+  }
+}
+```
+VENUS creates both author and keyword nodes and links them whenever they appear in the same publication. This enables the representation of heterogeneous co-occurrence networks containing multiple types of entities.
 
 ## Complete Node-link Encoding Templates
 

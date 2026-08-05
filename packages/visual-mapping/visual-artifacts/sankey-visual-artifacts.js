@@ -37,7 +37,7 @@ export class SankeyVisualArtifacts extends VisualArtifacts {
 
 		this.layout = {
 			...chartSpace,
-			align: nodes.align,
+			align: encoding.align,
 			nodeWidth: Number(nodes.size?.value),
 			nodePadding: Number(nodes.padding),
 			

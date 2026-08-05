@@ -159,7 +159,7 @@ In this example, the width of each flow is proportional to the values returned b
 
 ## Sankey layout
 
-The layout of Sankey stages is controlled by the `nodes.align` property, which specifies the stage alignment strategy used by the D3 Sankey layout algorithm. The supported values are:
+The layout of Sankey stages is controlled by the `align` property, which specifies the stage alignment strategy used by the D3 Sankey layout algorithm. The supported values are:
 
 - `"justify"` *(default)*: aligns source nodes to the left and sink nodes to the right.
 - `"left"`: aligns all nodes as far left as possible.
@@ -198,8 +198,6 @@ encoding: {
     // global fallback for stages that do not define fields[i].sort
     sort: { by: "layout", order: "asc", mode: null },
 
-    // layout
-    align: "justify", // justify | left | right | center
     padding: 2,
     size: { value: 25 },
 
@@ -217,7 +215,10 @@ encoding: {
     tooltip: { fields: ["count"] }
   },
 
-  interactions: { tooltip: true }
+  interactions: { tooltip: true },
+
+  // layout
+  align: "justify", // justify | left | right | center
 }
 ```
 
