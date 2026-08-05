@@ -90,3 +90,5 @@ do_not_commit/
 ## vite environment variables
 .env.local
 .env.*.local
+
+website/editor/public/data/examples

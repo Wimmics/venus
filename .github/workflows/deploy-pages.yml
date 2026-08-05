@@ -62,8 +62,6 @@ jobs:
           mkdir -p out/editor
           cp -R website/homepage/dist/* out/
           cp -R website/editor/dist/* out/editor/
-          mkdir -p out/editor/data/examples
-          cp -R examples/* out/editor/data/examples/
           mkdir -p out/templates
           cp -R website/homepage/templates/* out/templates/
           mkdir -p out/assets/logos

@@ -3,6 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "predev": "node ../../scripts/sync-editor-assets.mjs",
+    "prebuild": "node ../../scripts/sync-editor-assets.mjs",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
