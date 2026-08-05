@@ -6,7 +6,7 @@ import { UsabilityTestingWorkflow } from "./test-timeline";
 // Tutorial content
 import usabilityContent from "../tutorial/content/usability.js";
 
-export const USABILITY_TEST_DATA_PATH = `${import.meta.env.BASE_URL}/data/usability-testing`
+export const USABILITY_TEST_DATA_PATH = `${import.meta.env.BASE_URL}data/usability-testing`
 const STORAGE_KEY = "venus-usability-test";
 
 export class UserEvaluation {
