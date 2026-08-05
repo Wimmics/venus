@@ -250,7 +250,6 @@ async function main() {
   }
 
   const manifest = {
-    generatedAt: new Date().toISOString(),
     root: {
       type: "folder",
       name: "docs",
