@@ -18,7 +18,7 @@ export class UsabilityTestingWorkflow {
 
         this.frequencyLikert = ["Not at all", "Slightly", "Moderately", "Very", "Extremely"]
 
-        this.debug = true // TEMP: make debug false for evaluation
+        this.debug = false 
     }
 
     async buildTimeline() {
