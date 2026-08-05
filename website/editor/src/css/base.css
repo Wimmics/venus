@@ -1,174 +1,187 @@
 :root {
-  --bg: #f3f4f6;
-  --border: #d0d7de;
-  --text: #1f2937;
-  --muted: #6b7280;
-  --accent: lightcoral;
-  --accent-strong: #eb6f6f;
-  --accent-contrast: #ffffff;
-  --danger: var(--accent-strong);
-
-  --bs-primary: var(--accent);
-  --bs-primary-rgb: 240, 128, 128;
-  --bs-link-color: var(--accent-strong);
-  --bs-link-hover-color: var(--accent);
+	--bg: #f3f4f6;
+	--border: #d0d7de;
+	--text: #1f2937;
+	--muted: #6b7280;
+	--accent: lightcoral;
+	--accent-strong: #eb6f6f;
+	--accent-contrast: #ffffff;
+	--danger: var(--accent-strong);
+	
+	--bs-primary: var(--accent);
+	--bs-primary-rgb: 240, 128, 128;
+	--bs-link-color: var(--accent-strong);
+	--bs-link-hover-color: var(--accent);
 }
 
 * {
-  box-sizing: border-box;
+	box-sizing: border-box;
 }
 
 body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: "Lato", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  min-height: 100vh;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
+	background: var(--bg);
+	color: var(--text);
+	font-family: "Lato", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+	min-height: 100vh;
+	margin: 0;
+	display: flex;
+	flex-direction: column;
 }
 
 h1,
 h2,
 h3,
 button {
-  font-family: "Montserrat", "Lato", sans-serif;
+	font-family: "Montserrat", "Lato", sans-serif;
 }
 
 .editor-navbar {
-  background: var(--accent);
-  color: #ffffff;
+	background: var(--accent);
+	color: #ffffff;
 }
 
 .editor-navbar-inner {
-  max-width: none;
-  min-height: 64px;
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.4rem 1rem;
+	max-width: none;
+	min-height: 64px;
+	display: flex;
+	gap: 1rem;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.4rem 1rem;
 }
 
 .editor-brand {
-  font-family: "Montserrat", "Lato", sans-serif;
-  font-size: 1.3rem;
-  font-weight: 700;
+	font-family: "Montserrat", "Lato", sans-serif;
+	font-size: 1.3rem;
+	font-weight: 700;
 }
 
 .editor-navbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  flex-wrap: wrap;
+	display: flex;
+	align-items: center;
+	gap: 0.45rem;
+	flex-wrap: wrap;
 }
 
 .editor-navbar .w3-button {
-  border-radius: 4px;
+	border-radius: 4px;
 }
 
 .editor-createbar {
-  position: relative;
-  z-index: 20;
-  background: #ffffff;
-  border-bottom: 1px solid var(--border);
+	position: relative;
+	z-index: 20;
+	background: #ffffff;
+	border-bottom: 1px solid var(--border);
 }
 
 .editor-createbar-inner {
-  max-width: none;
-  min-height: 54px;
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  padding: 0.45rem 1rem;
+	max-width: none;
+	min-height: 54px;
+	display: flex;
+	align-items: center;
+	gap: 0.8rem;
+	padding: 0.45rem 1rem;
 }
 
 .editor-createbar-label {
-  flex: 0 0 auto;
-  color: #4b5563;
-  font-weight: 700;
+	flex: 0 0 auto;
+	color: #4b5563;
+	font-weight: 700;
 }
 
 .editor-createbar-actions {
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
+	min-width: 0;
+	display: flex;
+	align-items: center;
+	gap: 0.55rem;
 }
 
 .editor-done-button {
-    margin-left: auto;
+	margin-left: auto;
 }
 
 .editor-createbar-separator {
-  width: 1px;
-  height: 1.6rem;
-  background: var(--border);
+	width: 1px;
+	height: 1.6rem;
+	background: var(--border);
 }
 
 .editor-toolbar-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-    min-width: 220px;
+	display: flex;
+	flex-direction: column;
+	gap: 0.2rem;
+	min-width: 220px;
 }
 
 .editor-toolbar-label {
-    margin: 0;
-    font-size: 0.72rem;
-    font-weight: 600;
-    color: var(--bs-secondary-color);
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
+	margin: 0;
+	font-size: 0.72rem;
+	font-weight: 600;
+	color: var(--bs-secondary-color);
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
 }
 
 
 
 .editor-footer {
-  border-top: 1px solid var(--border);
+	border-top: 1px solid var(--border);
 }
 
 .footer-logos {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  flex-wrap: wrap;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 1rem;
+	flex-wrap: wrap;
 }
 
 .footer-logos img {
-  height: 35px;
-  width: auto;
-  display: block;
+	height: 35px;
+	width: auto;
+	display: block;
 }
 
 .editor-toast-stack {
-  position: fixed;
-  right: 1rem;
-  top: 15rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-  z-index: 2000;
-  pointer-events: none;
+	position: absolute;
+	left: 35px;
+	right: 16px;
+	top: 80px;
+	
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	
+	pointer-events: none;
+
+	z-index: 1000;
 }
 
 .editor-toast {
-  min-width: 240px;
-  max-width: min(420px, calc(100vw - 2rem));
-  border-radius: 8px;
-  border: 1px solid #d7dde4;
-  background: #ffffff;
-  color: #1f2937;
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.16);
-  padding: 0.55rem 0.7rem;
-  font-size: 0.9rem;
-  line-height: 1.35;
-  white-space: pre-line;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+
+    pointer-events: auto;
+
+    padding: 10px 14px;
+
+    border-radius: 6px;
+}
+
+.editor-toast-close {
+    border: none;
+    background: none;
+    cursor: pointer;
+
+    margin-left: 12px;
+
+    font-size: 18px;
+    line-height: 1;
 }
 
 .editor-toast.error {
-  border-color: #fecaca;
-  background: #fff7f7;
-  color: #7f1d1d;
+	border-color: #fecaca;
+	background: #fff7f7;
+	color: #7f1d1d;
 }

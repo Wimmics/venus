@@ -1,6 +1,6 @@
 import { EditorPanelController } from "./editor-panel-controller.js";
 import { EncodingEditor } from "./encoding-editor.js";
-import { safeRun, updateStatus } from "./utils/safe-run.js";
+import { safeRun, updateStatus, clearErrorToasts } from "./utils/safe-run.js";
 
 import * as d3 from "d3"
 
@@ -29,11 +29,16 @@ export class EncodingPanelController extends EditorPanelController {
 			.style("display", "none");
 
 		this._setEncodingRun()
+
+		this.encodingBuilder = new EncodingBuilder()
 	}
 
 	_setEncodingRun() {
 		document.querySelector("#encodingRunButton")
-			.addEventListener("click", this.onRun)
+			.addEventListener("click", () => {
+				clearErrorToasts();
+				this.onRun();
+			});
 	}
 	
 	getToolbarActions() {
@@ -128,8 +133,8 @@ export class EncodingPanelController extends EditorPanelController {
 	async displayEncodingOptions(menu) {
 		const _this = this;
 
-		const encodingBuilder = new EncodingBuilder({ component: this.getActiveComponent() })
-		await encodingBuilder.build()
+		
+		await this.encodingBuilder.build({ component: this.getActiveComponent() })
 
 		menu.innerHTML = "";
 
@@ -139,7 +144,7 @@ export class EncodingPanelController extends EditorPanelController {
 		// Define high-level encoding objects, such as marks, visual encodings, annotations, legends, scales
 		const sections = d3.select(menu)
 			.selectAll(".menu-section")
-			.data(encodingBuilder.getData())
+			.data(this.encodingBuilder.getData())
 			.enter()
 			.append("div")
 			.classed("menu-section", true)
@@ -210,7 +215,7 @@ export class EncodingPanelController extends EditorPanelController {
 	showDocumentation(event, doc) {
 
 		this.tooltip
-			.html(this.buildDocumentation(doc))
+			.html(this.encodingBuilder.buildDocumentation(doc))
 			.style("display", "block")
 			.style("left", `${event.pageX + 12}px`)
 			.style("top", `${event.pageY}px`);
@@ -219,79 +224,20 @@ export class EncodingPanelController extends EditorPanelController {
 	hideDocumentation() {
 		this.tooltip.style("display", "none");
 	}
-
-	buildDocumentation(doc) {
-
-		let html = `<h5>${doc.description}</h5>`;
-
-		if (doc.values) {
-			html += buildValues(doc.values);
-		}
-
-		if (doc.properties) {
-
-			html += `<br><h6>Properties</h6>`;
-			html += "<table>";
-
-			for (const p of doc.properties) {
-
-				html += `
-					<tr>
-						<th>${p.name}</th>
-						<td>${p.description}</td>
-					</tr>
-				`;
-				
-				if (p.values) {
-					html += `
-						<tr>
-							<td colspan="2">
-								${buildValues(p.values)}
-							</td>
-						</tr>
-					`;
-				}
-			}
-
-			html += "</table>";
-		}
-
-		function buildValues(values) {
-			const hasDescriptions = values.some(v => v.description);
-
-			return hasDescriptions
-				? `
-					<ul class="tooltip-values">
-						${values.map(v => `
-							<li><strong>${v.label ?? v}</strong> – ${v.description}</li>
-						`).join("")}
-					</ul>
-				`
-				: `
-					<div class="tooltip-badges">
-						${values.map(v => `
-							<span class="badge bg-light text-dark border">${v.label ?? v}</span>
-						`).join("")}
-					</div>
-				`;
-		}
-
-		return html;
-	}
 		
-	
+	buildSnippet(d) {
+		const select = document.querySelector(`#${d.key}`);
+		const option = select.options[select.selectedIndex];
+
+		return d.action({
+			datum: option.__data__,
+			value: select.value,
+			component: this.getActiveComponent()
+		});
+	}
 	
 	async addSnippet(d) {
-		const selectElement = document.querySelector(`#${d.key}`)
-		const datum = d3.select(selectElement.options[selectElement.selectedIndex]).datum()
-		console.log("datum = ", datum)
-
-		const selectedValue = selectElement.value
-		const snippet = d.action({
-			datum,
-			value: selectedValue, 
-			component: this.getActiveComponent()
-		})
+		const snippet = this.buildSnippet(d)
 
 		this.editor.insertAtCursor(snippet)
 

@@ -24,22 +24,22 @@ export class UsabilityTestingWorkflow {
     async buildTimeline() {
 
         // pre-test
-        // await this._addWelcomeMessage()
-        // await this._addTermsAndConditionsAgreement()
-        // await this._addPreTestQuestionnaire()
+        await this._addWelcomeMessage()
+        await this._addTermsAndConditionsAgreement()
+        await this._addPreTestQuestionnaire()
 
         // // tutorial
-        // await this._addTutorial()
+        await this._addTutorial()
         
 
         // // tasks
-        // const json = await fetchJson(`${USABILITY_TEST_DATA_PATH}/tasks.json`)
-        // for (const task of json.values) {
-        //     await this._addTask(task)
-        // }
+        const json = await fetchJson(`${USABILITY_TEST_DATA_PATH}/tasks.json`)
+        for (const task of json.values) {
+            await this._addTask(task)
+        }
 
         // // post-test 
-        // await this._addUMUXLiteQuestionnaire()
+        await this._addUMUXLiteQuestionnaire()
         await this._addPostTestQuestionnaire()
     }
 

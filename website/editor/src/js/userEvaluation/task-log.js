@@ -8,6 +8,7 @@ export class TaskLog{
         this.runCount = 0
         this.docsCount = 0
 
+        this.docs = []
         this.errors = []
         this.templateSelections = []
         this.querySelections = []

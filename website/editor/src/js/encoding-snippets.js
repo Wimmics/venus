@@ -26,13 +26,15 @@ const COMMON_DOC = {
 }
 
 export class EncodingBuilder{
-	constructor({ component }) {
-		this.component = component // current visualization component (the menu is generated dynamically)
+	constructor() {
 
-		console.log("component = ", this.component)
+		this.instanceId = Math.random().toString(36).slice(2);
+
+    	console.log("EncodingPanelController", this.instanceId);
 	}
 
-	async build() {
+	async build({ component }) {
+		this.component = component // current visualization component (the menu is generated dynamically)
 
 		this.data = [
 			{ 
@@ -368,7 +370,7 @@ export class EncodingBuilder{
 				key: "node-type", 
 				label: "Type", 
 				options: nodeTypeOptions,
-				action: ({ datum }) => d.snippet,
+				action: ({ datum }) => datum.snippet,
 				documentation: {
 					description: "Specifies the role of the nodes in the visualization.",
 					values: nodeTypeOptions,
@@ -639,5 +641,64 @@ export class EncodingBuilder{
 
 	getData() {
 		return this.data ?? []
+	}
+
+	buildDocumentation(doc) {
+	
+		let html = `<h5>${doc.description}</h5>`;
+
+		if (doc.values) {
+			html += buildValues(doc.values);
+		}
+
+		if (doc.properties) {
+
+			html += `<br><h6>Properties</h6>`;
+			html += "<table>";
+
+			for (const p of doc.properties) {
+
+				html += `
+					<tr>
+						<th>${p.name}</th>
+						<td>${p.description}</td>
+					</tr>
+				`;
+				
+				if (p.values) {
+					html += `
+						<tr>
+							<td colspan="2">
+								${buildValues(p.values)}
+							</td>
+						</tr>
+					`;
+				}
+			}
+
+			html += "</table>";
+		}
+
+		function buildValues(values) {
+			const hasDescriptions = values.some(v => v.description);
+
+			return hasDescriptions
+				? `
+					<ul class="tooltip-values">
+						${values.map(v => `
+							<li><strong>${v.value ?? v}</strong> – ${v.description}</li>
+						`).join("")}
+					</ul>
+				`
+				: `
+					<div class="tooltip-badges">
+						${values.map(v => `
+							<span class="badge bg-light text-dark border">${v.value ?? v}</span>
+						`).join("")}
+					</div>
+				`;
+		}
+
+		return html;
 	}
 }

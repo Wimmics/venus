@@ -147,18 +147,32 @@ export class UserEvaluation {
         const overlay = document.querySelector("#doc-overlay");
         const closeButton = document.querySelector("#close-doc");
         const docsButton = document.querySelector("#docs");
-
+        
+        let usingDoc = null
         docsButton.addEventListener("click", (event) => {
             event.preventDefault();
             event.stopImmediatePropagation();
 
             this.currentTaskLog.docsCount++;
+            
+            usingDoc = {
+                openTime: performance.now() - this.currentTaskLog.startTime,
+                docsCount: this.currentTaskLog.docsCount
+            }
 
             overlay.hidden = false;
         });
 
         closeButton.addEventListener("click", () => {
             overlay.hidden = true;
+
+            if (!usingDoc) return;
+
+            usingDoc.closeTime = performance.now() - this.currentTaskLog.startTime
+            usingDoc.duration = usingDoc.closeTime - usingDoc.openTime
+
+            this.currentTaskLog.docs.push(usingDoc)
+            usingDoc = null
         });
     }
 
@@ -186,7 +200,6 @@ export class UserEvaluation {
 
                         this.currentTaskLog.errors.push({
                             time: performance.now() - this.currentTaskLog.startTime,
-                            type: this.getErrorType(message),
                             message
                         });
                     }
@@ -237,7 +250,7 @@ export class UserEvaluation {
         this.editorApp.encodingPanelController.addSnippet = async (d, ...args) => {
             const selectedValue = document.querySelector(`#${d.key}`).value;
             const component = this.editorApp.encodingPanelController.getActiveComponent()
-            const snippet = d.action(selectedValue, component)
+            const snippet = this.editorApp.encodingPanelController.buildSnippet(d);
 
             this.currentTaskLog.encodingSnippets.push({
                 time: performance.now() - this.currentTaskLog.startTime,
@@ -265,18 +278,6 @@ export class UserEvaluation {
 
     }
 
-    getErrorType(message){
-        if (message.includes("JSON.parse")) {
-            return "JSON syntax"
-        }
-
-        if (message.includes("Invalid encoding")) {
-            return "encoding"
-        }
-        
-        return "unknown"
-    }
-
     waitForUser() {
         return new Promise(resolve => {
             this.waitingResolve = resolve;
@@ -287,7 +288,7 @@ export class UserEvaluation {
         this.currentTaskLog = new TaskLog({task: "tutorial", startTime: performance.now()})
 
         this.testContainer.classList.remove("active");
-        this.tutorial.start("documentation") // TEMP: remove parameter
+        this.tutorial.start() // TEMP: remove parameter
     }
 
     async startTask({ taskConfig = null, taskDescription = null} ) {
