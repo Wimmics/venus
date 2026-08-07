@@ -8,6 +8,7 @@
     "dev:homepage": "npm -w @wimmics/venus-homepage run dev",
     "dev:editor": "npm -w @wimmics/venus-editor run dev",
     "build:editor": "npm -w @wimmics/venus-editor run build",
+    "test:encoding": "node --test tests/encoding.test.mjs",
 
     "proxy": "npm -w @wimmics/venus-sparql-proxy run start",
 

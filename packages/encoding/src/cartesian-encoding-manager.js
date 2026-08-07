@@ -1,5 +1,5 @@
 import { EncodingManager } from "./encoding-manager.js";
-import { getEncodingTemplate } from "@wimmics/venus-core";
+import { getEncodingTemplate, isCountScaleType, SUPPORTED_KEYS } from "@wimmics/venus-core";
 
 /**
  * Base encoding manager for Cartesian (coordinate-based) visualizations.
@@ -26,30 +26,76 @@ export class CartesianEncodingManager extends EncodingManager {
         }
     }
     
-    validateVisSpecificEncoding(merged) {
-        this._validateRequiredXY(merged);
-        this._validateCommonCartesianEncoding(merged);
-    }
-    
-    _validateRequiredXY(encoding) {
-        if (!encoding?.x?.field || !encoding?.y?.field) {
-            throw new Error(
-                `Invalid encoding: "x.field" and "y.field" are required for ${this.getChartType()}.`
-            );
+    validateVisSpecificEncoding(userEncoding) {
+        const axes = ["x", "y"]
+
+        for (const axis of axes) {
+            if (!this._isProvided(userEncoding?.[axis])) {
+                throw new Error(`Invalid encoding: "${axis}" is required for ${this.getChartType()}.`)
+            }
+
+            if (!userEncoding?.[axis]?.field) {
+                throw new Error(`Invalid encoding: "${axis}.field" is required for ${this.getChartType()}.`);
+            }
+
+            this._validateField(userEncoding?.[axis]?.field, axis)
+
+            this._validateScales(userEncoding?.[axis], `${axis}`, axis)
+
+            this._validateSupportedKeys(SUPPORTED_KEYS.cartesianLayout, Object.keys(userEncoding?.[axis]), `${axis}`)
+
+            // Axis appearance validation
+
+            const axisAppearance = userEncoding?.[axis]?.axis
+
+            if (!this._isProvided(axisAppearance))
+                continue
+
+            if (this._isProvided(axisAppearance?.labelAngle) && !this._isNumber(axisAppearance?.labelAngle)) {
+                throw new Error(`Invalid encoding: ${axis}.axis.labelAngle must be a number when provided.`)
+            }
+
+            if (this._isProvided(axisAppearance?.labelOffset)) {
+                if (!this._isNonEmptyObject(axisAppearance?.labelOffset)) {
+                    console.warn(`Ignored encoding: "${axis}.axis.labelOffset" is empty. Expected object format: {x, y}.`)
+                }
+
+                if (this._isProvided(axisAppearance?.labelOffset?.x) && !this._isNumber(axisAppearance?.labelOffset?.x)) {
+                    throw new Error(`Invalid encoding: "${axis}.axis.labelOffset.x" must be a number when provided.` )
+                }
+
+                if (this._isProvided(axisAppearance?.labelOffset?.y) && !this._isNumber(axisAppearance?.labelOffset?.y)) {
+                    throw new Error(`Invalid encoding: "${axis}.axis.labelOffset.y" must be a number when provided.` )
+                }
+            }
+
+            if (this._isProvided(axisAppearance?.tickStep)) {
+
+                if (!this._isNonNegativeNumber(axisAppearance?.tickStep)) {
+                    console.warn(`Ignored encoding: "${axis}.axis.tickStep" must be a non-negative number when provided. Using default.` )
+                }
+                
+                if (isCountScaleType(userEncoding?.[axis]?.scale?.type) && !Number.isInteger(axisAppearance?.tickStep)) {
+                    throw new Error(`Invalid encoding: "${axis}.axis.tickStep" must be an integer for scale type "count" when provided.`)
+                }
+            }
+
+            if (this._isProvided(axisAppearance?.tickFormat)) {
+                if (!this._isNonEmptyString(axisAppearance?.tickFormat)) {
+                    console.warn(`Invalid encoding: "${axis}.axis.tickFormat" must be a non-empty string when provided. Using default.`)
+                }
+
+                const possibleValues = ["raw", "integer", "percent", "compact", "kmb", "k", "m", "b"]
+                if (this._isString(axisAppearance?.tickFormat) && !possibleValues.includes(axisAppearance?.tickFormat.toLowerCase())) {
+                    console.warn(`Ignored encoding: "${axisAppearance?.tickFormat}" unknown for ${axis}.axis.tickFormat. Possible values are: ${possibleValues.join(', ')}.`)
+                }
+            }
+
+            this._validateSupportedKeys(SUPPORTED_KEYS.axis, Object.keys(axisAppearance), `${axis}.axis`)
+
+            
         }
     }
-    
-    _validateCommonCartesianEncoding(encoding) {
-        if (
-            encoding?.interactions?.tooltip !== undefined &&
-            typeof encoding.interactions.tooltip !== "boolean"
-        ) {
-            throw new Error(
-                'Invalid encoding: "interactions.tooltip" must be a boolean when provided.'
-            );
-        }
-    }    
-    
     
     _getByPath(obj, path) {
         return path.split(".").reduce((acc, key) => acc?.[key], obj);

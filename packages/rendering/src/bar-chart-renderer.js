@@ -79,9 +79,8 @@ export default class BarChartRenderer extends CartesianChartRenderer {
 			.attr("y", getY)
 			.attr("width", d => getWidth(d))
 			.attr("height", getHeight)
-			.attr("fill", (d) => this._getMarkColor(d.datum, MARK_TYPES.BARS) )
-			.attr("stroke", "#ffffff")
-			.attr("stroke-width", (d) => this._getMarkStrokeWidth(d.datum, MARK_TYPES.BARS));
+			
+		this._setVisualVariables()
 
 		this._renderBarLabels({
 			bars: visibleBars,
@@ -145,9 +144,8 @@ export default class BarChartRenderer extends CartesianChartRenderer {
 			.attr("y", d => getY(d))
 			.attr("width", getWidth)
 			.attr("height", d => getHeight(d))
-			.attr("fill", (d) => this._getMarkColor(d.datum, MARK_TYPES.BARS))
-			.attr("stroke", "#ffffff")
-			.attr("stroke-width", (d) => this._getMarkStrokeWidth(d.datum, MARK_TYPES.BARS));
+			
+		this._setVisualVariables()
 
 		this._renderBarLabels({
 			bars: visibleBars,
@@ -157,6 +155,14 @@ export default class BarChartRenderer extends CartesianChartRenderer {
 			getHeight,
 			orientation: "horizontal"
 		});
+	}
+
+	_setVisualVariables() {
+		this.chartGroup.selectAll(".bars rect")
+			.attr("opacity", d => this._getMarkOpacity(d.datum, MARK_TYPES.BARS))
+			.attr("fill", (d) => this._getMarkColor(d.datum, MARK_TYPES.BARS))
+			.attr("stroke", d => this._getMarkStroke(d.datum, MARK_TYPES.BARS))
+			.attr("stroke-width", (d) => this._getMarkStrokeWidth(d.datum, MARK_TYPES.BARS))
 	}
 
 	_renderBarLabels({ bars = [], getX, getY, getWidth, getHeight, orientation = "vertical" }) {
@@ -220,13 +226,11 @@ export default class BarChartRenderer extends CartesianChartRenderer {
 
 	_focusMark({ activeElement } = {}) {
 		if (!activeElement) return;
-		
+		const _this = this
+
 		this.chartGroup.selectAll(".bars rect")
-			.attr("opacity", function () {
-				return this === activeElement ? 1 : 0.2;
-			})
-			.attr("stroke", function () {
-				return this === activeElement ? "#222222" : "#ffffff";
+			.attr("opacity", function (d) {
+				return this === activeElement ? 1 : Math.min(_this._getMarkOpacity(d.datum, MARK_TYPES.BARS), 0.2);
 			})
 			.attr("stroke-width", function () {
 				const base = Number(this.getAttribute("data-base-stroke-width"));
@@ -238,8 +242,7 @@ export default class BarChartRenderer extends CartesianChartRenderer {
 	_resetFocusMark() {
 		
 		this.chartGroup.selectAll(".bars rect")
-			.attr("opacity", 1)
-			.attr("stroke", "#ffffff")
+			.attr("opacity", d => this._getMarkOpacity(d.datum, MARK_TYPES.BARS))
 			.attr("stroke-width", function () {
 				const base = Number(this.getAttribute("data-base-stroke-width"));
 				return Number.isFinite(base) && base >= 0 ? base : 0;

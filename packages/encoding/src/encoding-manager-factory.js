@@ -22,19 +22,6 @@ import { EncodingManager } from "./encoding-manager.js";
  *   - For node-link graphs: {@link ForceGraphEncodingManager}
  *   - For sankeys: {@link SankeyEncodingManager}
  *   - Default: {@link EncodingManager}
- *
- * @throws {Error} Implicitly throws if visType results in invalid encoding (during validation).
- *
- * @example
- * import { createEncodingManager } from '@wimmics/venus-encoding';
- * import { VIS_TYPES } from '@wimmics/venus-core';
- *
- * const manager = createEncodingManager(VIS_TYPES.VENUS_GRAPH);
- * const encoding = {
- *   nodes: { color: { field: 'type' } },
- *   links: { color: { value: '#ccc' } }
- * };
- * manager.validateEncoding(encoding); // Returns { valid: true, errors: [] }
  */
 export function createEncodingManager(visType) {
 	switch (visType) {

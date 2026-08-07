@@ -225,8 +225,7 @@ export class ColorScaleCalculator {
 			}
 		}
 		
-		const warningMessage = `D3 color scheme "${input}" not found for type "${scaleType}". See available schemes at: https://d3js.org/d3-scale-chromatic`;
-		console.warn(warningMessage);
+		console.warn(`Ignored encoding: "${input}" not found for "scale.type: ${scaleType}". See available schemes at: https://d3js.org/d3-scale-chromatic.`);
 				
 		return null;
 	}
@@ -288,9 +287,9 @@ export class ColorScaleCalculator {
 		
 		// Warn for range/domain length mismatch.
 		if (finalRange.length < domain.length) {
-			console.warn(`Color range shorter than domain (${label}): ${finalRange.length} < ${domain.length}. Colors will repeat.`)
+			console.warn(`There are more distinct values in the "${label}" field than available colors. Colors will be reused.`);
 		} else if (finalRange.length > domain.length) {
-			console.warn(`Color range longer than domain (${label}): ${finalRange.length} > ${domain.length}. Extra colors ignored.`)
+			console.warn(`More colors are defined than needed for the "${label}" field. Extra colors will be ignored.`)
 		}
 		
 		// Build the final scale instance.

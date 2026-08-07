@@ -32,17 +32,4 @@ export class LineChartEncodingManager extends CartesianEncodingManager {
 	getMarks() {
 		return [ MARK_TYPES.LINES, MARK_TYPES.POINTS ];
 	}
-	
-	afterMergeEncoding(merged, userEncoding) {
-		const hasUserPointsConfig =
-			userEncoding.points &&
-			typeof userEncoding.points === "object";
-		
-		if (
-			hasUserPointsConfig &&
-			!Object.prototype.hasOwnProperty.call(userEncoding.points, "display")
-		) {
-			merged.points.display = true;
-		}
-	}
 }

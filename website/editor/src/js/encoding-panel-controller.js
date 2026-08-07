@@ -227,11 +227,11 @@ export class EncodingPanelController extends EditorPanelController {
 		
 	buildSnippet(d) {
 		const select = document.querySelector(`#${d.key}`);
-		const option = select.options[select.selectedIndex];
+		const option = select?.options?.[select.selectedIndex];
 
 		return d.action({
-			datum: option.__data__,
-			value: select.value,
+			datum: option?.__data__,
+			value: select?.value,
 			component: this.getActiveComponent()
 		});
 	}

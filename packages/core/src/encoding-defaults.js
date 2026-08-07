@@ -39,9 +39,11 @@ export const MARK_DEFAULTS = {
         color: channel.color("#69b3a2"),
         stroke: channel.stroke(null),
         strokeWidth: channel.strokeWidth(0),
+        opacity: channel.opacity(1),
         groups: channel.groups(),
-        labels: labels(false),
-        legend: BASE_DEFAULTS.legend
+        labels: labels(false), 
+        stack: false,
+        tooltip: null
     },
 
     points: {
@@ -51,7 +53,7 @@ export const MARK_DEFAULTS = {
         stroke: channel.stroke("#fff"),
         strokeWidth: channel.strokeWidth(1),
         labels: labels(false),
-        legend: BASE_DEFAULTS.legend
+        tooltip: null
     },
 
     lines: {
@@ -60,7 +62,7 @@ export const MARK_DEFAULTS = {
         strokeWidth: channel.strokeWidth(3),
         groups: channel.groups(),
         labels: labels(false),
-        legend: BASE_DEFAULTS.legend
+        tooltip: null
     },
 
     nodes: {
@@ -69,7 +71,7 @@ export const MARK_DEFAULTS = {
         stroke: channel.stroke("#fff"),
         strokeWidth: channel.strokeWidth(1.5),
         labels: labels(true),
-        legend: BASE_DEFAULTS.legend
+        tooltip: null
     },
 
     links: {
@@ -77,11 +79,9 @@ export const MARK_DEFAULTS = {
         stroke: channel.stroke("#999"),
         strokeWidth: channel.strokeWidth(1),
         opacity: channel.opacity(1),
-        distance: {
-            value: 100
-        },
+        distance: { value: 100 },
         labels: labels(false),
-        legend: BASE_DEFAULTS.legend
+        tooltip: null
     }
 
 };
@@ -101,9 +101,8 @@ export const VISUALIZATION_DEFAULTS = {
         links: {
 			...MARK_DEFAULTS.links,
             size: channel.size(3),
-            distance: {
-                value: 100
-            }
+            distance: { value: 100 },
+            type: "directional"
         }
 
     },
@@ -130,7 +129,10 @@ export const VISUALIZATION_DEFAULTS = {
 
 	[VIS_TYPES.VENUS_LINECHART]: {
 		...POSITION_DEFAULTS,
-		points: MARK_DEFAULTS.points,
+		points: {
+            ...MARK_DEFAULTS.points,
+            display: false
+        },
 		lines: MARK_DEFAULTS.lines
 	},
 

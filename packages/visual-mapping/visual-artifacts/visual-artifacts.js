@@ -77,7 +77,7 @@ export class VisualArtifacts {
 
 	_processMarkArtifacts({ mark, config, data, role = null }) {
 
-		for (let channel of (getSupportedChannels(mark))) {
+		for (let channel of getSupportedChannels(mark)) {
 			this._processScaleChannel({
 				mark: mark,
 				role: role,
@@ -89,7 +89,7 @@ export class VisualArtifacts {
 		}
 
 		
-		for (let attribute of (getSupportedAttributes(mark))) {
+		for (let attribute of getSupportedAttributes(mark)) {
 			this._processAttribute({
 				mark: mark,
 				attribute: attribute,

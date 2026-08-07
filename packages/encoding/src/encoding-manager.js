@@ -1,4 +1,22 @@
-import { CHANNEL_TYPES, getSupportedChannels, getEncodingTemplate } from "@wimmics/venus-core";
+import { 
+	CHANNEL_TYPES, MARK_TYPES, ALIGN_TYPES, VIS_TYPES, BINNING_METHODS, SCALE_TYPES, SUPPORTED_KEYS,
+	getSupportedChannels, 
+	getEncodingTemplate,  
+	getMarkSupportedKeys,  
+	getColorPalettesNames,
+
+	isMetricSupported, 
+	isGroupsSupported,
+
+	isMark,
+	isCartesianVis,
+	isNetworkVis,
+	
+	isOrdinalScaleType,
+	isColorScale,
+	isThresholdScaleType,
+	isLayoutScale,
+} from "@wimmics/venus-core";
 
 /**
  * Base class for visual encoding managers.
@@ -39,48 +57,7 @@ export class EncodingManager {
 	getDefaultEncoding() {
 		return getEncodingTemplate(this.getChartType());
 	}
-	
-	/**
-	 * Validates a user-provided encoding specification.
-	 * 
-	 * Checks that the encoding conforms to visualization-specific rules:
-	 * - All required marks are present and valid
-	 * - All field references are valid
-	 * - All scale configurations are valid
-	 * - Tooltip configurations are well-formed
-	 * - Interaction settings are valid
-	 * 
-	 * @param {Object} userEncoding - The user-provided encoding specification.
-	 * @throws {Error} If encoding is invalid. Error message describes the specific problem.
-	 */
-	validateEncoding(userEncoding) {
-		if (!userEncoding || typeof userEncoding !== "object") {
-			throw new Error(
-				`Invalid encoding: an explicit encoding object is required for ${this.getChartType()}.`
-			);
-		}
-		
-		this._validateTooltipConfig(userEncoding, this.getMarks());
-		
-		this.validateVisSpecificEncoding(userEncoding);
-		this._validateMarks(userEncoding);
 
-	}
-	
-	/**
-	 * Validates that all field references in the encoding exist in the SPARQL query results.
-	 * 
-	 * Checks every field reference in the encoding against the list of available SPARQL
-	 * variables. This ensures that when data is fetched, all referenced fields will exist.
-	 * 
-	 * @param {Object} encoding - The validated encoding specification.
-	 * @param {string[]} [sparqlVars=[]] - List of variable names from SPARQL query results.
-	 * @throws {Error} If any field reference is not found in sparqlVars.
-	 */
-	validateReferencedFields(encoding, sparqlVars = []) {
-		this._validateReferencedFieldsExist(encoding, sparqlVars);
-	}
-	
 	/**
 	 * Merges user-provided encoding with visualization-specific defaults.
 	 * 
@@ -144,6 +121,359 @@ export class EncodingManager {
 	}
 	
 	/**
+	 * Validates a user-provided encoding specification.
+	 * 
+	 * Checks that the encoding conforms to visualization-specific rules:
+	 * - All required marks are present and valid
+	 * - All field references are valid
+	 * - All scale configurations are valid
+	 * - Tooltip configurations are well-formed
+	 * - Interaction settings are valid
+	 * 
+	 * @param {Object} userEncoding - The user-provided encoding specification.
+	 * @throws {Error} If encoding is invalid. Error message describes the specific problem.
+	 */
+	validateEncoding(userEncoding) {
+		if (!userEncoding || typeof userEncoding !== "object") {
+			throw new Error(
+				`Invalid encoding: an explicit encoding object is required.`
+			);
+		}
+		
+		this._validateMarks(userEncoding); // should validate supported keys per mark
+
+		this._validateInteractions(userEncoding)
+
+		this.validateVisSpecificEncoding(userEncoding);
+	}
+
+	_validateMarkChannels(userEncoding, path, mark) {
+		for (let channel of getSupportedChannels(mark)) {
+			let channelEncoding = userEncoding?.[channel]
+
+			if (!this._isProvided(channelEncoding))
+				continue
+
+			if (Array.isArray(channelEncoding) || typeof channelEncoding === "string") {
+				throw new Error(
+					`Invalid encoding: "${path}.${channel}" must be an object containing "value" ${channel !== 'opacity' ? ' or "field"' : ""}.`
+				);				
+			}
+
+			if (this._isProvided(channelEncoding?.value) && this._isProvided(channelEncoding?.field)) {
+				console.warn(`Ignored encoding: when both "${path}.field" and "${path}.value" are provided, "${path}.field" takes precedence.`);
+			}
+
+			this._validateValue(channelEncoding?.value,`${path}.${channel}`,  channel)
+			this._validateField(channelEncoding?.field, `${path}.${channel}`, channel)
+			this._validateMetric(channelEncoding, path, mark)
+
+			this._validateLegends(channelEncoding, path)
+			this._validateScales(channelEncoding, path, channel)
+
+			this._validateSupportedKeys(SUPPORTED_KEYS.channels[channel] ?? SUPPORTED_KEYS.channels.default, Object.keys(channelEncoding), `${path}.${channel}`)
+		}
+	}
+
+	_validateField(field, path, channel) {
+		if (!this._isProvided(field))
+			return
+		
+		if (channel === CHANNEL_TYPES.OPACITY) {
+			throw new Error(`Invalid encoding: "${path}.field" is not supported.`)
+		}
+
+		if (!this._isNonEmptyString(field) || field === null) {
+			throw new Error(`Invalid encoding: "${path}.field" must be a non-empty string.`);
+		}
+	}
+
+	_validateValue(value, path, channel) {
+		if (!this._isProvided(value)) {
+			if (channel === CHANNEL_TYPES.OPACITY) {
+				console.warn(`Ignored encoding: "${path}.value" is required.`)	
+			}
+			return
+		}
+
+		if (channel === CHANNEL_TYPES.OPACITY && !this._isUnitInterval(value)) {
+			console.warn(`Ignored encoding: "${path}.value" must be a number between 0 and 1 when provided.`);		
+		}
+
+		if (isColorScale(channel)) {
+			if (!this._isNonEmptyString(value) || !this._isValidCssColor(value)) {
+				throw new Error(`Invalid encoding: "${path}.value" must be a non-empty string containing a valid CSS color (e.g., "red", "#ff0000", or "rgb(255, 0, 0)"). See the MDN CSS color reference for the list of supported color values.`)
+			}
+		}
+
+		if (!isColorScale(channel) && !this._isNonNegativeNumber(value)) {
+			throw new Error(`Invalid encoding: "${path}.value must be a non-negative number when provided.`)
+		}
+	}
+
+	_validateInteractions(userEncoding) {
+		if (!this._isProvided(userEncoding?.interactions))
+			return
+		
+		for (const key of SUPPORTED_KEYS.interactions) {
+			if (this._isProvided(userEncoding?.interactions?.[key]) && !this._isBoolean(userEncoding?.interactions?.[key])) {
+				throw new Error(`Invalid encoding: "interactions.${key}" must be a boolean when provided.`);
+			}
+		}
+
+		this._validateSupportedKeys(SUPPORTED_KEYS.interactions, Object.keys(userEncoding?.interactions), "interactions")
+	}
+
+	_validateSupportedKeys(supportedKeys, providedKeys, path) {
+		const diff = this._getArrayDifference(providedKeys, supportedKeys)
+		if (diff.length) {
+			console.warn(`Ignored encoding: "${path}" contain non-supported properties (${diff.join(', ')}).`)
+		}
+	}
+	
+	_validateTooltips(tooltipEncoding, path) {
+		if (!this._isProvided(tooltipEncoding?.tooltip)) return
+
+		const fields = tooltipEncoding?.tooltip?.fields
+
+		if (!this._isProvided(fields) || !fields.length) {
+			console.warn(`Ignored encoding: ${path}.tooltip.fields is either missing or empty. Using default.`)
+			return
+		}
+		
+		if (!Array.isArray(fields)) {
+			throw new Error(`Invalid encoding: "${path}.tooltip.fields" must be an array of query variable names.`);
+		}
+		
+		if (!fields.every((d) => this._isNonEmptyString(d))) {
+			throw new Error(`Invalid encoding: "${path}.tooltip.fields" must contain non-empty strings only.`);
+		}
+
+		if (this._isProvided(tooltipEncoding?.title) && !this._isNonEmptyString(tooltipEncoding?.title)) {
+			throw new Error(`Invalid encoding: "${path}.tooltip.title" must be a non-empty string when provided.`)
+		}
+
+		this._validateSupportedKeys(SUPPORTED_KEYS.tooltip, Object.keys(tooltipEncoding), `${path}.tooltip`)
+	}
+
+	_validateMetric(userEncoding, path, mark) {
+		if (!this._isProvided(userEncoding?.metric)) 
+			return
+
+		if (!isMetricSupported(mark)) {
+			throw new Error(`Invalid encoding: "${path}.metric" is not supported.`)
+		}
+
+		if (!this._isNonEmptyString(userEncoding?.metric)) {
+			throw new Error(`Invalid encoding: "${path}.metric" must be a non-empty string when provided.`)
+		}
+
+		if (userEncoding?.metric !== "degree") {
+			throw new Error(`Invalid encoding: "${path}.metric" must be "degree" when provided.`);
+		}
+
+		if (this._isProvided(userEncoding?.field)) {
+			throw new Error(`Invalid encoding: "${path}" cannot define both "field" and "metric".`);
+		}
+	}
+
+	_validateScales(userEncoding, path, channel) {
+		const scaleEncoding = userEncoding?.scale
+		if (!this._isProvided(scaleEncoding))
+			return
+
+		if (!this._isProvided(userEncoding?.field)) {
+			console.warn(`Ignored encoding: "${path}.scale" requires "${path}.field" or "${path}.metric".`)
+			return
+		}
+
+		if (!this._isNonEmptyObject(scaleEncoding) || this._isString(scaleEncoding)) {
+			console.warn(`Ignored encoding: "${path}.scale" must be a non-empty object. Using default values.`)
+			return
+		}
+
+		const scaleTypes = Object.values(SCALE_TYPES)
+		if (this._isProvided(scaleEncoding?.type)) {
+
+			if (!scaleTypes.includes(scaleEncoding?.type)) {
+				throw new Error(`Invalid encoding: ${scaleEncoding?.type} unknown for "${path}.scale.type". Possible values: ${scaleTypes.join(', ')}.`)
+			}
+
+			if (scaleEncoding?.type === SCALE_TYPES.POW && !this._isProvided(scaleEncoding?.exponent)) {
+				console.warn(`Ignored encoding: "pow" scales require "scale.exponent".`)
+			}
+
+			if (isThresholdScaleType(scaleEncoding?.type) && isLayoutScale(channel)) {
+				throw new Error(`Invalid encoding: ${channel} do not support "threshold" scales.`)
+			}
+		}
+
+		if (isColorScale(channel)) {
+			if (this._isProvided(userEncoding?.metric) && !["quantitative", "sequential"].includes(scaleEncoding?.type)) {
+				throw new Error(`Invalid encoding: "${path}.scale.type" must be "quantitative" or "sequential" for metric color.`);
+			}
+			
+			if (this._isString(scaleEncoding?.range) && !getColorPalettesNames().includes(scaleEncoding?.range)) {
+				console.warn(`Ignored encoding: "${scaleEncoding?.range}" unknown for "${path}.scale.range".`)
+			}
+		}
+
+		if (this._isProvided(scaleEncoding?.exponent)) {
+			if (scaleEncoding?.type !== SCALE_TYPES.POW) {
+				console.warn(`Ignored encoding: "exponent" is only supported for "pow" scales.`)
+			} else if (!this._isNonNegativeNumber(scaleEncoding?.exponent)) {
+				throw new Error(`Invalid encoding: "exponent" must be a non-negative number.`)
+			}
+		}
+
+		if (this._isProvided(scaleEncoding?.padding)) {
+			if (![SCALE_TYPES.BAND, SCALE_TYPES.POINT].includes(scaleEncoding?.type) && channel != "x") {
+				console.warn(`Ignored encoding: "padding" is only supported for "point" and "band" scales.`)
+			} else if (!this._isUnitInterval(scaleEncoding?.padding) || scaleEncoding?.padding >= 1) {
+				throw new Error(`Invalid encoding: "${path}.padding" must be a number between 0 and 1 (excluded) when provided.`) 
+			}
+		}
+
+		if (this._isProvided(scaleEncoding?.binning)) {
+			if (!isThresholdScaleType(scaleEncoding?.type)) {
+				console.warn(`Ignored encoding: "binning" is only supported for "threshold" scales.`)
+			} else {
+				if (!this._isNonEmptyObject(scaleEncoding?.binning) || this._isString(scaleEncoding?.binning)) {
+					console.warn(`Ignored encoding: "${path}.scale.binning" must be a non-empty object when provided.`)
+				}
+
+				const method = scaleEncoding?.binning?.method
+				if (this._isProvided(method) && !Object.values(BINNING_METHODS).includes(method)) {
+					console.warn(`Ignored encoding: "${method}" unknown for "${path}.scale.binning.method". Possible values: ${Object.values(BINNING_METHODS).join(', ')}.`)
+				}
+
+				const bins = scaleEncoding?.binning?.bins
+				if (this._isProvided(bins) && !this._isNonNegativeNumber(bins)) {
+					console.warn(`Ignored encoding: "${path}.scale.binning.bins" must be a non-negative number when provided. Using default.`) 
+				}
+
+				const breaks = scaleEncoding?.binning?.breaks
+				if (this._isProvided(breaks)) {
+					if (!Array.isArray(breaks)) {
+						console.warn(`Ignored encoding: "${path}.scale.binning.breaks" must be a list of valid data values when provided.`) 
+					}
+
+					if (!breaks.every(d => this._isNumber(d))) {
+						console.warn(`Ignored encoding: "${path}.scale.binning.breaks" must be a list of numbers when provided. Non-number values are ignored.`)
+					}
+				}
+			}
+		}
+
+		this._validateSupportedKeys(SUPPORTED_KEYS.scale, Object.keys(scaleEncoding), `${path}.scale`)
+
+		// Range and domain values are validated later on color-scale-calculator.js
+	}
+
+	_validateGroups(userEncoding, path, mark) {
+		const groups = userEncoding?.groups
+
+		if (!this._isProvided(groups)) 
+			return
+
+		if (!isGroupsSupported(mark)) {
+			console.warn(`Ignored encoding: "${path}.groups" is not supported.`)
+			return
+		}
+
+		if (!this._isNonEmptyObject(groups) || !this._isProvided(groups?.field)) {
+			console.warn(`Ignored encoding: "${path}.groups" must be a non-empty object containing a "field" property when provided.`)
+		}
+
+		this._validateField(groups?.field, `${path}.groups`)
+
+		this._validateSupportedKeys(SUPPORTED_KEYS.groups, Object.keys(groups), `${path}.groups`)
+	}
+
+	_validateLegends(userEncoding, path) {
+		const legendEncoding = userEncoding?.legend
+
+		if (!this._isProvided(legendEncoding))
+			return
+
+		if (this._validateDisplay(legendEncoding, `${path}.legend`) == false)
+			return
+
+		if (!this._isProvided(userEncoding?.field) && !this._isProvided(userEncoding?.metric)) {
+			console.warn(`Ignored encoding: "${path}.legend" requires "${path}.field" or "${path}.metric".`)
+		}
+
+		if (this._isProvided(userEncoding?.value)) {
+			console.warn(`Ignored encoding: "${path}.legend" does not work with "${path}.value".`)
+		}
+
+		if (this._isProvided(legendEncoding?.title) && !this._isNonEmptyString(legendEncoding?.title)) {
+			console.warn(`Ignored encoding: "${path}.legend.title" must be a non-empty string when provided.`)
+		}
+
+		this._validateSupportedKeys(SUPPORTED_KEYS.legend, Object.keys(legendEncoding), `${path}.legend`)
+	}
+
+	_validateDisplay(userEncoding, path) {
+		if (!this._isProvided(userEncoding?.display))
+			return
+
+		if (!this._isBoolean(userEncoding?.display) ) {
+			throw new Error(`Invalid encoding: "${mark}.display" must be a boolean when provided.`);
+		}
+
+		const providedKeys = Object.keys(userEncoding).filter(key => key !== "display")
+		if (userEncoding?.display === false) {
+			console.warn(`Ignored encoding: ${providedKeys.map(key => `"${path}.${key}"`).join(', ')} due to "${path}.display:false".`)
+			return false
+		}
+	}
+
+	_validateLabels(userEncoding, path) {
+		if (!this._isProvided(userEncoding?.labels))
+			return
+
+		if (this._validateDisplay(userEncoding?.labels, `${path}.labels`) === false)
+			return
+
+		if (!this._isProvided(userEncoding?.labels?.value) && !this._isProvided(userEncoding?.labels?.field)) {
+			console.warn(`Ignored encoding: either "${path}.labels.value" or "${path}.labels.field" must be provided when using "${path}.labels".`)
+			return
+		}
+
+		this._validateValue(userEncoding?.labels?.value, `${path}.labels`)
+		this._validateField(userEncoding?.labels?.field, `${path}.labels`)
+
+		this._validateSupportedKeys(SUPPORTED_KEYS.labels, Object.keys(userEncoding?.labels), `${path}.labels`)
+	}
+	
+	_validateMarks(userEncoding) {
+		const supportedMarks = this.getMarks()
+		const providedMarks = Object.keys(userEncoding).filter(key => isMark(key))
+		
+		const markEncoding = (mark) => userEncoding?.[mark] ?? {}
+
+		const diff = this._getArrayDifference(providedMarks, supportedMarks)
+		if (diff.length) {
+			console.warn(`Ignored encoding: ${this.getChartType()} contain unsupported marks (${diff.join(", ")}).`)
+		}
+
+		for (const mark of this.getMarks()) {
+			const currentEncoding = markEncoding(mark)
+
+			const supportedKeys = getMarkSupportedKeys(mark)
+			if (supportedKeys.includes("display") && this._validateDisplay(currentEncoding, mark) === false)
+				return
+			
+			this._validateTooltips(currentEncoding, `${mark}`)
+			this._validateMarkChannels(currentEncoding, `${mark}`, mark)
+			this._validateGroups(currentEncoding, `${mark}`, mark)
+			this._validateSupportedKeys(getMarkSupportedKeys(mark), Object.keys(currentEncoding), `${mark}`)
+		}
+	}
+	
+
+	/**
 	 * Validates visualization-specific encoding requirements.
 	 * 
 	 * This abstract method is implemented by subclasses to check visualization-specific
@@ -159,98 +489,26 @@ export class EncodingManager {
 	validateVisSpecificEncoding(merged) {
 		throw new Error("validateEncoding must be implemented by subclass");
 	}
-	
-	
-	_validateTooltipConfig(encoding, marks = [], rolesByMark = {}) {
-		const enabled = encoding?.interactions?.tooltip;
-		
-		if (enabled !== undefined && typeof enabled !== "boolean") {
-			throw new Error('Invalid encoding: "interactions.tooltip" must be a boolean when provided.');
-		}
-		
-		const validateFields = (fields, key) => {
-			if (fields == null) return;
-			
-			if (!Array.isArray(fields)) {
-				throw new Error(`Invalid encoding: "${key}" must be an array of query variable names.`);
-			}
-			
-			if (!fields.every((d) => typeof d === "string" && d.trim().length > 0)) {
-				throw new Error(`Invalid encoding: "${key}" must contain non-empty strings only.`);
-			}
-		};
-		
-		for (const mark of marks) {
-			validateFields(encoding?.[mark]?.tooltip?.fields, `${mark}.tooltip.fields`);
-			
-			for (const role of rolesByMark[mark] ?? []) {
-				validateFields(
-					encoding?.[mark]?.[role]?.tooltip?.fields,
-					`${mark}.${role}.tooltip.fields`
-				);
-			}
-		}
-	}
-	
-	_validateMarks(encoding) {
-		for (const mark of this.getMarks()) {
-			this._validateMarkDisplay(encoding, mark);
-			this._validateMarkSizeField(encoding, mark);
-			
-			// const nestedChannels = this.getNestedMarkChannels(mark);
-			
-			// for (const channel of Object.keys(nestedChannels || {})) {
-			// 	this._validateNestedField(encoding, mark, channel);
-			// }
-		}
-	}
-	
-	_validateMarkDisplay(encoding, mark) {
-		if (
-			encoding?.[mark]?.display !== undefined &&
-			typeof encoding[mark].display !== "boolean"
-		) {
-			throw new Error(
-				`Invalid encoding: "${mark}.display" must be a boolean when provided.`
-			);
-		}
-	}
-	
-	_validateMarkSizeField(encoding, mark) {
-		this._validateOptionalField(
-			encoding?.[mark]?.size?.field,
-			`${mark}.size.field`
-		);
-	}
-	
-	_validateNestedField(encoding, mark, channel) {
-		this._validateOptionalField(
-			encoding?.[mark]?.[channel]?.field,
-			`${mark}.${channel}.field`
-		);
-	}
-	
-	_validateOptionalField(field, path) {
-		if (
-			field !== undefined &&
-			field !== null &&
-			(typeof field !== "string" || !field.trim())
-		) {
-			throw new Error(
-				`Invalid encoding: "${path}" must be a non-empty string when provided.`
-			);
-		}
-	}
-	
-	_validateReferencedFieldsExist(encoding, vars) {
-		if (!Array.isArray(vars) || vars.length === 0) return;
+
+	/**
+	 * Validates that all field references in the encoding exist in the SPARQL query results.
+	 * 
+	 * Checks every field reference in the encoding against the list of available SPARQL
+	 * variables. This ensures that when data is fetched, all referenced fields will exist.
+	 * 
+	 * @param {Object} encoding - The validated encoding specification.
+	 * @param {string[]} [sparqlVars=[]] - List of variable names from SPARQL query results.
+	 * @throws {Error} If any field reference is not found in sparqlVars.
+	 */
+	validateReferencedFields(encoding, sparqlVars = []) {
+		if (!Array.isArray(sparqlVars) || sparqlVars.length === 0) return;
 		
 		const fields = this._collectFieldReferences(encoding);
 		
 		for (const { path, value } of fields) {
-			if (!vars.includes(value)) {
+			if (!sparqlVars.includes(value)) {
 				throw new Error(
-					`Invalid encoding: "${path}" references unknown SPARQL variable "${value}". Available variables are: ${vars.join(", ")}.`
+					`Invalid encoding: "${path}" references unknown SPARQL variable "${value}". Available variables are: ${sparqlVars.join(", ")}.`
 				);
 			}
 		}
@@ -267,7 +525,7 @@ export class EncodingManager {
 			const path = basePath ? `${basePath}.${key}` : key;
 			
 			if (key === "field") {
-				if (typeof value === "string" && value.trim().length > 0) {
+				if (this._isNonEmptyString(value)) {
 					fields.push({ path, value });
 				}
 				
@@ -282,4 +540,55 @@ export class EncodingManager {
 		return fields;
 	}
 	
+	// helpers
+
+	_isUnitInterval(value) {
+		return Number.isFinite(value) && value >= 0 && value <= 1;
+	}
+
+	_isProvided(value) {
+		return value !== undefined
+	}
+
+	_isString(value) {
+		return typeof value === "string"
+	}
+
+	_isNonEmptyString(value) {
+		return this._isString(value) && !!value.trim();
+	}
+
+	_isBoolean(value) {
+		return typeof value === "boolean"
+	}
+
+	_isNumber(value) {
+		return Number.isFinite(value)
+	}
+
+	_isNonNegativeNumber(value) {
+		return this._isNumber(value) && value >= 0;
+	}
+
+	_isObject(value) {
+		return typeof value === 'object'
+	}
+
+	_isNonEmptyObject(value) {
+		return this._isObject(value) && Object.keys(value).length > 0
+	}
+
+	_isValidCssColor(value) {
+		if (typeof value !== "string") return false;
+
+		const style = new Option().style;
+		style.color = "";
+		style.color = value;
+
+		return style.color !== "";
+	}
+
+	_getArrayDifference(a, b) {
+		return a.filter(value => !b.includes(value))
+	}
 }

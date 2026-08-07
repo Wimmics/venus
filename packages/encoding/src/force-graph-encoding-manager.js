@@ -8,8 +8,8 @@
  * 
  * @extends GraphEncodingManager
  */
-import { GraphEncodingManager } from "./graph-encoding-manager";
-import { getSupportedChannels, MARK_TYPES, VIS_TYPES } from "@wimmics/venus-core";
+import { GraphEncodingManager } from "./graph-encoding-manager.js";
+import { getMarkSupportedKeys, getSupportedChannels, MARK_TYPES, VIS_TYPES } from "@wimmics/venus-core";
 
 export class ForceGraphEncodingManager extends GraphEncodingManager {
 
@@ -41,111 +41,111 @@ export class ForceGraphEncodingManager extends GraphEncodingManager {
 		}
 	}
 
-	_validateGraphSpecificEncoding(merged){
-        this._validateSingleScaleConfig(merged);
-        this._validateGraphConstructionConfig(merged);
-        this._validateNodeMetricConfig(merged);
-
-		this._validateRoleNodeConfig(merged) // Specific force-graph validation
+	validateVisSpecificEncoding(userEncoding){
+        this._validateNodes(userEncoding);
+        this._validateLinks(userEncoding);
     }   
 	
-	_validateSingleScaleConfig(encoding) {
-		super._validateSingleScaleConfig(encoding)
+	_validateNodes(userEncoding) {
+		if (!this._isProvided(userEncoding?.nodes)) {
+			throw new Error(`Invalid encoding: "nodes" are required for ${this.getChartType()}.`)
+		}
 
-		// Validate specific force-graph scale config
+		if (!this._isNonEmptyObject(userEncoding?.nodes)) {
+            throw new Error(`Invalid encoding: "nodes" must be a non-empty object containing "field", "fields", or "source" and "target" properties.`)
+        }
+
+		const nodesEncoding = userEncoding?.nodes;
+		const supportedNodeKeys = [
+			...getMarkSupportedKeys(MARK_TYPES.NODES),
+			"field",
+			"fields",
+			"source",
+			"target"
+		];
+
+		this._validateMarkChannels(nodesEncoding, "nodes", MARK_TYPES.NODES)
+		this._validateSupportedKeys(supportedNodeKeys, Object.keys(nodesEncoding), "nodes")
+
 		for (const role of ["source", "target"]) {
-			if (Array.isArray(encoding?.nodes?.[role]?.color)) {
-				throw new Error(`Invalid encoding: "nodes.${role}.color" must be an object, not an array.`);
+			if (!this._isProvided(nodesEncoding?.[role])) {
+				continue;
 			}
-			if (Array.isArray(encoding?.nodes?.[role]?.size)) {
-				throw new Error(`Invalid encoding: "nodes.${role}.size" must be an object, not an array.`);
-			}
+
+			this._validateTooltips(nodesEncoding?.[role], `nodes.${role}`)
+			
+			this._validateMarkChannels(nodesEncoding?.[role], `nodes.${role}`, MARK_TYPES.NODES)
+
+			this._validateSupportedKeys(getMarkSupportedKeys(MARK_TYPES.NODES), Object.keys(nodesEncoding?.[role]), `nodes.${role}`)
 		}
 	}
 	
-	_validateNodeMetricConfig(encoding) {
-		const validateMetric = (channel, key) => {
-			if (channel?.metric === undefined) return;
-			if (channel.metric !== "degree") {
-				throw new Error(`Invalid encoding: "${key}.metric" must be "degree" when provided.`);
-			}
-			if (channel.field !== undefined) {
-				throw new Error(`Invalid encoding: "${key}" cannot define both "field" and "metric".`);
-			}
-		};
-		
-		validateMetric(encoding?.nodes?.color, "nodes.color");
-		validateMetric(encoding?.nodes?.size, "nodes.size");
-		validateMetric(encoding?.nodes?.source?.color, "nodes.source.color");
-		validateMetric(encoding?.nodes?.target?.color, "nodes.target.color");
-		validateMetric(encoding?.nodes?.source?.size, "nodes.source.size");
-		validateMetric(encoding?.nodes?.target?.size, "nodes.target.size");
-		
-		const metricColorScaleType = encoding?.nodes?.color?.scale?.type;
-		if (
-			encoding?.nodes?.color?.metric !== undefined &&
-			metricColorScaleType !== undefined &&
-			metricColorScaleType !== "quantitative" &&
-			metricColorScaleType !== "sequential"
-		) {
-			throw new Error(
-				'Invalid encoding: "nodes.color.scale.type" must be "quantitative" or "sequential" for metric color.'
-			);
-		}
-		
-		if (encoding?.links?.color?.metric !== undefined) {
-			throw new Error('Invalid encoding: "links.color.metric" is not supported.');
-		}
-	}
-	
-	_validateGraphConstructionConfig(encoding) {
-		if (encoding?.links?.field !== undefined) {
+	_validateLinks(userEncoding) {
+		const linksEncoding = userEncoding?.links
+		const nodesEncoding = userEncoding?.nodes
+
+		if (this._isProvided(linksEncoding?.field)) {
 			throw new Error(
 				'Invalid encoding: "links.field" is not supported. Use "nodes.source.field" and "nodes.target.field", "links.relation.field", or "links.context.field".'
 			);
 		}
-		const linkType = encoding?.links?.type;
+
+		if (this._isProvided(linksEncoding?.distance) && !this._isNonNegativeNumber(linksEncoding?.distance)) {
+			throw new Error(`Invalid encoding: "links.distance" must be a non-negative number when provided.`)
+		}
+
+		const linkType = linksEncoding?.type;
 		if (linkType && !["directional", "semantic", "cooccurrence"].includes(linkType)) {
 			throw new Error('Invalid encoding: "links.type" must be "directional", "semantic", or "cooccurrence".');
 		}
+
 		if (linkType === "cooccurrence") {
-			if (!encoding?.nodes?.field && !encoding?.nodes?.fields) {
-				throw new Error('Invalid encoding: "nodes.field" or "nodes.fields" is required for co-occurrence graph nodes.');
+			if (!nodesEncoding?.field && !nodesEncoding?.fields) {
+				throw new Error('Invalid encoding: "nodes.field" or "nodes.fields" is required for co-occurrence graphs.');
 			}
-			if (typeof encoding?.links?.context?.field !== "string" || !encoding.links.context.field.trim()) {
-				throw new Error('Invalid encoding: "links.context.field" is required for co-occurrence links.');
+
+			if (!this._isProvided(linksEncoding?.context?.field)) {
+				throw new Error('Invalid encoding: "links.context.field" is required for co-occurrence graphs.');
 			}
-			return;
-		}
-		if (encoding?.links?.context !== undefined && linkType !== "cooccurrence") {
-			throw new Error('Invalid encoding: "links.context" is only supported for co-occurrence links.');
-		}
-		if (!encoding?.nodes?.source?.field || !encoding?.nodes?.target?.field) {
-			throw new Error(
-				'Invalid encoding: "nodes.source.field" and "nodes.target.field" are required for directional and semantic graph links.'
-			);
-		}
-		if ((linkType === "semantic" || encoding?.links?.relation !== undefined) && (
-			typeof encoding?.links?.relation?.field !== "string" ||
-			!encoding.links.relation.field.trim()
-		)) {
-			throw new Error('Invalid encoding: "links.relation.field" is required for semantic links.');
-		}
-	}
-	
-	_validateRoleNodeConfig(encoding) {
-		const validateRole = (role) => {
-			const config = encoding?.nodes?.[role];
-			if (!config) return;
-			const supportedKeys = new Set(["field", "color", "size", "labels", "stroke", "tooltip"]);
-			const unsupportedKeys = Object.keys(config).filter((key) => !supportedKeys.has(key));
-			if (unsupportedKeys.length) {
-				throw new Error(`Invalid encoding: "nodes.${role}" has unsupported properties: ${unsupportedKeys.join(", ")}.`);
+			
+			this._validateField(linksEncoding?.context?.field, "links.context")
+
+			if (this._isProvided(nodesEncoding?.source) || this._isProvided(nodesEncoding?.target)) {
+				console.warn(`Ignored encoding: "nodes.source" and "nodes.target" are not required for co-occurrence graphs.`)
 			}
-		};
+
+			return
+		}
+
 		
-		validateRole("source");
-		validateRole("target");
+		if (!this._isProvided(nodesEncoding?.source) || !this._isProvided(nodesEncoding?.target)) {
+			throw new Error(`Invalid encoding: "nodes.source" and "nodes.target" are required for directional and semantic graphs.`)
+		} 
+
+		if (!this._isProvided(nodesEncoding?.source?.field) || !this._isProvided(nodesEncoding?.target?.field)) {
+			throw new Error('Invalid encoding: "nodes.source.field" and "nodes.target.field" are required for directional and semantic graphs.');
+		}
+
+		this._validateField(nodesEncoding?.source?.field, "nodes.source")
+		this._validateField(nodesEncoding?.target?.field, "nodes.target")
+
+		if (linkType === "semantic") {
+			if (!this._isProvided(linksEncoding?.relation)) {
+				throw new Error('Invalid encoding: "links.relation.field" is required for semantic graphs.');
+			}
+
+			this._validateField(linksEncoding?.relation?.field, `links.relation`)
+		}
+		
+
+		// Warnings
+		if (this._isProvided(linksEncoding?.context) && linkType !== "cooccurrence") {
+			console.warn('Ignored encoding: "links.context" is only supported for co-occurrence graphs.');
+		}
+
+		if (this._isProvided(linksEncoding?.relation) && linkType !== "semantic") {
+			console.warn('Ignored encoding: "links.relation" is only supported for semantic graphs.');
+		}
 	}
 	
 }

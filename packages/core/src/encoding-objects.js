@@ -1,12 +1,5 @@
 import * as chromatic from "d3-scale-chromatic";
 
-export const COLOR_PALETTES = Object.keys(chromatic)
-    .filter(name => name.startsWith("scheme"))
-    .map(name => ({
-        value: name.replace(/^scheme/, ""),
-        label: name.replace(/^scheme/, "")
-    }));
-
 export const CHANNEL_TYPES = {
 	COLOR: "color", 
 	SIZE: "size", 
@@ -32,6 +25,14 @@ export const ATTRIBUTE_TYPES = {
 	TOOLTIP: "tooltip"
 }
 
+// possible known values
+export const COLOR_PALETTES = Object.keys(chromatic)
+    .filter(name => name.startsWith("scheme"))
+    .map(name => ({
+        value: name.replace(/^scheme/, ""),
+        label: name.replace(/^scheme/, "")
+    }));
+
 export const SCALE_TYPES = {
 	ORDINAL: "ordinal",
 	LINEAR: "linear",
@@ -45,6 +46,11 @@ export const SCALE_TYPES = {
 	BAND: "band",
 	POINT: "point"
 };
+
+export const BINNING_METHODS = {
+	JENKS: "jenks",
+	QUARTILES: "quartiles"
+}
 
 export const SORT_BY = {
 	LAYOUT: "layout",
@@ -91,14 +97,20 @@ const QUANTITATIVE_TYPES = new Set([
 	SCALE_TYPES.SEQUENTIAL
 ]);
 
+export function getColorPalettesNames() {
+	return COLOR_PALETTES.map(d => d.value)
+}
+
+export function isLayoutScale(channel) {
+	return ["x", "y"].includes(channel)
+}
+
 export function isColorScale(channel) {
 	return channel === CHANNEL_TYPES.COLOR || channel === CHANNEL_TYPES.STROKE;
 }
 
 export function normalizeScaleType(type, fallback = SCALE_TYPES.ORDINAL) {
-	return typeof type === "string" && type.trim()
-	? type.trim()
-	: fallback;
+	return typeof type === "string" && type.trim() ? type.trim() : fallback;
 }
 
 export function isCountScaleType(type) {

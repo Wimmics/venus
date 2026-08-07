@@ -1,5 +1,7 @@
 import { ColorLegend } from './color-legend.js';
 import { SizeLegend } from './size-legend.js';
+import { StrokeWidthLegend } from './stroke-width-legend.js';
+import { CHANNEL_TYPES } from '@wimmics/venus-core';
 
 /**
 * Factory function to create legend elements from compiled legend descriptors.
@@ -14,6 +16,15 @@ export function createLegends(config = {}) {
 	const legendItems = Array.isArray(config.legendItems)
 	? config.legendItems
 	: [];
+
+	const isColorLegendType = (type) =>
+		type === CHANNEL_TYPES.COLOR || type === CHANNEL_TYPES.STROKE;
+
+	const isSizeLegendType = (type) =>
+		type === CHANNEL_TYPES.SIZE;
+
+	const isStrokeWidthLegendType = (type) =>
+		type === CHANNEL_TYPES.STROKE_WIDTH;
 	
 	for (const item of legendItems) {
 		if (item?.display === false) continue;
@@ -40,8 +51,19 @@ export function createLegends(config = {}) {
 		
 		const data = config.datasets?.[item.mark] || [];
 		if (!data || !data.length) continue
-		
-		const legend = item.type === "color" ? new ColorLegend() : new SizeLegend()
+
+		let legend = null;
+		if (isColorLegendType(item.type)) {
+			legend = new ColorLegend();
+		} else if (isSizeLegendType(item.type)) {
+			legend = new SizeLegend();
+		} else if (isStrokeWidthLegendType(item.type)) {
+			legend = new StrokeWidthLegend();
+		} else {
+			console.warn(`Ignored legend: unsupported legend type "${item.type}".`);
+			continue;
+		}
+
 		legend.data = data;
 		legend.d3Scale = scale;
 		legend.encoding = legendEncoding;

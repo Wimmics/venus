@@ -31,21 +31,24 @@ export const channel = {
     color(value = null) {
         return {
             value,
-            scale: { ...BASE_DEFAULTS.colorScale }
+            scale: { ...BASE_DEFAULTS.colorScale },
+            legend: {... BASE_DEFAULTS.legend }
         };
     },
 
     stroke(value = null) {
         return {
             value,
-            scale: { ...BASE_DEFAULTS.colorScale }
+            scale: { ...BASE_DEFAULTS.colorScale },
+            legend: {... BASE_DEFAULTS.legend }
         };
     },
 
     size(value = null) {
         return {
             value,
-            scale: { ...BASE_DEFAULTS.sizeScale }
+            scale: { ...BASE_DEFAULTS.sizeScale },
+            legend: {... BASE_DEFAULTS.legend }
         };
     },
 
@@ -58,7 +61,8 @@ export const channel = {
     strokeWidth(value = 1) {
         return {
             value,
-            scale: { ...BASE_DEFAULTS.sizeScale }
+            scale: { ...BASE_DEFAULTS.sizeScale },
+            legend: {... BASE_DEFAULTS.legend }
         };
     },
 

@@ -91,6 +91,7 @@ export class D3ScaleFactory {
 		scale,
 		domain,
 		range,
+		scaleType,
 		isThreshold,
 		count = SCALE_DEFAULTS.BINNING.BINS,
 		bounds = null
@@ -108,6 +109,7 @@ export class D3ScaleFactory {
 		return this.createContinuousLegendSamples({
 			scale,
 			domain,
+			scaleType,
 			count
 		});
 	}
@@ -162,7 +164,20 @@ export class D3ScaleFactory {
 		});
 	}
 	
-	createContinuousLegendSamples({ scale, domain, count }) {
+	createContinuousLegendSamples({ scale, domain, scaleType, count }) {
+		if (isOrdinalScaleType(scaleType)) {
+			if (!Array.isArray(domain) || domain.length === 0) return [];
+
+			const selectedDomainValues = this._sampleDomainValues(domain, count);
+
+			return selectedDomainValues.map((domainValue) => ({
+				label: String(domainValue),
+				value: scale(domainValue),
+				domainValue,
+				isThreshold: false
+			}));
+		}
+
 		if (!Array.isArray(domain) || domain.length < 2) {
 			return domain.map((domainValue) => ({
 				label: String(domainValue),
@@ -196,6 +211,27 @@ export class D3ScaleFactory {
 			};
 		});
 	}
+
+	_sampleDomainValues(domain, count) {
+		if (!Array.isArray(domain) || domain.length === 0) return [];
+
+		if (!Number.isFinite(count) || count <= 0 || domain.length <= count) {
+			return [...domain];
+		}
+
+		if (count === 1) {
+			return [domain[0]];
+		}
+
+		const values = [];
+		for (let index = 0; index < count; index += 1) {
+			const t = index / (count - 1);
+			const domainIndex = Math.round(t * (domain.length - 1));
+			values.push(domain[domainIndex]);
+		}
+
+		return values;
+	}
 	
 	_formatThresholdLabel(lower, upper, { includeLower = true, includeUpper = false } = {}) {
 		const format = (value) => {
@@ -228,7 +264,7 @@ export class D3ScaleFactory {
 			range: scaleConfig.range || null,
 			scaleType: isQuant ? SCALE_TYPES.QUANTITATIVE : SCALE_TYPES.ORDINAL,
 			fallbackInterpolator: null,
-			label: `Color[${field}]`
+			label: `color (${field})`
 		});
 	}
 	

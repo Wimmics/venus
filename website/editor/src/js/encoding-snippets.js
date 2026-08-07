@@ -1,4 +1,8 @@
-import { SCALE_TYPES, LEGEND_POSITIONS, VIS_TYPES, MARK_TYPES, CHANNEL_TYPES, ATTRIBUTE_TYPES, ALIGN_TYPES, COLOR_PALETTES, isOrdinalScaleType } from "@wimmics/venus-core"
+import { 
+	SCALE_TYPES, LEGEND_POSITIONS, VIS_TYPES, MARK_TYPES, CHANNEL_TYPES, ATTRIBUTE_TYPES, ALIGN_TYPES, COLOR_PALETTES, 
+	isOrdinalScaleType, isCartesianVis, 
+	POSITION_DEFAULTS,
+	VISUALIZATION_DEFAULTS} from "@wimmics/venus-core"
 
 // -----------------------------------------------
 // encoding builder menu's construction functions
@@ -22,6 +26,14 @@ const COMMON_DOC = {
 	value: {
 		name: "value",
 		description: "Specifies the numeric value of the property."
+	},
+	axis: {
+		name: "axis",
+		description: "Configures the visual appearance of the axis, including labels, ticks, and title."
+	},
+	axisScale: {
+		name: "scale",
+		description: "Configures how data values are mapped to positions along the axis."
 	}
 }
 
@@ -70,9 +82,9 @@ export class EncodingBuilder{
 			}
 		]
 
-		const layoutVisualizations = [VIS_TYPES.VENUS_SANKEY, VIS_TYPES.VENUS_BARCHART]
+		const extraLayoutVisualizations = [VIS_TYPES.VENUS_SANKEY]
 
-		if (layoutVisualizations.includes(this.component)) {
+		if (extraLayoutVisualizations.includes(this.component) || isCartesianVis(this.component)) {
 			this.data.push({
 				separator: "Visualization-specific"
 			})
@@ -323,6 +335,34 @@ export class EncodingBuilder{
 				documentation: {
 					description: "Controls the alignment of Sankey stages.",
 					values: alignmentOptions
+				}
+			},
+			{
+				key: "layout-x-axis",
+				label: "X Axis",
+				action: () => `"x": ${JSON.stringify(VISUALIZATION_DEFAULTS[this.component].x, null, 4)}`,
+				display: () => isCartesianVis(this.component) ? "grid" : "none",
+				documentation: {
+					description: "Configures the appearance and behavior of the horizontal axis.",
+					properties: [
+						COMMON_DOC.field,
+						COMMON_DOC.axis,
+						COMMON_DOC.axisScale
+					]
+				}
+			},
+			{
+				key: "layout-y-axis",
+				label: "Y Axis",
+				action: () => `"y": ${JSON.stringify(POSITION_DEFAULTS.y, null, 4)}`,
+				display: () => isCartesianVis(this.component) ? "grid" : "none",
+				documentation: {
+					description: "Configures the appearance and behavior of the vertical axis.",
+					properties: [
+						COMMON_DOC.field,
+						COMMON_DOC.axis,
+						COMMON_DOC.axisScale
+					]
 				}
 			},
 			{

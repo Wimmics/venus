@@ -53,17 +53,23 @@ export class SankeyEncodingManager extends GraphEncodingManager {
         }
     }
 
-     _validateGraphSpecificEncoding(merged){
-        this._validateSingleScaleConfig(merged);
-        this._validateGraphConstructionConfig(merged);
-
-        this._validateSankeyValueConfig(merged);
-        this._validateSankeyLayoutConfig(merged);
-        this._validateUnsupportedGraphConfig(merged);
+     validateVisSpecificEncoding(userEncoding){
+        this._validateNodes(userEncoding);
+        this._validateLinks(userEncoding);
+        this._validateLayout(userEncoding);
     } 
     
-    _validateGraphConstructionConfig(encoding) {
-        const fields = encoding?.nodes?.fields;
+    _validateNodes(userEncoding) {
+        
+        if (!this._isProvided(userEncoding?.nodes)) {
+			throw new Error(`Invalid encoding: "nodes" are required for ${this.getChartType()}.`)
+		}
+
+        if (!this._isNonEmptyObject(userEncoding?.nodes)) {
+            throw new Error(`Invalid encoding: "nodes" must be a non-empty object containing a "fields" property.`)
+        }
+
+        const fields = userEncoding?.nodes?.fields;
 
         if (!Array.isArray(fields)) {
             throw new Error('Invalid encoding: "nodes.fields" must be an array.');
@@ -73,7 +79,7 @@ export class SankeyEncodingManager extends GraphEncodingManager {
             throw new Error('Invalid encoding: "nodes.fields" must contain at least two entries.');
         }
 
-        this._validateSortConfig(encoding?.nodes?.sort, "nodes.sort");
+        this._validateSortConfig(userEncoding?.nodes?.sort, "nodes.sort");
 
         // Validate each value of the fields array
         for (let index = 0; index < fields.length; index++) {
@@ -133,107 +139,15 @@ export class SankeyEncodingManager extends GraphEncodingManager {
                 `nodes.fields[${index}].sort`
             );
         }
-    }
-    
-    _validateNodeMetricConfig(encoding) {
-        if (encoding?.nodes?.color?.metric !== undefined) {
-            throw new Error('Invalid encoding: "nodes.color.metric" is not supported for sankey. Use "nodes.color.field" or "nodes.color.value".');
+
+        // Warnings
+        if (this._isProvided(userEncoding?.nodes?.field)) {
+            console.warn('Ignored encoding: "nodes.field" is not supported for sankey. Use "nodes.fields" instead.');
         }
         
-        if (encoding?.links?.color?.metric !== undefined) {
-            throw new Error('Invalid encoding: "links.color.metric" is not supported for sankey. Use "links.color.field" or "links.color.value".');
+        if (this._isProvided(userEncoding?.nodes?.source) || this._isProvided(userEncoding?.nodes?.target)) {
+            console.warn('Ignored encoding: "nodes.source" and "nodes.target" are not supported for sankey. Use "nodes.fields" to define ordered stages.');
         }
-    }
-    
-    _validateSankeyValueConfig(encoding) {
-        
-        const valueField = encoding?.links?.value?.field;
-        if (
-            valueField !== null &&
-            valueField !== undefined &&
-            (typeof valueField !== "string" || !valueField.trim())
-        ) {
-            throw new Error('Invalid encoding: "links.value.field" must be a non-empty string or null.');
-        }
-    }
-    
-    _validateSankeyLayoutConfig(encoding) {
-        const align = encoding?.nodes?.align;
-        if (align !== undefined && !ALIGN_TYPES.includes(align)) {
-            throw new Error('Invalid encoding: "nodes.align" must be "justify", "left", "right", or "center".');
-        }
-        
-        const nodePadding = encoding?.nodes?.padding;
-        if (nodePadding !== undefined && (!Number.isFinite(nodePadding) || nodePadding < 0)) {
-            throw new Error('Invalid encoding: "nodes.padding" must be a non-negative number.');
-        }
-        
-        const opacity = encoding?.links?.opacity?.value;
-        if (opacity !== undefined && (!Number.isFinite(opacity) || opacity < 0 || opacity > 1)) {
-            throw new Error('Invalid encoding: "links.opacity.value" must be a number between 0 and 1.');
-        }
-    }
-    
-    _validateUnsupportedGraphConfig(encoding) {
-        if (encoding?.nodes?.field !== undefined) {
-            throw new Error('Invalid encoding: "nodes.field" is not supported for sankey. Use "nodes.fields".');
-        }
-        
-        if (encoding?.nodes?.source !== undefined || encoding?.nodes?.target !== undefined) {
-            throw new Error('Invalid encoding: "nodes.source" and "nodes.target" are not supported for sankey. Use "nodes.fields" to define ordered stages.');
-        }
-        
-        if (encoding?.links?.type !== undefined) {
-            throw new Error('Invalid encoding: "links.type" is not supported for sankey.');
-        }
-        
-        if (encoding?.links?.relation !== undefined || encoding?.links?.context !== undefined) {
-            throw new Error('Invalid encoding: "links.relation" and "links.context" are not supported for sankey.');
-        }
-    }
-
-    mergeVisSpecificEncoding(encoding = {}, defaults) {
-        encoding.nodes ??= {};
-
-        encoding.nodes.sort = this._normalizeSortConfig(
-            encoding.nodes.sort,
-            {
-                by: SORT_BY.LAYOUT,
-                order: SORT_ORDER.ASC,
-                mode: null
-            }
-        );
-
-        encoding.nodes.fields = (encoding.nodes.fields || []).map(item => {
-            const stage =
-                typeof item === "string"
-                    ? { field: item }
-                    : { ...item };
-
-            stage.sort = this._normalizeSortConfig(
-                stage.sort,
-                encoding.nodes.sort
-            );
-
-            // Apply the common node defaults (color, opacity, etc.)
-            const mergedStage = {
-                ...defaults.nodes, // default values
-                ...encoding.nodes, // global user-defined values
-                ...stage // stage-specific user-defined values
-            };
-
-            this._mergeChannels(
-                mergedStage,
-                defaults.nodes,
-                {
-                    ...encoding.nodes,
-                    ...stage
-                },
-                getSupportedChannels(MARK_TYPES.NODES)
-            );
-
-            return mergedStage;
-        });
     }
 
     _validateSortConfig(config, path) {
@@ -287,6 +201,91 @@ export class SankeyEncodingManager extends GraphEncodingManager {
                 `Invalid encoding: "${path}.mode" is only allowed when "${path}.by" is "${SORT_BY.COUNT}" or "${SORT_BY.VALUE}".`
             );
         }
+    }
+
+    
+    _validateLinks(userEncoding) {
+
+        if (!this._isProvided(userEncoding?.links)) {
+			throw new Error(`Invalid encoding: "links" are required for ${this.getChartType()}.`)
+		}
+
+        if (!this._isNonEmptyObject(userEncoding?.links)) {
+            throw new Error(`Invalid encoding: "links" must be a non-empty object containing a "value.field" property.`)
+        }
+        
+        const valueField = userEncoding?.links?.value?.field;
+        if (this._isProvided(valueField) && !this._isNonEmptyString(valueField)) {
+            throw new Error('Invalid encoding: "links.value.field" must be a non-empty string or null.');
+        }
+
+        // Warning
+        if (this._isProvided(userEncoding?.links?.type)) {
+            console.warn('Ignored encoding: "links.type" is not supported for sankey.');
+        }
+        
+        if (this._isProvided(userEncoding?.links?.relation) || this._isProvided(userEncoding?.links?.context)) {
+            console.warn('Ignored encoding: "links.relation" and "links.context" are not supported for sankey.');
+        }
+    }
+    
+    _validateLayout(userEncoding) {
+        const nodePadding = userEncoding?.nodes?.padding;
+        if (this._isProvided(nodePadding) && !this._isNonNegativeNumber(nodePadding)) {
+            throw new Error('Invalid encoding: "nodes.padding" must be a non-negative number.');
+        }
+
+        const align = userEncoding?.nodes?.align;
+        if (this._isProvided(align) && !ALIGN_TYPES.includes(align)) {
+            console.warn('Ignored encoding: "nodes.align" must be "justify", "left", "right", or "center". Using default.');
+        }
+    }
+
+
+
+
+    mergeVisSpecificEncoding(encoding = {}, defaults) {
+        encoding.nodes ??= {};
+
+        encoding.nodes.sort = this._normalizeSortConfig(
+            encoding.nodes.sort,
+            {
+                by: SORT_BY.LAYOUT,
+                order: SORT_ORDER.ASC,
+                mode: null
+            }
+        );
+
+        encoding.nodes.fields = (encoding.nodes.fields || []).map(item => {
+            const stage =
+                typeof item === "string"
+                    ? { field: item }
+                    : { ...item };
+
+            stage.sort = this._normalizeSortConfig(
+                stage.sort,
+                encoding.nodes.sort
+            );
+
+            // Apply the common node defaults (color, opacity, etc.)
+            const mergedStage = {
+                ...defaults.nodes, // default values
+                ...encoding.nodes, // global user-defined values
+                ...stage // stage-specific user-defined values
+            };
+
+            this._mergeChannels(
+                mergedStage,
+                defaults.nodes,
+                {
+                    ...encoding.nodes,
+                    ...stage
+                },
+                getSupportedChannels(MARK_TYPES.NODES)
+            );
+
+            return mergedStage;
+        });
     }
 
     _normalizeSortConfig(config, fallback = null) {

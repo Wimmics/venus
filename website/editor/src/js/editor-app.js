@@ -465,8 +465,7 @@ export class EditorApp {
 		await safeRun(async () => {
 			const parsedEncoding = await this.encodingPanelController.parseValue();
 			if (parsedEncoding.error) {
-				updateStatus(parsedEncoding.error.message, {isError: true} );
-				return;
+				throw parsedEncoding.error
 			}
 			
 			const { scenario } = this.getActiveContext();
@@ -482,7 +481,7 @@ export class EditorApp {
 			const renderDataSource = canUseScenarioCache ? "provided" : dataSource;
 			const queryText = await this.sparqlPanelController.getText();
 			if (renderDataSource === "query" && !String(queryText || "").trim()) {
-				updateStatus("Enter a SPARQL query to render the selected chart.", {isError: true});
+				throw new Error("Enter a SPARQL query to render the selected chart.");
 				return;
 			}
 			
@@ -493,34 +492,31 @@ export class EditorApp {
 				} else {
 					const parsedResults = await this.resultsPanelController.parseJson();
 					if (parsedResults.error) {
-						updateStatus(`Invalid SPARQL Results JSON: ${parsedResults.error.message}`, {isError: true});
-						return;
+						throw parsedResults.error
 					}
 					providedSparqlResult = parsedResults.value;
 				}
 			}
 			
-			try {
-				const result = await this.visualizationView.render({
-					component,
-					scenario,
-					endpoint,
-					queryText,
-					encoding: parsedEncoding.value,
-					dataSource: renderDataSource,
-					sparqlResult: providedSparqlResult
-				});
+			const result = await this.visualizationView.render({
+				component,
+				scenario,
+				endpoint,
+				queryText,
+				encoding: parsedEncoding.value,
+				dataSource: renderDataSource,
+				sparqlResult: providedSparqlResult
+			});
 
-				if (result?.sparqlData) {
-					await this.resultsPanelController.setText(JSON.stringify(result.sparqlData || {}, null, 2));
-				}
-			} catch(e) {
-				updateStatus(e.message, {isError: true})
+			if (result?.sparqlData) {
+				await this.resultsPanelController.setText(
+					JSON.stringify(result.sparqlData || {}, null, 2)
+				);
 			}
 			
 			await this.updateGeneratedCode();
 		},
-		"Render failed")
+		{ fallbackMessage: "Failed to render visualization." } )
 	}
 	
 	async updateGeneratedCode() {
