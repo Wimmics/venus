@@ -256,15 +256,13 @@ export class D3ScaleFactory {
 			});
 			
 			if (thresholdScale) return thresholdScale;
-			
 		}
 		
 		return this.colorScaleCalculator.createColorScale({
 			domain,
-			range: scaleConfig.range || null,
+			userRange: scaleConfig.range || null,
 			scaleType: isQuant ? SCALE_TYPES.QUANTITATIVE : SCALE_TYPES.ORDINAL,
-			fallbackInterpolator: null,
-			label: `color (${field})`
+			field
 		});
 	}
 	

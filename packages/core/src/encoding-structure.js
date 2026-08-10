@@ -12,7 +12,7 @@ export const SUPPORTED_KEYS = {
     binning: ["method", "bins", "breaks"],
 
     cartesianLayout: ["axis", "scale", "field"], // x, y
-    axis: ["labelAngle", "labelOffset", "tickStep", "tickFormat"],
+    axis: ["labelAngle", "labelOffset", "tickStep", "tickFormat", "title"],
     legend: ["display", "position", "compact", "title"],
     tooltip: ["fields", "title"],
     groups: ["field"],
@@ -22,9 +22,9 @@ export const SUPPORTED_KEYS = {
         default: ["enabled", "tooltip"],
         nodes: ["zoom", "drag"]
     }, 
-    marks: (mark) => getMarkSupportedKeys(mark), 
+    marks: (vis, mark) => Object.keys(VISUALIZATION_DEFAULTS[vis]?.[mark]), 
     channels: {
-        default: ["field", "value", "scale", "legend"] ,
+        default: ["field", "metric", "value", "scale", "legend"] ,
         opacity: ["value"]
     }
 }

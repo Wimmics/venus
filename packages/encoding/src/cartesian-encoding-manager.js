@@ -51,6 +51,10 @@ export class CartesianEncodingManager extends EncodingManager {
             if (!this._isProvided(axisAppearance))
                 continue
 
+            if (this._isProvided(axisAppearance?.title)) {
+                this._validateDisplay(axisAppearance?.title, `${axis}.axis.title`)
+            }
+
             if (this._isProvided(axisAppearance?.labelAngle) && !this._isNumber(axisAppearance?.labelAngle)) {
                 throw new Error(`Invalid encoding: ${axis}.axis.labelAngle must be a number when provided.`)
             }

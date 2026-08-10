@@ -15,7 +15,7 @@
     }
   },
   "lines": {
-    "group": {
+    "groups": {
       "field": "genreLabel"
     },
     "size": {

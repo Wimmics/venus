@@ -61,6 +61,7 @@ export const MARK_DEFAULTS = {
         stroke: channel.stroke("#ccc"),
         strokeWidth: channel.strokeWidth(3),
         groups: channel.groups(),
+        size: channel.size(1),
         labels: labels(false),
         tooltip: null
     },
@@ -71,7 +72,8 @@ export const MARK_DEFAULTS = {
         stroke: channel.stroke("#fff"),
         strokeWidth: channel.strokeWidth(1.5),
         labels: labels(true),
-        tooltip: null
+        tooltip: null, 
+        field: null
     },
 
     links: {
@@ -92,6 +94,8 @@ export const VISUALIZATION_DEFAULTS = {
 
         nodes: {
 			...MARK_DEFAULTS.nodes,
+            source: null,
+            target: null,
             size: {
                 metric: "degree",
                 ...channel.size()
@@ -102,7 +106,9 @@ export const VISUALIZATION_DEFAULTS = {
 			...MARK_DEFAULTS.links,
             size: channel.size(3),
             distance: { value: 100 },
-            type: "directional"
+            type: "directional", 
+            relation: null, 
+            context: null
         }
 
     },
@@ -117,12 +123,15 @@ export const VISUALIZATION_DEFAULTS = {
                 by: SORT_BY.LAYOUT,
                 order: SORT_ORDER.ASC,
                 mode: null
-            }
+            },
+            fields: null
         },
 
         links: {
 			...MARK_DEFAULTS.links,
-            opacity: channel.opacity(0.35)
+            opacity: channel.opacity(0.35), 
+            value: null, 
+            field: null
         }
 
     },
@@ -131,7 +140,7 @@ export const VISUALIZATION_DEFAULTS = {
 		...POSITION_DEFAULTS,
 		points: {
             ...MARK_DEFAULTS.points,
-            display: false
+            display: true
         },
 		lines: MARK_DEFAULTS.lines
 	},

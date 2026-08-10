@@ -9,7 +9,7 @@
  * @extends GraphEncodingManager
  */
 import { GraphEncodingManager } from "./graph-encoding-manager.js";
-import { getMarkSupportedKeys, getSupportedChannels, MARK_TYPES, VIS_TYPES } from "@wimmics/venus-core";
+import { CHANNEL_TYPES, getMarkSupportedKeys, getSupportedChannels, MARK_TYPES, VIS_TYPES } from "@wimmics/venus-core";
 
 export class ForceGraphEncodingManager extends GraphEncodingManager {
 
@@ -18,27 +18,34 @@ export class ForceGraphEncodingManager extends GraphEncodingManager {
 	}
 
 	mergeVisSpecificEncoding(mergedEncoding, defaults, userEncoding){
-	
+
+		// Only complete the encoding of user-provided channels (override the remaining with global "nodes" encoding)
+		const getRoleSupportedChannels = (role) => {
+			return Object.keys(userEncoding?.nodes?.[role]).filter(key => Object.values(CHANNEL_TYPES).includes(key))
+		}
+
 		// Add defaults for semantic and directional graphs, via source and target tags
 		if (mergedEncoding.links.type !== "cooccurrence") {
+
 			mergedEncoding.nodes = {
-				...mergedEncoding.nodes, // global nodes options
+				...mergedEncoding.nodes, // global "nodes" options
 			}
 
 			for (let role of ["source", "target"]) {
 				mergedEncoding.nodes[role] = {
-					...(defaults.nodes),
 					...(userEncoding.nodes?.[role])
 				}
-
+				
 				this._mergeChannels(
 					mergedEncoding.nodes[role], 
 					defaults.nodes, 
 					userEncoding.nodes?.[role], 
-					getSupportedChannels(MARK_TYPES.NODES)
+					getRoleSupportedChannels(role)
 				)
 			}
 		}
+
+
 	}
 
 	validateVisSpecificEncoding(userEncoding){

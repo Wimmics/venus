@@ -16,6 +16,9 @@ import {
 	isColorScale,
 	isThresholdScaleType,
 	isLayoutScale,
+	isQuantitativeScaleType,
+
+	isValidCssColor
 } from "@wimmics/venus-core";
 
 /**
@@ -161,15 +164,15 @@ export class EncodingManager {
 			}
 
 			if (this._isProvided(channelEncoding?.value) && this._isProvided(channelEncoding?.field)) {
-				console.warn(`Ignored encoding: when both "${path}.field" and "${path}.value" are provided, "${path}.field" takes precedence.`);
+				console.warn(`Ignored encoding: when both "${path}.${channel}.field" and "${path}.${channel}.value" are provided, "${path}.${channel}.field" takes precedence.`);
 			}
 
 			this._validateValue(channelEncoding?.value,`${path}.${channel}`,  channel)
 			this._validateField(channelEncoding?.field, `${path}.${channel}`, channel)
-			this._validateMetric(channelEncoding, path, mark)
+			this._validateMetric(channelEncoding, `${path}.${channel}`, mark)
 
-			this._validateLegends(channelEncoding, path)
-			this._validateScales(channelEncoding, path, channel)
+			this._validateLegends(channelEncoding, `${path}.${channel}`)
+			this._validateScales(channelEncoding, `${path}.${channel}`, channel)
 
 			this._validateSupportedKeys(SUPPORTED_KEYS.channels[channel] ?? SUPPORTED_KEYS.channels.default, Object.keys(channelEncoding), `${path}.${channel}`)
 		}
@@ -201,7 +204,7 @@ export class EncodingManager {
 		}
 
 		if (isColorScale(channel)) {
-			if (!this._isNonEmptyString(value) || !this._isValidCssColor(value)) {
+			if (!this._isNonEmptyString(value) || !isValidCssColor(value)) {
 				throw new Error(`Invalid encoding: "${path}.value" must be a non-empty string containing a valid CSS color (e.g., "red", "#ff0000", or "rgb(255, 0, 0)"). See the MDN CSS color reference for the list of supported color values.`)
 			}
 		}
@@ -253,7 +256,7 @@ export class EncodingManager {
 			throw new Error(`Invalid encoding: "${path}.tooltip.title" must be a non-empty string when provided.`)
 		}
 
-		this._validateSupportedKeys(SUPPORTED_KEYS.tooltip, Object.keys(tooltipEncoding), `${path}.tooltip`)
+		this._validateSupportedKeys(SUPPORTED_KEYS.tooltip, Object.keys(tooltipEncoding?.tooltip), `${path}.tooltip`)
 	}
 
 	_validateMetric(userEncoding, path, mark) {
@@ -282,7 +285,7 @@ export class EncodingManager {
 		if (!this._isProvided(scaleEncoding))
 			return
 
-		if (!this._isProvided(userEncoding?.field)) {
+		if (!this._isProvided(userEncoding?.field) && !this._isProvided(userEncoding?.metric)) {
 			console.warn(`Ignored encoding: "${path}.scale" requires "${path}.field" or "${path}.metric".`)
 			return
 		}
@@ -306,6 +309,21 @@ export class EncodingManager {
 			if (isThresholdScaleType(scaleEncoding?.type) && isLayoutScale(channel)) {
 				throw new Error(`Invalid encoding: ${channel} do not support "threshold" scales.`)
 			}
+
+			if (isQuantitativeScaleType(scaleEncoding?.type) && this._isProvided(scaleEncoding?.range)) {
+
+				if (Array.isArray(scaleEncoding?.range)) {
+					if (scaleEncoding?.range.length < 2) {
+						console.warn(`Ignored encoding: "${path}.scale.range" must be an array containing at least two numeric values.`)
+					}
+					else {
+						const invalidValues = scaleEncoding?.range.filter(d => !this._isNumber(d))
+						if (invalidValues.length) {
+							console.warn(`Ignored encoding: "${path}.scale.range" contain invalid values (${invalidValues.join(', ')}).`)
+						}
+					}
+				}
+			}
 		}
 
 		if (isColorScale(channel)) {
@@ -313,10 +331,29 @@ export class EncodingManager {
 				throw new Error(`Invalid encoding: "${path}.scale.type" must be "quantitative" or "sequential" for metric color.`);
 			}
 			
-			if (this._isString(scaleEncoding?.range) && !getColorPalettesNames().includes(scaleEncoding?.range)) {
-				console.warn(`Ignored encoding: "${scaleEncoding?.range}" unknown for "${path}.scale.range".`)
+			if (this._isString(scaleEncoding?.range)) {
+				const colorPalettesLowerCase = getColorPalettesNames().map(d => d.toLowerCase())
+				if (!colorPalettesLowerCase.includes(scaleEncoding?.range.toLowerCase())) {
+					if (isValidCssColor(scaleEncoding?.range)) {
+						console.warn(`Ignored encoding: "${scaleEncoding?.range}" is a valid color name. Use "${path}.value" for constant color. "${path}.scale.range" expects a color palette name. Using default.`)
+					} else {
+						console.warn(
+						`Ignored encoding: "${scaleEncoding?.range}" is not a recognized palette for "${path}.scale.range" (case-insensitive). ` +
+						`See valid palette names: https://d3js.org/d3-scale-chromatic.`
+						);
+					}
+				}
+			}
+
+			if (Array.isArray(scaleEncoding?.range)) {
+				const invalidColors = scaleEncoding?.range.filter(d => !isValidCssColor(d))
+				if (invalidColors.length) {
+					console.warn(`Ignored encoding: "${path}.scale.range" contains invalid color names (${invalidColors.join(', ')}). Only valid colors will be used.`)
+				}			
 			}
 		}
+
+		
 
 		if (this._isProvided(scaleEncoding?.exponent)) {
 			if (scaleEncoding?.type !== SCALE_TYPES.POW) {
@@ -403,7 +440,7 @@ export class EncodingManager {
 			console.warn(`Ignored encoding: "${path}.legend" requires "${path}.field" or "${path}.metric".`)
 		}
 
-		if (this._isProvided(userEncoding?.value)) {
+		if (this._isProvided(userEncoding?.value) && !this._isProvided(userEncoding?.field)) {
 			console.warn(`Ignored encoding: "${path}.legend" does not work with "${path}.value".`)
 		}
 
@@ -415,6 +452,7 @@ export class EncodingManager {
 	}
 
 	_validateDisplay(userEncoding, path) {
+
 		if (!this._isProvided(userEncoding?.display))
 			return
 
@@ -468,7 +506,7 @@ export class EncodingManager {
 			this._validateTooltips(currentEncoding, `${mark}`)
 			this._validateMarkChannels(currentEncoding, `${mark}`, mark)
 			this._validateGroups(currentEncoding, `${mark}`, mark)
-			this._validateSupportedKeys(getMarkSupportedKeys(mark), Object.keys(currentEncoding), `${mark}`)
+			this._validateSupportedKeys(SUPPORTED_KEYS.marks(this.getChartType(), mark), Object.keys(currentEncoding), `${mark}`)
 		}
 	}
 	
@@ -578,15 +616,7 @@ export class EncodingManager {
 		return this._isObject(value) && Object.keys(value).length > 0
 	}
 
-	_isValidCssColor(value) {
-		if (typeof value !== "string") return false;
-
-		const style = new Option().style;
-		style.color = "";
-		style.color = value;
-
-		return style.color !== "";
-	}
+	
 
 	_getArrayDifference(a, b) {
 		return a.filter(value => !b.includes(value))

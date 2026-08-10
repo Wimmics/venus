@@ -48,9 +48,6 @@ export class ForceGraphVisualArtifacts extends VisualArtifacts {
 			// Remove inherited source/target default only when base nodes.channel exists.
 			if (role && baseExplicit) return true;
 
-			// Remove base nodes.channel only when source/target explicitly overrides it.
-			if (!role && anyRoleExplicit) return true;
-
 			return false;
 		};
 

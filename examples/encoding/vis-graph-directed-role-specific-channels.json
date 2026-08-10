@@ -1,0 +1,26 @@
+{
+  "title": "Co-starring network of Harrison Ford",
+  "nodes": {
+    "source": {
+      "field": "actorName",
+      "color": {
+        "field": "actorBirthYear",
+        "value": "#cccccc",
+        "scale": {
+          "type": "quantitative",
+          "range": "Blues"
+        },
+        "legend": {
+          "title": "Actor's Birth Year",
+          "position": "top-left"
+        }
+      },
+      "size": {
+        "field": "actorBirthYear"
+      }
+    },
+    "target": {
+      "field": "movieName"
+    }
+  }
+}

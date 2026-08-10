@@ -45,6 +45,14 @@
 			"component": "venus-graph"
 		},
 		{
+			"id": "visgraph-directed-role-channels",
+			"name": "Force-directed Graph: Movies and Co-stars of Harrison Ford",
+			"encodingPath": "/encoding/vis-graph-directed-role-specific-channels.json",
+			"queryPath": "/queries/redford-costars-birthyear.rq",
+			"endpoint": "https://dbpedia.org/sparql",
+			"component": "venus-graph"
+		},
+		{
 			"id": "visgraph-cooccurrence-color-size",
 			"name": "Force-directed Graph: Harrison Ford Co-Stars and their Birth Year",
 			"encodingPath": "/encoding/vis-graph-cooccurrence-color-size.json",

@@ -128,7 +128,8 @@ export class DomainCalculator {
 			const autoDomain = [dataMin, dataMax];
 			
 			if (!Array.isArray(userDomain) || userDomain.length < 2) {
-				console.warn(`No valid numeric domain provided by user for field "${field}". Domain automatically generated from data extent: [${this._formatValueList(autoDomain)}].`);
+				if (field !== "degree")
+					console.warn(`Missing domain: data values for "${field}" automatically extracted from data: [${this._formatValueList(autoDomain)}].`);
 				return { domain: autoDomain};
 			}
 			
@@ -137,7 +138,7 @@ export class DomainCalculator {
 			.filter(v => !isNaN(v));
 			
 			if (userNumericValues.length < 2) {
-				console.warn(`Invalid numeric domain for field "${field}". User provided: [${this._formatValueList(userDomain)}]. Domain automatically generated from data extent: [${this._formatValueList(autoDomain)}].`);
+				console.warn(`Invalid domain for field "${field}". User provided: [${this._formatValueList(userDomain)}]. Data values: [${this._formatValueList(autoDomain)}].`);
 				return {domain: autoDomain};
 			}
 			
@@ -148,16 +149,16 @@ export class DomainCalculator {
 			if (scaleType === 'log' && (finalDomain[0] <= 0 || finalDomain[1] <= 0)) {
 				const positiveValues = numericValues.filter(v => v > 0);
 				if (positiveValues.length < 2) {
-					console.warn(`Log scale requires positive values for field "${field}". Falling back to [1, 10].`);
+					console.warn(`Invalid domain: Log scale requires positive values for field "${field}". Using default.`);
 					return {domain: [1, 10]};
 				}
 				finalDomain = [Math.min(...positiveValues), Math.max(...positiveValues)];
-				console.warn(`Invalid non-positive user domain for log scale on field "${field}". Domain corrected to positive data extent: [${this._formatValueList(finalDomain)}].`);
+				console.warn(`Invalid domain for field "${field}". User provided: [${this._formatValueList(userDomain)}]. Corrected domain: [${this._formatValueList(finalDomain)}].`);
 			}
 			
 			if (finalDomain[0] === finalDomain[1]) {
 				finalDomain = [finalDomain[0], finalDomain[0] + 1];
-				console.warn(`Degenerate numeric domain for field "${field}" (min=max). Domain expanded to: [${this._formatValueList(finalDomain)}].`);
+				console.warn(`Invalid domain for field "${field}" (min=max). Corrected domain: [${this._formatValueList(finalDomain)}].`);
 			}
 			
 			return { domain: finalDomain }
