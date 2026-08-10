@@ -21,13 +21,12 @@ NPM published package:
 - `packages/components`: defines the [`@wimmics/venus`](https://www.npmjs.com/package/@wimmics/venus) package, which provides custom elements (`venus-graph`, `venus-barchart`) and the integration layer.
 
 Internal packages:
-- `packages/core`: shared low-level utilities (`VIS_TYPES`).
-- `packages/datasource`: fetch + retry + map orchestration for visualization data (`buildForceGraph`, `buildBarChart`).
-- `packages/encoding`: domain and scale computation, visualization-specific encoding managers, and visual-artifact compilers.
-- `packages/legends`: color/size legend web components and factory helpers used by graph and bar chart.
-- `packages/mappers`: SPARQL JSON -> visualization data mapping layer (force graph and bar chart).
-- `packages/renderer-d3`: D3 renderer runtime (force graph and bar chart).
-- `packages/sparql`: SPARQL fetchers and metadata query helpers.
+- `packages/core`: shared utilities, encoding defaults and structures.
+- `packages/import`: fetch data from a given SPARQL endpoint.
+- `packages/encoding`: visualization-specific encoding managers, handles default encoding specification and validators.
+- `packages/transform`: SPARQL JSON -> visualization data transformation layer.
+- `packages/visual-mapping`: compute visual artifacts from encoding and data, creates color/size legend web components, creates and manages tooltips, and computes color/size scales.
+- `packages/rendering`: handles the visualization rendering and user interactions using D3.js library.
 
 SPARQL proxy package:
 - `packages/proxy`: defines the [`@wimmics/venus-sparql-proxy`](https://www.npmjs.com/package/@wimmics/venus-sparql-proxy), a standalone SPARQL proxy server for CORS workarounds.
