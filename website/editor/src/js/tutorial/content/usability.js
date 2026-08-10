@@ -30,18 +30,18 @@ export default {
     "query-selection": {
         title: "Query Examples",
         description:
-            "This menu provides example SPARQL queries over DBpedia. You may use them as a starting point whenever a task requires creating a SPARQL query and a visualization from scratch."
+            "This menu provides example SPARQL queries over DBpedia. Disabled during the experiment."
     },
     "example-selection": {
         title: "Complete Examples",
-        description: "Complete examples illustrate how VENUS can be used. They will be disabled during the experiment."
+        description: "Complete examples illustrate how VENUS can be used. Disabled during the experiment."
     },
 
 
     query: {
         ...defaultContent.query,
         description:
-            "Some tasks require modifying the SPARQL query, while others provide it already completed."
+            "The SPARQL query will be displayed here. You will not need to modify it during the experiment."
     },
 
     encoding: {

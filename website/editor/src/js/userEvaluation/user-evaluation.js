@@ -48,8 +48,6 @@ export class UserEvaluation {
             },
 
             on_trial_finish: () => {
-                console.log(this.jsPsych.data.get().values());
-
                 this.saveTrialData()
             }
         });
@@ -66,6 +64,7 @@ export class UserEvaluation {
 
         // Disable example selection
         document.querySelector("#scenarioSelect").disabled = true   
+        document.querySelector("#querySelect").disabled = true   
     }
 
     _setupContainer() {
@@ -181,7 +180,7 @@ export class UserEvaluation {
 
         this.tutorial.setContent(usabilityContent)
 		this.tutorial.setMandatory(true)
-        this.tutorial.setDisabledSteps(["welcome", "workflow"])
+        this.tutorial.setDisabledSteps(["welcome", "workflow", "query-selection", "example-selection", "query-endpoint"])
 
         this.tutorial.setDoneAction(() => {
             this.finishTask();
@@ -393,9 +392,7 @@ export class UserEvaluation {
     }
 
     async saveToServer() {
-        console.log("final state = ", this.state)
 
-        console.log('server url = ', `${import.meta.env.VITE_LOGS_SERVER_URL}`)
         const response = await fetch(`${import.meta.env.VITE_LOGS_SERVER_URL}`, {
             method: "POST",
             headers: {
@@ -406,7 +403,6 @@ export class UserEvaluation {
 
         sessionStorage.removeItem(STORAGE_KEY);
 
-        console.log("response = ", response)
         if (!response.ok) {
             throw new Error("Failed to save log.");
         }

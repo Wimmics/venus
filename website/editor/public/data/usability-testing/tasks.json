@@ -46,14 +46,5 @@
         "sparqlReadOnly": true,
         "encoding": false,
         "visualization": false
-    },
-    {
-        "id": "task_7",
-        "description_path": "/tasks/task_7.html",
-        "scenario_id": null,
-        "sparqlReadOnly": false,
-        "sparql": false,
-        "encoding": false,
-        "visualization":false
     }
 ]}

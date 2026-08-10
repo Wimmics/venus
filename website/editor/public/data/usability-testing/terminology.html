@@ -12,28 +12,103 @@ Before exploring the editor, it is helpful to become familiar with a few basic c
          style="width:100%;">
 </p>
 
+<h3>The encoding</h3>
+
 <p>
-A visualization encoding is composed of a few recurring concepts:
+    In VENUS, the <strong>encoding</strong> describes how the data returned by the SPARQL query should be represented in the visualization.
+</p>
+
+<p>
+    An encoding is organized into different types of properties. Depending on the visualization, it can define:
 </p>
 
 <ul>
-    <li>
+     <li>
         <strong>Data fields</strong> are the variables returned by the SPARQL query (or contained in the SPARQL JSON results). They are used to define the graphical elements of the visualization and how they represent the data.
     </li>
-
     <li>
-        <strong>Marks</strong> define the graphical elements of the visualization, such as
-        <strong>bars</strong>, <strong>nodes</strong>, <strong>links</strong>, <strong>lines</strong>, or
-        <strong>points</strong>.
+        <strong>Layout properties</strong> that determine how data are positioned or arranged.
     </li>
-
     <li>
-        <strong>Visual variables</strong> (or channels) determine how marks visually represent the data. Examples include
-        <strong>color</strong>, <strong>size</strong>, <strong>opacity</strong>, and <strong>stroke</strong>.
+        <strong>Marks</strong> that define the graphical elements used to represent the data, such as <code>lines</code>, <code>nodes</code>, or <code>links</code>.
     </li>
-
     <li>
-        <strong>Annotations</strong> add textual information to the visualization, such as
-        <strong>labels</strong> and <strong>tooltips</strong>.
+        <strong>Visual variables</strong> that control how a mark looks, such as <code>color</code>, <code>size</code>, <code>stroke</code>, or <code>opacity</code>.
+    </li>
+    <li>
+        <strong>Annotations</strong> that provide additional information or behavior, such as labels, tooltips.
+    </li>
+    <li>
+        <strong>Interactions</strong> that control what user interactions can be performed on the visualization, such as zoom or drag.
     </li>
 </ul>
+
+<div class="info-box">
+    <strong>Important:</strong>
+    Visual variables are defined <strong>inside the mark they modify</strong>.
+    Layout properties, on the other hand, are defined separately at the visualization level.
+</div>
+
+<h3>Example: Line chart</h3>
+
+<p>
+    A line chart uses <code>x</code> and <code>y</code> to define the horizontal and vertical positions (the layout properties). The <code>lines</code> mark then defines how the lines themselves are represented.
+</p>
+
+<pre><code>{
+    "x": {
+        "field": "year"
+    },
+    "y": {
+        "field": "temperature"
+    },
+    "lines": {
+        "groups": {
+            "field": "city"
+        },
+        "color": {
+            "field": "city"
+        },
+        "size": {
+            "value": 2
+        }
+    }
+}</code></pre>
+
+<p>Here:</p>
+
+<ul>
+    <li>
+        <code>x.field</code> uses <code>year</code> to determine the horizontal position.
+    </li>
+    <li>
+        <code>y.field</code> uses <code>temperature</code> to determine the vertical position.
+    </li>
+    <li>
+        <code>lines.groups</code> separates the data into different lines according to <code>city</code>.
+    </li>
+    <li>
+        <code>lines.color</code> uses <code>city</code> to determine the color of each line.
+    </li>
+    <li>
+        <code>lines.size</code> sets the line thickness to a constant value.
+    </li>
+</ul>
+
+<p>
+    Notice that <code>color</code> and <code>size</code> are inside <code>lines</code>: they modify the appearance of the lines.
+</p>
+
+<div class="info-box">
+    <strong>Keep in mind:</strong>
+    The structure of an encoding depends on the visualization type.
+    Cartesian visualizations such as line charts use specific layout properties such as <code>x</code> and <code>y</code>, while network visualizations define layout through marks such as <code>nodes</code> and <code>links</code>.
+</div>
+
+<p>
+    A useful way to read an encoding is: <strong>layout determines where things are → marks determine what is drawn → visual variables determine how marks look.</strong>
+</p>
+
+<p>
+    You do not need to memorize the encoding syntax. During the experiment, the <strong>Encoding Builder</strong> can help you add the available properties.
+</p>

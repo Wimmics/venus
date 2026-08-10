@@ -73,7 +73,6 @@ export class UsabilityTestingWorkflow {
 
     async _addPreTestQuestionnaire() {
         const json = await fetchJson(`${USABILITY_TEST_DATA_PATH}/pre-questionnaire.json`)
-        console.log("json = ", json)
 
         this.timeline.push({
             type: surveyHtmlForm,
@@ -213,7 +212,6 @@ export class UsabilityTestingWorkflow {
 
     async _addUMUXLiteQuestionnaire() {
         const json = await fetchJson(`${USABILITY_TEST_DATA_PATH}/umux-lite.json`)
-        console.log("json = ", json)
 
         this.timeline.push({
             type: surveyLikert,
