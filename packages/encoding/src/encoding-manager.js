@@ -286,7 +286,7 @@ export class EncodingManager {
 			return
 
 		if (!this._isProvided(userEncoding?.field) && !this._isProvided(userEncoding?.metric)) {
-			console.warn(`Ignored encoding: "${path}.scale" requires "${path}.field" or "${path}.metric".`)
+			console.warn(`Ignored encoding: "${path}.scale" requires "${path}.field" or "${path}.metric". Using "${path}.metric" with default value.`)
 			return
 		}
 
