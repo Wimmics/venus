@@ -47,16 +47,18 @@ Node-link diagrams are defined using the `nodes` and `links` marks.
 Nodes are defined through the `nodes` mark, which accepts one of the following forms:
 
 - A single node definition:
-```js
-  { field: "variable" }
+```json
+{ 
+	"field": "variable" 
+}
 ```
 
 - Separate definitions for source and target nodes:
 
-```js
+```json
 {
-	source: { field: "source" },
-	target: { field: "target" }
+	"source": { "field": "source" },
+	"target": { "field": "target" }
 }
 ```
 
@@ -81,12 +83,12 @@ Each link type defines how links are interpreted and constructed. The following 
 
 The following channels are supported by both nodes and links. For nodes, they may be applied globally or defined separately for `nodes.source` and `nodes.target`.
 
-| Channel | Description | Documentation  |
-|---|---|---|
-| `color` | Defines the color of nodes. | See [Color](../../encoding/color.md) |
-| `size`  | Defines the radius of nodes. | See [Size](../../encoding/size.md) |
-| `strokeWidth` | Defines the stroke width of nodes. | See [Stroke Width](../../encoding/stroke-width.md)
-| `stroke` | Defines the stroke color of nodes. | See [Stroke](../../encoding/stroke.md)
+| Channel | Description |
+|---|---|
+| `color` | Defines the color of nodes.  |
+| `size`  | Defines the radius of nodes. | 
+| `strokeWidth` | Defines the stroke width of nodes. | 
+| `stroke` | Defines the stroke color of nodes. | 
 
 Links further exposes the `links.distance.value` property, which specifies the preferred distance between connected nodes used by the force-directed layout algorithm. It accepts a numeric value.
 
@@ -109,15 +111,17 @@ where `[channel]` may be `color` or `size`.
 
 **Example**
 
-```js
-nodes: {
-  source: { field: "actorName" },
-  target: { field: "movieName" },
-  size: {
-    metric: "degree",
-    scale: { type: "linear", range: [5, 25] },
-    legend: { title: "Degree" }
-  }
+```json
+{
+	"nodes": {
+		"source": { "field": "actorName" },
+		"target": { "field": "movieName" },
+		"size": {
+			"metric": "degree",
+			"scale": { "type": "linear", "range": [5, 25] },
+			"legend": { "title": "Degree" }
+		}
+	}
 }
 ```
 
@@ -246,119 +250,217 @@ The examples below provide complete, ready-to-use encodings for each type of nod
 
 ### Source-target graph (directional or semantic)
 
-```js
-encoding: {
-  nodes: {
-    source: {
-      field: "source",
-      color: {
-        field: "sourceType",
-        scale: { type: "ordinal", range: "Set2" },
-        legend: { title: "Source Type", display: true, position: "bottom" }
+```json
+{
+  "nodes": {
+    "source": {
+      "field": "source",
+      "color": {
+        "field": "sourceType",
+        "scale": {
+          "type": "ordinal",
+          "range": "Set2"
+        },
+        "legend": {
+          "title": "Source Type",
+          "display": true,
+          "position": "bottom"
+        }
       },
-      labels: { display: false },
-      tooltip: {
-        title: { field: "sourceLabel" },
-        fields: ["source", "sourceLabel", "sourceType"]
+      "labels": {
+        "display": false
+      },
+      "tooltip": {
+        "title": {
+          "field": "sourceLabel"
+        },
+        "fields": [
+          "source",
+          "sourceLabel",
+          "sourceType"
+        ]
       }
     },
-
-    target: {
-      field: "target",
-      color: {
-        field: "targetType",
-        scale: { type: "ordinal", range: "Set3" },
-        legend: { title: "Target Type", display: true, position: "bottom" }
+    "target": {
+      "field": "target",
+      "color": {
+        "field": "targetType",
+        "scale": {
+          "type": "ordinal",
+          "range": "Set3"
+        },
+        "legend": {
+          "title": "Target Type",
+          "display": true,
+          "position": "bottom"
+        }
       },
-      labels: { display: false },
-      tooltip: {
-        title: { field: "targetLabel" },
-        fields: ["target", "targetLabel", "targetType"]
+      "labels": {
+        "display": false
+      },
+      "tooltip": {
+        "title": {
+          "field": "targetLabel"
+        },
+        "fields": [
+          "target",
+          "targetLabel",
+          "targetType"
+        ]
       }
     },
-
-    // global fallbacks
-    size: {
-      metric: "degree",
-      scale: { type: "linear", range: [6, 24] },
-      legend: { title: "Node Degree", display: true, position: "bottom" }
+    "size": {
+      "metric": "degree",
+      "scale": {
+        "type": "linear",
+        "range": [
+          6,
+          24
+        ]
+      },
+      "legend": {
+        "title": "Node Degree",
+        "display": true,
+        "position": "bottom"
+      }
     },
-    stroke: { value: "#ffffff", width: 1.5, display: true },
-    labels: { display: true },
-    tooltip: {
-      title: { field: "sourceLabel" },
-      fields: ["source", "target"]
+    "stroke": {
+      "value": "#ffffff",
+      "width": 1.5,
+      "display": true
+    },
+    "labels": {
+      "display": true
+    },
+    "tooltip": {
+      "title": {
+        "field": "sourceLabel"
+      },
+      "fields": [
+        "source",
+        "target"
+      ]
     }
   },
-
-  links: {
-    // use "directional" for plain directed links,
-    // or "semantic" + relation.field for predicate-labeled links
-    type: "semantic",
-    relation: { field: "predicate" },
-
-    color: {
-      field: "predicate",
-      scale: { type: "ordinal", range: "Set1" },
-      legend: { title: "Relation", display: true, position: "bottom" }
+  "links": {
+    "type": "semantic",
+    "relation": {
+      "field": "predicate"
     },
-
-    distance: { value: 110 },
-    labels: { display: false, field: "predicate" },
-    tooltip: {
-      title: { field: "predicate" },
-      fields: ["source", "predicate", "target"]
+    "color": {
+      "field": "predicate",
+      "scale": {
+        "type": "ordinal",
+        "range": "Set1"
+      },
+      "legend": {
+        "title": "Relation",
+        "display": true,
+        "position": "bottom"
+      }
+    },
+    "distance": {
+      "value": 110
+    },
+    "labels": {
+      "display": false,
+      "field": "predicate"
+    },
+    "tooltip": {
+      "title": {
+        "field": "predicate"
+      },
+      "fields": [
+        "source",
+        "predicate",
+        "target"
+      ]
     }
   },
-
-  interactions: {
-    tooltip: true,
-    drag: true,
-    zoom: true
+  "interactions": {
+    "tooltip": true,
+    "drag": true,
+    "zoom": true
   }
 }
 ```
 
 ### Cooccurrence graph
 
-```js
-encoding: {
-  nodes: {
-    field: "author",
-    color: {
-      field: "authorGroup",
-      scale: { type: "ordinal", range: "Tableau10" },
-      legend: { title: "Author Group", display: true, position: "bottom" }
+```json
+{
+  "nodes": {
+    "field": "author",
+    "color": {
+      "field": "authorGroup",
+      "scale": {
+        "type": "ordinal",
+        "range": "Tableau10"
+      },
+      "legend": {
+        "title": "Author Group",
+        "display": true,
+        "position": "bottom"
+      }
     },
-    size: {
-      metric: "degree",
-      scale: { type: "linear", range: [6, 22] },
-      legend: { title: "Cooccurrence Degree", display: true, position: "bottom" }
+    "size": {
+      "metric": "degree",
+      "scale": {
+        "type": "linear",
+        "range": [6, 22]
+      },
+      "legend": {
+        "title": "Cooccurrence Degree",
+        "display": true,
+        "position": "bottom"
+      }
     },
-    labels: { display: true, field: "author" },
-    stroke: { value: "#ffffff", width: 1.5, display: true },
-    tooltip: {
-      title: { field: "author" },
-      fields: ["author", "authorGroup"]
+    "labels": {
+      "display": true,
+      "field": "author"
+    },
+    "stroke": {
+      "value": "#ffffff",
+      "width": 1.5,
+      "display": true
+    },
+    "tooltip": {
+      "title": {
+        "field": "author"
+      },
+      "fields": [
+        "author",
+        "authorGroup"
+      ]
     }
   },
-
-  links: {
-    type: "cooccurrence",
-    context: { field: "publication" },
-    color: { value: "#999999" },
-    distance: { value: 90 },
-    labels: { display: false },
-    tooltip: {
-      title: { field: "publication" },
-      fields: ["publication"]
+  "links": {
+    "type": "cooccurrence",
+    "context": {
+      "field": "publication"
+    },
+    "color": {
+      "value": "#999999"
+    },
+    "distance": {
+      "value": 90
+    },
+    "labels": {
+      "display": false
+    },
+    "tooltip": {
+      "title": {
+        "field": "publication"
+      },
+      "fields": [
+        "publication"
+      ]
     }
   },
-
-  interactions: {
-    tooltip: true,
-    drag: true,
-    zoom: true
+  "interactions": {
+    "tooltip": true,
+    "drag": true,
+    "zoom": true
   }
 }
 ```

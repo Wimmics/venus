@@ -18,7 +18,7 @@ export class UsabilityTestingWorkflow {
 
         this.frequencyLikert = ["Not at all", "Slightly", "Moderately", "Very", "Extremely"]
 
-        this.debug = false 
+        this.debug = false // true for pre-filling the forms for testing
     }
 
     async buildTimeline() {
@@ -438,7 +438,7 @@ export class UsabilityTestingWorkflow {
             questions.push({
                 prompt: value.description,
                 labels: scale10,
-                required: false // change to true once the protocol is done 
+                required: true 
             })
         }
 

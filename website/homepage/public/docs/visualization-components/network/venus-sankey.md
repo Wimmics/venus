@@ -53,9 +53,11 @@ Sankey stages are defined through the `nodes.fields` property, which accepts eit
 
 A string entry specifies the SPARQL variable whose bindings define the nodes of a stage.
 
-```js
-nodes: {
-  fields: ["country", "city", "organization"]
+```json
+{
+  	"nodes": {
+    		"fields": ["country", "city", "organization"]
+ 	}
 }
 ```
 
@@ -72,16 +74,18 @@ An object entry provides additional configuration options for a stage.
 
 Example:
 
-```js
-nodes: {
-  fields: [
-    {
-      field: "country",
-      title: "Country",
-      color: { field: "continent" },
-      sort: { by: "count" }
-    }
-  ]
+```json
+{
+	"nodes": {
+		"fields": [
+			{
+				"field": "country",
+				"title": "Country",
+				"color": { "field": "continent" },
+				"sort": { "by": "count" }
+			}
+		]
+	}
 }
 ```
 
@@ -100,11 +104,13 @@ The `sort` property controls the ordering of nodes within a stage.
 
 #### Object form
 
-```js
-sort: {
-  by: "layout" | "alpha" | "count" | "value",
-  order: "asc" | "desc",      // optional
-  mode: "total" | "in" | "out" // optional
+```json
+{
+	"sort": {
+		"by": "layout" | "alpha" | "count" | "value",
+		"order": "asc" | "desc",      // optional
+		"mode": "total" | "in" | "out" // optional
+	}
 }
 ```
 
@@ -147,11 +153,13 @@ If `links.value` is omitted, each binding contributes a value of `1`.
 
 **Example**
 
-```js
-links: {
-  value: {
-    field: "count"
-  }
+```json
+{
+	"links": {
+		"value": {
+			"field": "count"
+		}
+	}
 }
 ```
 
@@ -173,52 +181,96 @@ See the [D3 Sankey alignment documentation](https://github.com/d3/d3-sankey#alig
 
 The example below provide complete, ready-to-use encodings for the sabkey diagram, including all default values. Only the properties required to identify the nodes and flow magnitude (`links.value`) are mandatory. All other properties correspond to default values automatically applied by VENUS and may be omitted unless customization is required.
 
-```js
-encoding: {
-  nodes: {
+```json
+{
+  "nodes": {
     // ordered stages
-    fields: [
+    "fields": [
       {
-        field: "stageA",
-        title: "Stage A",
-        color: {
-          field: "category",
-          scale: { type: "ordinal", range: "Set3" },
-          legend: { display: true, position: "bottom" }
+        "field": "stageA",
+        "title": "Stage A",
+        "color": {
+          "field": "category",
+          "scale": {
+            "type": "ordinal",
+            "range": "Set3"
+          },
+          "legend": {
+            "display": true,
+            "position": "bottom"
+          }
         },
-        sort: { by: "alpha", order: "asc" }
+        "sort": {
+          "by": "alpha",
+          "order": "asc"
+        }
       },
       {
-        field: "stageB",
-        sort: { by: "value", mode: "total", order: "desc" }
+        "field": "stageB",
+        "sort": {
+          "by": "value",
+          "mode": "total",
+          "order": "desc"
+        }
       },
       "stageC"
     ],
 
     // global fallback for stages that do not define fields[i].sort
-    sort: { by: "layout", order: "asc", mode: null },
+    "sort": {
+      "by": "layout",
+      "order": "asc",
+      "mode": null
+    },
 
-    padding: 2,
-    size: { value: 25 },
+    "padding": 2,
+    "size": {
+      "value": 25
+    },
 
     // optional global color/labels/tooltip
-    color: { value: "#69b3a2" },
-    labels: { display: true, field: "label" },
-    tooltip: { fields: ["stageA", "stageB", "stageC"] }
+    "color": {
+      "value": "#69b3a2"
+    },
+    "labels": {
+      "display": true,
+      "field": "label"
+    },
+    "tooltip": {
+      "fields": [
+        "stageA",
+        "stageB",
+        "stageC"
+      ]
+    }
   },
 
-  links: {
-    value: { field: "count" },
-    color: { value: "#999" },
-    opacity: { value: 0.35 },
-    labels: { display: false },
-    tooltip: { fields: ["count"] }
+  "links": {
+    "value": {
+      "field": "count"
+    },
+    "color": {
+      "value": "#999"
+    },
+    "opacity": {
+      "value": 0.35
+    },
+    "labels": {
+      "display": false
+    },
+    "tooltip": {
+      "fields": [
+        "count"
+      ]
+    }
   },
 
-  interactions: { tooltip: true },
+  "interactions": {
+    "tooltip": true
+  },
 
   // layout
-  align: "justify", // justify | left | right | center
+  "align": "justify" // justify | left | right | center
 }
 ```
 

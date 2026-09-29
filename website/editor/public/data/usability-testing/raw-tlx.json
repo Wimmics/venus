@@ -7,7 +7,7 @@
     {
         "id": "physical-demand",
         "title": "Physical Demand",
-        "description": "How physically demanding was the task (e.g., controlling, activating)?"
+        "description": "How physically demanding was the task, considering the amount of mouse and keyboard interaction required?"
     },
     {
         "id": "temporal-demand",
@@ -17,7 +17,7 @@
     {
         "id": "effort",
         "title": "Effort",
-        "description": "How much effort did you put into accomplish your level of performance?"
+        "description": "How hard did you have to work to achieve your level of performance?"
     },
     {
         "id": "performance",

@@ -3,16 +3,22 @@
 The `scale` property defines how raw data values are converted into
 visual channels such as color and size.
 
-``` js
-encoding: {
-  nodes: {
-    color: {
-      field: "speciesLabel",
-      scale: { type: "ordinal", range: "Set3" }
+``` json
+{
+  "nodes": {
+    "color": {
+      	"field": "speciesLabel",
+      	"scale": { 
+        	"type": "ordinal", 
+        	"range": "Set3" 
+      	}
     },
-    size: {
-      field: "articleCount",
-      scale: { type: "sqrt", range: [5, 20] }
+    "size": {
+      	"field": "articleCount",
+      	"scale": { 
+			"type": "sqrt", 
+			"range": [5, 20] 
+		}
     }
   }
 }
@@ -64,19 +70,32 @@ You can specify the color range in three ways:
 
 - **Named palette**
 
-```js
-scale: { type: "ordinal", range: "Set3" }
+```json
+{
+	"scale": { 
+		"type": "ordinal", 
+		"range": "Set3" 
+	}
+}
 ```
 - **Named palette with fixed number of colors**
 
-```js
-scale: { range: "Reds[5]" }
+```json
+{	
+	"scale": { 
+		"range": "Reds[5]" 
+	}
+}
 ```
 
 - **Custom color array**
 
-```js
-scale: { range: ["#ff0000", "#00ff00", "#0000ff"] }
+```json
+{ 
+	"scale": { 
+		"range": ["#ff0000", "#00ff00", "#0000ff"] 
+	}
+}
 ```
 
 ### Resolution Rules
@@ -106,17 +125,22 @@ See [D3 Scale Chromatic: Categorical Schemes](https://d3js.org/d3-scale-chromati
 
 Typical use:
 
-```js
-color: {
-  field: "species",
-  scale: { type: "ordinal", range: "Category10" }
-}
+```json
+	"color": {
+		"field": "species",
+		"scale": { 
+			"type": "ordinal", 
+			"range": "Category10" 
+		}
+	}
 ```
 
 With fixed steps:
 
-```js
-scale: { range: "Reds[5]" }
+```json
+{
+	"scale": { "range": "Reds[5]" }
+}
 ```
 
 #### Sequential (Ordered)
@@ -131,10 +155,15 @@ See [D3 Scale Chromatic: Sequential Schemes](https://d3js.org/d3-scale-chromatic
 
 Typical use:
 
-```js
-color: {
-  field: "population",
-  scale: { type: "sequential", range: "Blues" }
+```json
+{
+	"color": {
+		"field": "population",
+		"scale": { 
+			"type": "sequential", 
+			"range": "Blues" 
+		}
+	}
 }
 ```
 
@@ -151,8 +180,13 @@ See [D3 Scale Chromatic: Diverging Schemes](https://d3js.org/d3-scale-chromatic/
 
 Typical use:
 
-```js
-scale: { type: "sequential", range: "RdYlBu" }
+```json
+{
+	"scale": { 
+		"type": "sequential", 
+		"range": "RdYlBu" 
+	}
+}
 ```
 
 #### Cyclical
@@ -163,8 +197,13 @@ Used for periodic data. Common examples:
 
 See [D3 Scale Chromatic: Cyclical Schemes](https://d3js.org/d3-scale-chromatic/cyclical) for a complete list of available palettes.
 
-```js
-scale: { type: "sequential", range: "Rainbow" }
+```json
+{
+	"scale": { 
+		"type": "sequential", 
+		"range": "Rainbow" 
+	}
+}
 ```
 
 ### Notes
@@ -182,16 +221,23 @@ interval.
 
 **Expected form**
 
-``` js
-range: [minSize, maxSize]
+``` json
+{
+	"range": [minSize, maxSize]
+}
 ```
 
 **Example**
 
-``` js
-size: {
-  field: "articleCount",
-  scale: { type: "sqrt", range: [5, 20] }
+``` json
+{
+	"size": {
+		"field": "articleCount",
+		"scale": { 
+			"type": "sqrt", 
+			"range": [5, 20] 
+		}
+	}
 }
 ```
 

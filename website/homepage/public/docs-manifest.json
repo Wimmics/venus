@@ -72,9 +72,33 @@
         "children": [
           {
             "type": "file",
+            "name": "datafields.md",
+            "title": "Data Fields",
+            "path": "encoding/datafields.md"
+          },
+          {
+            "type": "file",
+            "name": "marks.md",
+            "title": "Marks",
+            "path": "encoding/marks.md"
+          },
+          {
+            "type": "file",
+            "name": "channels.md",
+            "title": "Visual Variables",
+            "path": "encoding/channels.md"
+          },
+          {
+            "type": "file",
             "name": "scale.md",
             "title": "Scale Types",
             "path": "encoding/scale.md"
+          },
+          {
+            "type": "file",
+            "name": "annotations.md",
+            "title": "Annotations",
+            "path": "encoding/annotations.md"
           },
           {
             "type": "file",

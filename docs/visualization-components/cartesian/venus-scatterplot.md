@@ -48,6 +48,16 @@ The following visual channels are supported:
 | `strokeWidth` | Defines the stroke width of points. | See [Stroke Width](../../encoding/stroke-width.md)
 | `stroke` | Defines the stroke color of points. | See [Stroke](../../encoding/stroke.md)
 
+### Example
+
+```json
+{
+  	"points": {
+    		"color": { "field": "continentLabel" },
+      		"size": { "field": "population" }
+    }
+}
+```
 
 ## Bubble plots
 

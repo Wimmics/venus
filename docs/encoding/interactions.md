@@ -2,14 +2,14 @@
 
 The `interactions` property controls user interactions with the visualization. Interactions are enabled by default in all visualizations. To use the visualization as a simple static representation of the data, user interactions can be disabled, either globally or by type of interaction.
 
-```js
-encoding: {
-  interactions: {
-    enabled: true,
-    drag: true,
-    zoom: true,
-    tooltip: true
-  }
+```json
+{
+ 	"interactions": {
+      		"enabled": true,
+      		"drag": true,
+      		"zoom": true,
+      		"tooltip": true
+  	}
 }
 ```
 

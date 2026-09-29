@@ -17,16 +17,19 @@ Cartesian visualizations are appropriate when:
 
 All cartesian charts share a common layout defined via `x` and `y` properties of the encoding. The `x` property defines the horizontal position channel, while the `y` property defines the vertical position channel. 
 
-```js
-encoding: {
-  x: {
-    field: "country",
-    axis: { labelAngle: -30 }
-  },
-  y: {
-    field: "count",
-    axis: { tickFormat: "integer", tickStep: 1 }
-  }
+```json
+{
+  	"x": {
+    		"field": "country",
+    		"axis": { "labelAngle": -30 }
+  	},
+  	"y": {
+    		"field": "count",
+    		"axis": { 
+				"tickFormat": "integer", 
+				"tickStep": 1 
+			}
+  	}
 }
 ```
 
@@ -42,23 +45,23 @@ Both channels expose the following properties:
 
 The `axis` property customizes tick and label rendering.
 
-```js
-encoding: {
-  x: {
-    field: "country",
-    axis: {
-      labelAngle: -45,
-      labelOffset: { x: -6, y: 10 }
-    }
-  },
-  y: {
-    field: "languageCount",
-    axis: {
-      tickStep: 1,
-      tickFormat: "integer",
-      labelOffset: { x: -4, y: 0 }
-    }
-  }
+```json
+{
+  	"x": {
+		"field": "country",
+		"axis": {
+			"labelAngle": -45,
+			"labelOffset": { x: -6, y: 10 }
+		}
+	},
+	"y": {
+		"field": "languageCount",
+		"axis": {
+			"tickStep": 1,
+			"tickFormat": "integer",
+			"labelOffset": { x: -4, y: 0 }
+		}
+	}
 }
 ```
 

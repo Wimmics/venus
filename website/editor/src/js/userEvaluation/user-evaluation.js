@@ -303,6 +303,10 @@ export class UserEvaluation {
 
         // Prepare editor for task
         this.editorApp.sparqlPanelController.setReadOnly(taskConfig.sparqlReadOnly)
+        
+        // Ensure that the SPARQL query is visible and that "Use results as source" is disabled
+        this.editorApp.sparqlPanelController.toggleResultsAsSource(false)
+        document.querySelector("#sparql-tab").click()
 
         if (taskConfig.sparql === false)
             this.editorApp.sparqlPanelController.setText("")

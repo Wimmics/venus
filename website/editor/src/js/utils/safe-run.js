@@ -34,7 +34,7 @@ function showToast(message, { level = "info" } = {}) {
     text.textContent = message;
     toast.appendChild(text);
     
-    if (level === "error") {
+    // if (level === "error") {
         const close = document.createElement("button");
         close.className = "editor-toast-close";
         close.innerHTML = "&times;";
@@ -49,15 +49,15 @@ function showToast(message, { level = "info" } = {}) {
         });
         
         toast.appendChild(close);
-    } else {
-        window.setTimeout(() => {
-            toast.remove();
+    // } else {
+    //     window.setTimeout(() => {
+    //         toast.remove();
             
-            if (!stack.childElementCount) {
-                stack.remove();
-            }
-        }, TOAST_TIMEOUT_MS);
-    }
+    //         if (!stack.childElementCount) {
+    //             stack.remove();
+    //         }
+    //     }, TOAST_TIMEOUT_MS);
+    // }
     
     stack.appendChild(toast);
 }

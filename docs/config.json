@@ -28,8 +28,11 @@
     "encoding": {
       "items": [
         { "path": "encoding/start.md", "label": "Overview" },
-        { "path": "encoding/field.md", "label": "Data Fields" },
+        { "path": "encoding/datafields.md", "label": "Data Fields" },
+        { "path": "encoding/marks.md", "label": "Marks" },
+        { "path": "encoding/channels.md", "label": "Visual Variables" },
         { "path": "encoding/scale.md", "label": "Scale Types" },
+        { "path": "encoding/annotations.md", "label": "Annotations" },
         { "path": "encoding/interactions.md", "label": "User Interactions" }
       ]
     },

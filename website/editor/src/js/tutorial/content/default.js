@@ -100,7 +100,7 @@ export default {
     visualization: {
         title: "Visualization",
         description:
-            "The generated visualization is displayed here. Each time you run the editor, this view is updated to reflect your current query and encoding."
+            `The generated visualization is displayed here. Each time you click on the "Run Visualization" button, this view is updated to reflect your current query and encoding.`
     },
 
     "visualization-toolbar": {

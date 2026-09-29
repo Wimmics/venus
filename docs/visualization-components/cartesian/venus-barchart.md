@@ -54,9 +54,9 @@ The following visual channels are supported:
 
 Bars may be displayed vertically or horizontally using the global direction property.
 
-```js
-encoding: {
-  direction: "vertical"
+```json
+{
+  "direction": "vertical"
 }
 ```
 
@@ -87,12 +87,14 @@ Grouped (or multi-set) bar charts display multiple bars for each category to com
 
 Grouping is controlled by the `bars.groups` property, which specifies the SPARQL variable used to partition each category.
 
-```js
-bars: {
-  stack: false,
-  groups: {
-    field: "languageFamily"
-  }
+```json
+{
+	"bars": {
+		"stack": false,
+		"groups": {
+			"field": "languageFamily"
+		}
+	}
 }
 ```
 The values of `languageFamily` determine the grouped bars within each category.

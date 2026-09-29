@@ -59,9 +59,11 @@ Both marks support the following visual channels:
 
 The `points` mark controls whether points are displayed on top of the lines.
 
-```js
-points: {
-  display: true
+```json
+{
+	"points": {
+		"display": true
+	}
 }
 ```
 
@@ -73,11 +75,13 @@ Multi-line charts display several lines within the same chart to compare multipl
 
 Grouping is controlled by the `lines.groups` property, which specifies the SPARQL variable used to partition the data into distinct series.
 
-```js
-lines: {
-  groups: {
-    field: "countryLabel"
-  }
+```json
+{
+	"lines": {
+		"groups": {
+			"field": "countryLabel"
+		}
+	}
 }
 ```
 Each distinct value of `countryLabel` produces a separate line.
