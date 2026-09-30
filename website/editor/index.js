@@ -12,9 +12,35 @@ window.addEventListener("DOMContentLoaded", async () => {
 
 	if (import.meta.env.PROD && !testingMode) {
 		document.body.innerHTML = `
-			<div style="padding: 40px; font-family: sans-serif;">
-				<h2>VENUS Editor</h2>
-				<p>The editor is currently available only through the user study.</p>
+			<div class="study-page">
+				<div class="study-card">
+					<p class="study-notice">
+						<strong>Sorry!</strong> The VENUS editor is currently available only through the user study.
+					</p>
+
+					<div class="study-badge">VENUS User Study</div>
+
+					<h1>Help us evaluate VENUS</h1>
+
+					<p>
+						If you work with <strong>knowledge graphs</strong> and
+						<strong>SPARQL queries</strong>, we would like your help evaluating
+						VENUS for creating visualizations from knowledge graph data.
+					</p>
+
+					<p>
+						The study takes approximately <strong>45 minutes</strong> and
+						involves completing a series of visualization tasks using the VENUS editor.
+					</p>
+
+					<a class="study-button" href="?mode=user-study">
+						Participate in the user study
+					</a>
+
+					<p class="study-note">
+						No installation is required. The study runs directly in your browser.
+					</p>
+				</div>
 			</div>
 		`;
 		return;
