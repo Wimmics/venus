@@ -65,7 +65,7 @@ export default {
     run: {
         title: "Run",
         description:
-            "After making changes to the query or the encoding, click Run to update the visualization and verify the result."
+            `After making changes to the query or the encoding, click "Run Visualiztion" to update the visualization and verify the result. If “No Data to Display” appears unexpectedly, click “Run Visualization” again. The visualization may occasionally need a second run to load the data.`
     },
 
     documentation: {

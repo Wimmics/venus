@@ -127,6 +127,8 @@ export class UsabilityTestingWorkflow {
 
                 taskLog = await this.waitForUser()
 
+                this.closeTutorialResources() // close opened windows during tutorial, notably the documentation
+
                 done()
             },
             data: () => ({
@@ -576,6 +578,15 @@ export class UsabilityTestingWorkflow {
                 select.dispatchEvent(new Event("change", { bubbles: true }));
             }
         });
+    }
+
+    closeTutorialResources() {
+        console.log("removing remainings..")
+        const closeButton = document.querySelector("#close-doc");
+
+        if (closeButton) {
+            closeButton.click();
+        }
     }
 
 

@@ -247,7 +247,7 @@ export class UserEvaluation {
         const originalAddSnippet = this.editorApp.encodingPanelController.addSnippet.bind(this.editorApp.encodingPanelController);
 
         this.editorApp.encodingPanelController.addSnippet = async (d, ...args) => {
-            const selectedValue = document.querySelector(`#${d.key}`).value;
+            const selectedValue = document.querySelector(`#${d.key}`)?.value;
             const component = this.editorApp.encodingPanelController.getActiveComponent()
             const snippet = this.editorApp.encodingPanelController.buildSnippet(d);
 
@@ -303,7 +303,7 @@ export class UserEvaluation {
 
         // Prepare editor for task
         this.editorApp.sparqlPanelController.setReadOnly(taskConfig.sparqlReadOnly)
-        
+
         // Ensure that the SPARQL query is visible and that "Use results as source" is disabled
         this.editorApp.sparqlPanelController.toggleResultsAsSource(false)
         document.querySelector("#sparql-tab").click()
